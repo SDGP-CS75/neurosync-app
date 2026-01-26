@@ -1,1 +1,1 @@
-print("Hello SDGP")
+print("SDGP")
