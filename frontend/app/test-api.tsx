@@ -1,19 +1,25 @@
-import { View, Text } from "react-native";
-import { useEffect, useState } from "react";
-import { getHealth } from "../services/api";
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { BACKEND_URL } from '@env';
 
 export default function TestAPI() {
-  const [msg, setMsg] = useState("Loading...");
+  const [message, setMessage] = useState('Loading...');
 
   useEffect(() => {
-    getHealth()
-      .then(data => setMsg(data.message))
-      .catch(() => setMsg("Backend not reachable"));
+    fetch(`${BACKEND_URL}/health`)
+      .then(res => res.json())
+      .then(data => setMessage(data.message))
+      .catch(err => setMessage('Error connecting to backend'));
   }, []);
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-      <Text>{msg}</Text>
+    <View style={styles.container}>
+      <Text style={styles.text}>{message}</Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  text: { fontSize: 20 }
+});
