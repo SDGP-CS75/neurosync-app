@@ -1,50 +1,208 @@
-# Welcome to your Expo app 👋
+# NeuroSync Frontend
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The mobile application frontend for the NeuroSync productivity app, built with React Native and Expo.
 
-## Get started
+## Tech Stack
 
-1. Install dependencies
+- **React Native** - Mobile framework
+- **Expo** - Development platform
+- **Expo Router** - File-based routing
+- **TypeScript** - Type safety
+- **Supabase** - Backend services
+- **Firebase** - Authentication and database
+- **Axios** - HTTP client
 
-   ```bash
-   npm install
-   ```
+## Project Structure
 
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+frontend/
+├── app/                    # Expo Router pages
+│   ├── (auth)/            # Authentication routes
+│   │   ├── _layout.tsx
+│   │   ├── sign-in.tsx
+│   │   ├── sign-up.tsx
+│   │   └── welcome.tsx
+│   ├── (tabs)/            # Tab-based routes
+│   │   ├── _layout.tsx
+│   │   ├── index.tsx
+│   │   ├── daily-routine.tsx
+│   │   ├── focus-timer.tsx
+│   │   ├── todo-list.tsx
+│   │   ├── profile.tsx
+│   │   └── settings.tsx
+│   ├── _layout.tsx        # Root layout
+│   └── index.tsx          # Home page
+├── components/
+│   ├── screens/           # Screen components
+│   │   ├── ProfileView.tsx
+│   │   ├── RoutineView.tsx
+│   │   ├── TimerView.tsx
+│   │   └── TodoView.tsx
+│   └── ui/                # Reusable UI components
+│       ├── Button.tsx
+│       ├── Card.tsx
+│       └── Input.tsx
+├── context/               # React Context providers
+│   ├── AuthContext.tsx
+│   └── ThemeContext.tsx
+├── hooks/                 # Custom React hooks
+│   ├── useAuth.ts
+│   ├── useTheme.ts
+│   └── useTimer.ts
+├── services/              # API services
+│   ├── auth.ts
+│   ├── routines.ts
+│   ├── supabase.ts
+│   └── tasks.ts
+├── types/                 # TypeScript type definitions
+│   └── index.ts
+├── constants/             # App constants
+│   └── theme.ts
+├── assets/                # Images, fonts, etc.
+│   └── images/
+├── .env                   # Environment variables (not in git)
+├── .env.example           # Environment variables template
+├── .gitignore
+├── app.json               # Expo configuration
+├── package.json
+├── tsconfig.json
+└── README.md
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Getting Started
 
-## Learn more
+### Prerequisites
 
-To learn more about developing your project with Expo, look at the following resources:
+- Node.js (v18 or higher)
+- npm or yarn
+- Expo CLI (`npm install -g expo-cli`)
+- Expo Go app on your mobile device (for testing)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Installation
 
-## Join the community
+1. Install dependencies:
+```bash
+npm install
+```
 
-Join our community of developers creating universal apps.
+2. Create a `.env` file in the root directory:
+```bash
+cp .env.example .env
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+3. Configure your environment variables in `.env`:
+```env
+EXPO_PUBLIC_API_URL=http://localhost:3000/api
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_firebase_storage_bucket
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
+EXPO_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
+```
+
+### Running the App
+
+**Development mode**:
+```bash
+npm run dev
+```
+
+This will start the Expo development server. You can then:
+- Scan the QR code with the Expo Go app on your mobile device
+- Press `w` to open in a web browser
+- Press `a` to open in an Android emulator
+- Press `i` to open in an iOS simulator (macOS only)
+
+**Build for web**:
+```bash
+npm run build:web
+```
+
+**Lint code**:
+```bash
+npm run lint
+```
+
+**Type check**:
+```bash
+npm run typecheck
+```
+
+## Features
+
+### Authentication
+- User registration and login
+- Secure session management
+- Password recovery
+
+### Daily Routine
+- Create and manage daily routines
+- Track routine completion
+- AI-powered routine suggestions
+
+### Focus Timer
+- Pomodoro-style timer
+- Customizable work/break intervals
+- Session tracking and statistics
+
+### Todo List
+- Create, edit, and delete tasks
+- Task prioritization
+- Due date management
+- Task completion tracking
+
+### Profile
+- User profile management
+- Settings customization
+- Statistics and progress tracking
+
+## Navigation
+
+The app uses Expo Router for file-based routing:
+
+- **Auth Flow**: Welcome → Sign In/Sign Up → Main App
+- **Tab Navigation**: Home, Daily Routine, Focus Timer, Todo List, Profile, Settings
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `EXPO_PUBLIC_API_URL` | Backend API URL | Yes |
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
+| `EXPO_PUBLIC_FIREBASE_API_KEY` | Firebase API key | Yes |
+| `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase auth domain | Yes |
+| `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | Firebase project ID | Yes |
+| `EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase storage bucket | Yes |
+| `EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase messaging sender ID | Yes |
+| `EXPO_PUBLIC_FIREBASE_APP_ID` | Firebase app ID | Yes |
+
+## Development
+
+### Adding New Screens
+
+1. Create a new screen file in `app/` or `components/screens/`
+2. Add the route to the appropriate layout
+3. Update navigation if needed
+
+### Adding New Components
+
+Create reusable UI components in `components/ui/` following the existing pattern.
+
+### Using Custom Hooks
+
+Custom hooks are available in `hooks/`:
+- `useAuth()` - Authentication state and methods
+- `useTheme()` - Theme context
+- `useTimer()` - Timer functionality
+
+## Styling
+
+The app uses a theme-based approach defined in `constants/theme.ts`. All colors, spacing, and typography should be referenced from the theme constants.
+
+## License
+
+ISC

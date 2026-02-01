@@ -1,8 +1,13 @@
 {
+  "name": "neurosync-app",
+  "version": "1.0.0",
+  "description": "NeuroSync - A productivity app with AI-powered features",
+  "private": true,
   "devDependencies": {
     "concurrently": "^9.2.1"
   },
   "scripts": {
-    "start:all": "concurrently \"cd backend && node server.js\" \"cd frontend && npm start\""
+    "start:all": "concurrently \"cd backend && npm start\" \"cd frontend && npm dev\"",
+    "dev": "concurrently \"cd backend && npm run dev\" \"cd frontend && npm dev\""
   }
 }
