@@ -70,7 +70,7 @@ export default function WelcomeScreen() {
             marginBottom: isSmallScreen ? 10 : 15,
             maxWidth: 400
           }}
-          onPress={() => router.push('/(auth)/sign-in')}
+          onPress={() => router.push('/(auth)/welcome2')}
         >
           <Text style={{ color: '#161F14', fontSize: isSmallScreen ? 16 : 18, fontWeight: 'bold', textAlign: 'center' }}>
             Get Started
