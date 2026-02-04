@@ -41,7 +41,7 @@ function welcome2() {
           textAlign: 'center'
         }}
       >
-        Reach your full potential
+        Quick and Easy
       </Text>
 
       <Text
@@ -55,7 +55,7 @@ function welcome2() {
           textAlign: 'center'
         }}
       >
-        Develop new habits and build lifelong skills
+        Short daily exercises that integrate into your life 
       </Text>
       <Button
         mode="contained"

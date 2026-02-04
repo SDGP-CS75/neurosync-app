@@ -5,6 +5,7 @@ export default function AuthLayout() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' } }}>
       <Stack.Screen name="welcome" />
       <Stack.Screen name="welcome2" />
+      <Stack.Screen name="welcome3" />
     </Stack>
   );
 }

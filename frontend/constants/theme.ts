@@ -55,7 +55,7 @@ export const theme = {
     accent: "#7A69AD",
     background: "#e97777",
     surface: "#FFFFFF",
-    text: "#000000",
+    text: "#3A3B47",
     disabled: "#CCCCCC",
     placeholder: "#AAAAAA",
     backdrop: "#000000",

@@ -15,7 +15,7 @@ export default function RootLayout() {
           resizeMode="cover"
         >
           <View style={styles.content}>
-            <StatusBar style="dark" backgroundColor="#7A69AD" />
+            <StatusBar style="dark" />
             <Stack
               screenOptions={{
                 headerShown: false,
