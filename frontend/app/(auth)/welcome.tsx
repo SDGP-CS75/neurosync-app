@@ -1,5 +1,8 @@
 import { View, Text, TouchableOpacity, useWindowDimensions, SafeAreaView } from 'react-native';
+import { Button } from 'react-native-paper';
 import { router } from 'expo-router';
+import { buttonTheme } from '../../constants/theme';
+
 
 export default function WelcomeScreen() {
   const { width, height } = useWindowDimensions();
@@ -58,24 +61,21 @@ export default function WelcomeScreen() {
           </View>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.7}
-          style={{ 
-            backgroundColor: '#A8D99D', 
-            paddingVertical: isSmallScreen ? 12 : 15, 
-            paddingHorizontal: isSmallScreen ? 32 : 40, 
-            borderRadius: 25, 
-            width: '100%', 
+        <Button
+          mode="contained"
+          theme={buttonTheme}
+          style={{
+            paddingVertical: isSmallScreen ? 7 : 10,
+            paddingHorizontal: isSmallScreen ? 20 : 30,
+            width: '100%',
             marginTop: 'auto',
             marginBottom: isSmallScreen ? 10 : 15,
             maxWidth: 400
           }}
           onPress={() => router.push('/(auth)/welcome2')}
         >
-          <Text style={{ color: '#161F14', fontSize: isSmallScreen ? 16 : 18, fontWeight: 'bold', textAlign: 'center' }}>
-            Get Started
-          </Text>
-        </TouchableOpacity>
+          Let's Start
+        </Button>
 
       </View>
     </SafeAreaView>
