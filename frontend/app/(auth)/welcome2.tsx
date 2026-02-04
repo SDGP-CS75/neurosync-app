@@ -58,15 +58,16 @@ function welcome2() {
         Develop new habits and build lifelong skills
       </Text>
       <Button
-        mode="contained"
-        theme={buttonTheme}
-        style={{
-          paddingVertical: isSmallScreen ? 7 : 10,
-          paddingHorizontal: isSmallScreen ? 20 : 30,
-          width: "100%",
-          marginBottom: isSmallScreen ? 10 : 15,
-          maxWidth: 400,
-        }}
+          mode="contained"
+          theme={buttonTheme}
+          style={{
+            paddingVertical: isSmallScreen ? 5 : 7,
+            paddingHorizontal: isSmallScreen ? 5: 7,
+            width: '100%',
+            marginTop: 'auto',
+            marginBottom: isSmallScreen ? 10 : 15,
+            maxWidth: 400,
+          }}
         onPress={() => router.push("/(auth)/welcome3")}
       >
         Let's Start

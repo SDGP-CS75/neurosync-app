@@ -70,7 +70,7 @@ export default function WelcomeScreen() {
             width: '100%',
             marginTop: 'auto',
             marginBottom: isSmallScreen ? 10 : 15,
-            maxWidth: 400
+            maxWidth: 400,
           }}
           onPress={() => router.push('/(auth)/welcome2')}
         >
