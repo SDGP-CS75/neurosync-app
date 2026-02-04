@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, useWindowDimensions, SafeAreaView } from 'react-native';
 import { router } from 'expo-router';
 
 export default function WelcomeScreen() {
@@ -7,7 +7,7 @@ export default function WelcomeScreen() {
   const isMediumScreen = width >= 375 && width < 768;
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#EAF9E7' }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <View style={{ 
         flex: 1, 
         justifyContent: 'center', 
@@ -78,6 +78,6 @@ export default function WelcomeScreen() {
         </TouchableOpacity>
 
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
