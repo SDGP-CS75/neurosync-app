@@ -2,14 +2,14 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ImageBackground, StyleSheet, View } from "react-native";
 import { PaperProvider } from "react-native-paper";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider} from "react-native-safe-area-context";
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <PaperProvider>
         <ImageBackground
-          source={require("./assets/bg.png")}
+          source={require("../assets/bg.png")}
           style={styles.background}
           resizeMode="cover"
         >
