@@ -27,7 +27,7 @@ function welcome2() {
   return (
     <SafeAreaView style={styles.container}>
       <Image
-        source={require("../../assets/welcome/welcomeB2.png")} // relative path to the image
+        source={require("../../assets/welcome/welcome3.png")} // relative path to the image
         style={styles.image}
       />
       <Text
@@ -38,7 +38,7 @@ function welcome2() {
           marginBottom: 10,
           marginLeft: 20,
           marginRight: 20,
-          textAlign: 'center'
+          textAlign: "center",
         }}
       >
         Quick and Easy
@@ -52,10 +52,10 @@ function welcome2() {
           marginBottom: 80,
           marginLeft: 20,
           marginRight: 20,
-          textAlign: 'center'
+          textAlign: "center",
         }}
       >
-        Short daily exercises that integrate into your life 
+        Short daily exercises that integrate into your life
       </Text>
       <Button
         mode="contained"
@@ -71,6 +71,23 @@ function welcome2() {
       >
         Let's Start
       </Button>
+      <Text
+        style={{
+          fontSize: isSmallScreen ? 14 : 16,
+          color: theme.colors.otherText,
+          textAlign: "center",
+          fontWeight: "bold",
+          marginTop: 10,
+        }}
+      >
+        Already have an account?{" "}
+        <Text
+          onPress={() => router.push("/(auth)/sign-in")}
+          style={{ color: theme.colors.primary, fontWeight: "bold" }}
+        >
+          Login
+        </Text>
+      </Text>
     </SafeAreaView>
   );
 }
