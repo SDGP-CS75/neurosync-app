@@ -34,8 +34,8 @@ neurosync-app/
 │   │   ├── types/          # TypeScript types
 │   │   │   └── index.js
 │   │   ├── utils/          # Utility functions
-│   │   │   └── validators.js
-│   │   └── server.js       # Entry point
+│   │       └── validators.js
+│   │── server.js           # Entry point
 │   ├── .env.example        # Environment variables template
 │   ├── .gitignore
 │   ├── package.json
@@ -59,15 +59,9 @@ neurosync-app/
 │   │   ├── _layout.tsx    # Root layout
 │   │   └── index.tsx      # Home page
 │   ├── components/
-│   │   ├── screens/       # Screen components
-│   │   │   ├── ProfileView.tsx
-│   │   │   ├── RoutineView.tsx
-│   │   │   ├── TimerView.tsx
-│   │   │   └── TodoView.tsx
-│   │   └── ui/            # Reusable UI components
-│   │       ├── Button.tsx
-│   │       ├── Card.tsx
-│   │       └── Input.tsx
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   └── Input.tsx
 │   ├── context/           # React Context providers
 │   │   ├── AuthContext.tsx
 │   │   └── ThemeContext.tsx
