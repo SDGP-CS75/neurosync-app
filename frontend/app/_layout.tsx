@@ -8,15 +8,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <PaperProvider>
-        {/* <StatusBar style="dark" backgroundColor="#7A69AD" /> */}
-        <SafeAreaView style={{ flex: 1, backgroundColor: "#7A69AD" }} edges={["top"]}>
         <ImageBackground
           source={require("./assets/bg.png")}
           style={styles.background}
           resizeMode="cover"
         >
           <View style={styles.content}>
-            <StatusBar style="auto" />
+            <StatusBar style="dark" backgroundColor="#7A69AD" />
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -33,7 +31,6 @@ export default function RootLayout() {
             </Stack>
           </View>
         </ImageBackground>
-        </SafeAreaView>
       </PaperProvider>
     </SafeAreaProvider>
   );
