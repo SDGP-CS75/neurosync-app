@@ -1,7 +1,7 @@
-import { View, Text, TouchableOpacity, useWindowDimensions, SafeAreaView } from 'react-native';
+import { View, Text,  useWindowDimensions, SafeAreaView , ImageBackground} from 'react-native';
 import { Button } from 'react-native-paper';
 import { router } from 'expo-router';
-import { buttonTheme } from '../../constants/theme';
+import { buttonTheme,theme } from '../../constants/theme';
 
 
 export default function WelcomeScreen() {
@@ -18,25 +18,37 @@ export default function WelcomeScreen() {
         paddingHorizontal: isSmallScreen ? 16 : isMediumScreen ? 24 : 32,
         paddingVertical: isSmallScreen ? 16 : 24
       }}>
+        <View style={{ marginBottom: '0.5%', justifyContent: 'center', alignItems: 'center' ,marginTop: '10%'}}>
+          <ImageBackground
+            source={require('../../assets/welcome1.png')}
+            style={{ 
+              width: isSmallScreen ? 350 : isMediumScreen ? 500 : 600, 
+              height: isSmallScreen ? 350 : isMediumScreen ? 500 : 600,
+              alignItems: 'center',
+            }}
+          />
+        </View>
         <Text style={{ 
-          fontSize: isSmallScreen ? 36 : isMediumScreen ? 42 : 48, 
-          fontWeight: 'bold', 
-          color: '#161F14', 
-          marginTop: 40,
-          marginBottom: 'auto',
-          
-          textAlign: 'left'
+          fontSize: isSmallScreen ? 26 : 30, 
+          fontWeight: 'bold',
+          color: theme.colors.text, 
+          textAlign: 'center',
+          marginTop: '0.1%',
+          marginBottom: 15
         }}>
-          Welcome to NeuroSync
+          Your Calm Focus Companion
         </Text>
         <Text style={{ 
-          fontSize: isSmallScreen ? 14 : 16, 
-          color: '#2F402B', 
+          fontSize: isSmallScreen ? 12 : 14, 
+          color: theme.colors.otherText,
           textAlign: 'center', 
+          marginLeft: '5%', 
+          marginRight: '5%',
           marginBottom: 'auto',
           maxWidth: 400
         }}>
-          Boost your productivity with AI-powered features
+          Plan tasks, stay present, and move forward 
+          at your own pace with a distraction-free productivity experience.
         </Text>
 
         <View style={{ 
@@ -47,26 +59,14 @@ export default function WelcomeScreen() {
           flexWrap: 'wrap',
           gap: isSmallScreen ? 16 : 24
         }}>
-          <View style={{ alignItems: 'center', minWidth: isSmallScreen ? 80 : 90 }}>
-            <Text style={{ fontSize: isSmallScreen ? 32 : 40, marginBottom: isSmallScreen ? 6 : 10 }}>📅</Text>
-            <Text style={{ fontSize: isSmallScreen ? 12 : 14, color: '#333', fontWeight: '600' }}>Daily Routines</Text>
-          </View>
-          <View style={{ alignItems: 'center', minWidth: isSmallScreen ? 80 : 90 }}>
-            <Text style={{ fontSize: isSmallScreen ? 32 : 40, marginBottom: isSmallScreen ? 6 : 10 }}>⏱️</Text>
-            <Text style={{ fontSize: isSmallScreen ? 12 : 14, color: '#333', fontWeight: '600' }}>Focus Timer</Text>
-          </View>
-          <View style={{ alignItems: 'center', minWidth: isSmallScreen ? 80 : 90 }}>
-            <Text style={{ fontSize: isSmallScreen ? 32 : 40, marginBottom: isSmallScreen ? 6 : 10 }}>✅</Text>
-            <Text style={{ fontSize: isSmallScreen ? 12 : 14, color: '#333', fontWeight: '600' }}>Todo Lists</Text>
-          </View>
         </View>
 
         <Button
           mode="contained"
           theme={buttonTheme}
           style={{
-            paddingVertical: isSmallScreen ? 7 : 10,
-            paddingHorizontal: isSmallScreen ? 20 : 30,
+            paddingVertical: isSmallScreen ? 5 : 7,
+            paddingHorizontal: isSmallScreen ? 5: 7,
             width: '100%',
             marginTop: 'auto',
             marginBottom: isSmallScreen ? 10 : 15,
@@ -76,6 +76,17 @@ export default function WelcomeScreen() {
         >
           Let's Start
         </Button>
+
+        <Text style={{ 
+          fontSize: isSmallScreen ? 14 : 16, 
+          color: theme.colors.otherText,
+          textAlign: 'center',
+          fontWeight: 'bold',
+          marginTop: 10
+        }}>
+          Already have an account? <Text 
+          onPress={() => router.push('/(auth)/sign-in')} style={{ color: theme.colors.primary, fontWeight: 'bold' }}>Login</Text>
+        </Text>
 
       </View>
     </SafeAreaView>

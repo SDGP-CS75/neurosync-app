@@ -2,7 +2,7 @@ import { MD2DarkTheme, MD2LightTheme } from "react-native-paper";
 
 // Button Theme Configuration
 export const buttonTheme = {
-  roundness: 25,
+  roundness: 15,
   colors: {
     primary: "#7A69AD",
     accent: "#7A69AD",
@@ -55,7 +55,8 @@ export const theme = {
     accent: "#7A69AD",
     background: "#e97777",
     surface: "#FFFFFF",
-    text: "#000000",
+    text: "#3A3B47",
+    otherText: "#6E6A7C",
     disabled: "#CCCCCC",
     placeholder: "#AAAAAA",
     backdrop: "#000000",
