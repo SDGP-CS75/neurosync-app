@@ -2,12 +2,14 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ImageBackground, StyleSheet, View } from "react-native";
 import { PaperProvider } from "react-native-paper";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <PaperProvider>
+        {/* <StatusBar style="dark" backgroundColor="#7A69AD" /> */}
+        <SafeAreaView style={{ flex: 1, backgroundColor: "#7A69AD" }} edges={["top"]}>
         <ImageBackground
           source={require("./assets/bg.png")}
           style={styles.background}
@@ -31,6 +33,7 @@ export default function RootLayout() {
             </Stack>
           </View>
         </ImageBackground>
+        </SafeAreaView>
       </PaperProvider>
     </SafeAreaProvider>
   );
