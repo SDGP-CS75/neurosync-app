@@ -58,16 +58,17 @@ function welcome2() {
         Short daily exercises that integrate into your life
       </Text>
       <Button
-        mode="contained"
-        theme={buttonTheme}
-        style={{
-          paddingVertical: isSmallScreen ? 7 : 10,
-          paddingHorizontal: isSmallScreen ? 20 : 30,
-          width: "100%",
-          marginBottom: isSmallScreen ? 10 : 15,
-          maxWidth: 400,
-        }}
-        onPress={() => router.push("/(auth)/welcome3")}
+          mode="contained"
+          theme={buttonTheme}
+          style={{
+            paddingVertical: isSmallScreen ? 5 : 7,
+            paddingHorizontal: isSmallScreen ? 5: 7,
+            width: '100%',
+            marginTop: 'auto',
+            marginBottom: isSmallScreen ? 10 : 15,
+            maxWidth: 400,
+          }}
+        onPress={() => router.push("/(auth)/sign-in")}
       >
         Let's Start
       </Button>
