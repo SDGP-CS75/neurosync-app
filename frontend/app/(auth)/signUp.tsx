@@ -180,7 +180,14 @@ export default function signUp() {
         <Button
           mode="contained"
           theme={buttonTheme}
-          style={{ marginTop: 30, margin:20, marginBottom:0 }}
+          style={{
+            paddingVertical: isSmallScreen ? 5 : 7,
+            paddingHorizontal: isSmallScreen ? 5: 7,
+            width: '100%',
+            marginTop: 'auto',
+            marginBottom: isSmallScreen ? 10 : 15,
+            maxWidth: 400,
+          }}
           onPress={handleSubmit(onSubmit)} 
         >
           Sign Up
