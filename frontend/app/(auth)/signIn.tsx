@@ -1,7 +1,6 @@
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput, Button, HelperText, Text } from "react-native-paper";
-import { useState } from "react";
 import { inputTheme, theme, buttonTheme } from "../../constants/theme";
 import { Image, StyleSheet, useWindowDimensions } from "react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -36,39 +35,18 @@ export default function signIn() {
     },
   });
 
-  // const handleChange = (name: keyof FormData, value: string) => {
-  //   setFormData(prev => ({
-  //     ...prev,
-  //     [name]: value
-  //   }));
-  // };
+  const onSubmit = (data: FormData) => {
+    // This is where you'll handle the form data
+    // For example, sending it to your backend
+    console.log("Form submitted:", data);
 
-  // const [formData, setFormData] = useState<FormData>({
-  //   email: '',
-  //   password: ''
-  // });
+    // Example: navigating to a dashboard after login
+    // router.push("/dashboard");
+  };
 
+  
   return (
     <SafeAreaView style={styles.container}>
-      {/* <TextInput 
-        label="Email"
-        mode="outlined" 
-        value={formData.email}
-        style={{ marginTop: 16 }}
-        theme={inputTheme}
-        onChangeText={(text) => handleChange("email", text)}
-      />
-
-      <TextInput 
-        label="Password"
-        mode="outlined" 
-        secureTextEntry
-        style={{ marginTop: 16 }}
-        value={formData.password}
-        theme={inputTheme}
-        onChangeText={(text) => handleChange("password", text)}
-      /> */}
-
       <>
         <Text
           theme={theme}
@@ -153,15 +131,13 @@ export default function signIn() {
           mode="contained"
           theme={buttonTheme}
           style={{ marginTop: 30, margin:20, marginBottom:0 }}
-          onPress={(e) => {
-            console.log();
-          }}
+          onPress={handleSubmit(onSubmit)} 
         >
-          Submit
+          Login
         </Button>
 
         <Text
-          onPress={() => router.push("/(auth)/signIn")}
+          onPress={() => router.push("/(auth)/signUp")}
           style={{ color: theme.colors.otherText, fontWeight:600, textAlign:"center", marginTop:5 }}
         >
           Forget Password
@@ -178,7 +154,7 @@ export default function signIn() {
         >
           Don’t have an account?{" "}
           <Text
-            onPress={() => router.push("/(auth)/signIn")}
+            onPress={() => router.push("/(auth)/signUp")}
             style={{ color: theme.colors.primary, fontWeight: "bold" }}
           >
             Sign Up
