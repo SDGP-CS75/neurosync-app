@@ -83,7 +83,7 @@ function welcome2() {
       >
         Already have an account?{" "}
         <Text
-          onPress={() => router.push("/(auth)/sign-in")}
+          onPress={() => router.push("/(auth)/signIn")}
           style={{ color: theme.colors.primary, fontWeight: "bold" }}
         >
           Login

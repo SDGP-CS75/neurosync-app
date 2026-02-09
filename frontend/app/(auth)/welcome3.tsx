@@ -68,7 +68,7 @@ function welcome2() {
             marginBottom: isSmallScreen ? 10 : 15,
             maxWidth: 400,
           }}
-        onPress={() => router.push("/(auth)/sign-in")}
+        onPress={() => router.push("/(auth)/signIn")}
       >
         Let's Start
       </Button>
@@ -83,7 +83,7 @@ function welcome2() {
       >
         Already have an account?{" "}
         <Text
-          onPress={() => router.push("/(auth)/sign-in")}
+          onPress={() => router.push("/(auth)/signIn")}
           style={{ color: theme.colors.primary, fontWeight: "bold" }}
         >
           Login

@@ -85,7 +85,7 @@ export default function WelcomeScreen() {
           marginTop: 10
         }}>
           Already have an account? <Text 
-          onPress={() => router.push('/(auth)/sign-in')} style={{ color: theme.colors.primary, fontWeight: 'bold' }}>Login</Text>
+          onPress={() => router.push('/(auth)/signIn')} style={{ color: theme.colors.primary, fontWeight: 'bold' }}>Login</Text>
         </Text>
 
       </View>
