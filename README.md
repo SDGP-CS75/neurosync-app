@@ -47,7 +47,9 @@ neurosync-app/
 │   │   │   ├── _layout.tsx
 │   │   │   ├── sign-in.tsx
 │   │   │   ├── sign-up.tsx
-│   │   │   └── welcome.tsx
+│   │   │   ├── welcome.tsx
+│   │   │   └── welcome2.tsx
+|   |   |
 │   │   ├── (tabs)/        # Tab-based routes
 │   │   │   ├── _layout.tsx
 │   │   │   ├── index.tsx
@@ -58,16 +60,10 @@ neurosync-app/
 │   │   │   └── settings.tsx
 │   │   ├── _layout.tsx    # Root layout
 │   │   └── index.tsx      # Home page
-│   ├── components/
-│   │   ├── screens/       # Screen components
-│   │   │   ├── ProfileView.tsx
-│   │   │   ├── RoutineView.tsx
-│   │   │   ├── TimerView.tsx
-│   │   │   └── TodoView.tsx
-│   │   └── ui/            # Reusable UI components
-│   │       ├── Button.tsx
-│   │       ├── Card.tsx
-│   │       └── Input.tsx
+│   ├── components/       
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   └── Input.tsx
 │   ├── context/           # React Context providers
 │   │   ├── AuthContext.tsx
 │   │   └── ThemeContext.tsx
