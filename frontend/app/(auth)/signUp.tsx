@@ -7,6 +7,10 @@ import { inputTheme, theme, buttonTheme } from "../../constants/theme";
 import { Image, StyleSheet, useWindowDimensions } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { router } from "expo-router";
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../../services/firebase'; 
+
 
 type FormData = {
     firstName: string;
@@ -42,10 +46,27 @@ export default function signUp() {
     });
 
     const passwordValue = watch("password"); // watch the password field
-    const onSubmit = (data: FormData) => {
-        console.log("Form submitted:", data);
-        // Here you can send data to your API
-    };
+  const onSubmit = async (data: FormData) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
+
+      await setDoc(doc(db, 'users', user.uid), {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        createdAt: new Date(),
+      });
+
+      router.push('/(tabs)/profile');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Sign up error:', error.message);
+      } else {
+        console.error('Sign up error:', error);
+      }
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
