@@ -8,64 +8,68 @@ The mobile application frontend for the NeuroSync productivity app, built with R
 - **Expo** - Development platform
 - **Expo Router** - File-based routing
 - **TypeScript** - Type safety
+- **Tailwind CSS** - Utility-first CSS framework
 - **Supabase** - Backend services
 - **Firebase** - Authentication and database
-- **Axios** - HTTP client
 
 ## Project Structure
 
 ```
 frontend/
-├── app/                    # Expo Router pages
-│   ├── (auth)/            # Authentication routes
+├── app/                      # Expo Router pages
+│   ├── (auth)/              # Authentication routes
 │   │   ├── _layout.tsx
-│   │   ├── sign-in.tsx
-│   │   ├── sign-up.tsx
-│   │   └── welcome.tsx
-│   ├── (tabs)/            # Tab-based routes
+│   │   ├── signIn.tsx
+│   │   ├── signUp.tsx
+│   │   ├── welcome.tsx
+│   │   ├── welcome2.tsx
+│   │   └── welcome3.tsx
+│   ├── (tabs)/              # Tab-based routes
 │   │   ├── _layout.tsx
 │   │   ├── index.tsx
 │   │   ├── daily-routine.tsx
 │   │   ├── focus-timer.tsx
-│   │   ├── todo-list.tsx
 │   │   ├── profile.tsx
-│   │   └── settings.tsx
-│   ├── _layout.tsx        # Root layout
-│   └── index.tsx          # Home page
-├── components/
-│   ├── screens/           # Screen components
-│   │   ├── ProfileView.tsx
-│   │   ├── RoutineView.tsx
-│   │   ├── TimerView.tsx
-│   │   └── TodoView.tsx
-│   └── ui/                # Reusable UI components
-│       ├── Button.tsx
-│       ├── Card.tsx
-│       └── Input.tsx
-├── context/               # React Context providers
+│   │   ├── settings.tsx
+│   │   └── todo-list.tsx
+│   ├── _layout.tsx          # Root layout
+│   └── index.tsx            # Home page
+├── assets/                  # Static assets
+│   ├── bg.png
+│   ├── welcome1.png
+│   └── welcome/
+│       ├── welcome2.png
+│       └── welcome3.png
+├── components/              # Reusable UI components
+│   ├── Button.tsx
+│   ├── Card.tsx
+│   └── Input.tsx
+├── constants/               # App constants
+│   └── theme.ts
+├── context/                 # React Context providers
 │   ├── AuthContext.tsx
 │   └── ThemeContext.tsx
-├── hooks/                 # Custom React hooks
+├── hooks/                   # Custom React hooks
 │   ├── useAuth.ts
 │   ├── useTheme.ts
 │   └── useTimer.ts
-├── services/              # API services
+├── services/                # API services
 │   ├── auth.ts
 │   ├── routines.ts
 │   ├── supabase.ts
 │   └── tasks.ts
-├── types/                 # TypeScript type definitions
+├── types/                   # TypeScript type definitions
 │   └── index.ts
-├── constants/             # App constants
-│   └── theme.ts
-├── assets/                # Images, fonts, etc.
-│   └── images/
-├── .env                   # Environment variables (not in git)
-├── .env.example           # Environment variables template
+├── .env.example             # Environment variables template
 ├── .gitignore
-├── app.json               # Expo configuration
+├── app.json                 # Expo configuration
+├── babel.config.js          # Babel configuration
+├── env.d.ts
+├── eslint.config.js         # ESLint configuration
+├── package-lock.json
 ├── package.json
-├── tsconfig.json
+├── tailwind.config.js       # Tailwind configuration
+├── tsconfig.json            # TypeScript configuration
 └── README.md
 ```
 
@@ -105,7 +109,7 @@ EXPO_PUBLIC_FIREBASE_APP_ID=your_firebase_app_id
 
 ### Running the App
 
-**Development mode**:
+**Development mode:**
 ```bash
 npm run dev
 ```
@@ -116,17 +120,17 @@ This will start the Expo development server. You can then:
 - Press `a` to open in an Android emulator
 - Press `i` to open in an iOS simulator (macOS only)
 
-**Build for web**:
+**Build for web:**
 ```bash
 npm run build:web
 ```
 
-**Lint code**:
+**Lint code:**
 ```bash
 npm run lint
 ```
 
-**Type check**:
+**Type check:**
 ```bash
 npm run typecheck
 ```
@@ -163,8 +167,18 @@ npm run typecheck
 
 The app uses Expo Router for file-based routing:
 
-- **Auth Flow**: Welcome → Sign In/Sign Up → Main App
-- **Tab Navigation**: Home, Daily Routine, Focus Timer, Todo List, Profile, Settings
+### Auth Flow
+```
+welcome → welcome2 → welcome3 → signIn / signUp
+```
+
+### Tab Navigation
+- Home
+- Daily Routine
+- Focus Timer
+- Todo List
+- Profile
+- Settings
 
 ## Environment Variables
 
@@ -184,13 +198,13 @@ The app uses Expo Router for file-based routing:
 
 ### Adding New Screens
 
-1. Create a new screen file in `app/` or `components/screens/`
+1. Create a new screen file in `app/` directory
 2. Add the route to the appropriate layout
 3. Update navigation if needed
 
 ### Adding New Components
 
-Create reusable UI components in `components/ui/` following the existing pattern.
+Create reusable UI components in `components/` following the existing pattern.
 
 ### Using Custom Hooks
 
@@ -201,7 +215,7 @@ Custom hooks are available in `hooks/`:
 
 ## Styling
 
-The app uses a theme-based approach defined in `constants/theme.ts`. All colors, spacing, and typography should be referenced from the theme constants.
+The app uses a theme-based approach defined in `constants/theme.ts`. All colors, spacing, and typography should be referenced from the theme constants. Tailwind CSS is also configured for utility-first styling.
 
 ## License
 
