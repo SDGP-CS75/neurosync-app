@@ -58,7 +58,7 @@ export default function signUp() {
         createdAt: new Date(),
       });
 
-      router.push('/(tabs)/profile');
+      router.push('/(tabs)/home');
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Sign up error:', error.message);

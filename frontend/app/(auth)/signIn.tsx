@@ -52,7 +52,7 @@ type FormData = {
         console.log('No user document found!');
       }
 
-      router.push('/(tabs)/profile');
+      router.push('/(tabs)/home');
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error('Login error:', error.message);
