@@ -1,4 +1,5 @@
 // keyboard bug need to fix
+//terms and comdition
 //duplicate emails need to implement
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
