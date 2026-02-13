@@ -24,11 +24,11 @@ neurosync-app/
 │   │   ├── middleware/      # Custom middleware
 │   │   │   ├── auth.js
 │   │   │   └── errorHandler.js
-│   │   ├── routes/         # API routes
+│   │   ├── routes/          # API routes
 │   │   │   ├── routines.js
 │   │   │   ├── tasks.js
 │   │   │   └── users.js
-│   │   ├── services/       # Business logic
+│   │   ├── services/        # Business logic
 │   │   │   ├── aiService.js
 │   │   │   └── supabase.js
 │   │   ├── types/          # TypeScript types
@@ -38,63 +38,70 @@ neurosync-app/
 │   │   └── server.js       # Entry point
 │   ├── .env.example        # Environment variables template
 │   ├── .gitignore
+│   ├── package-lock.json
 │   ├── package.json
 │   └── README.md
 │
-├── frontend/               # React Native/Expo mobile app
-│   ├── app/                # Expo Router pages
-│   │   ├── (auth)/        # Authentication routes
+├── frontend/                # React Native/Expo mobile app
+│   ├── app/                 # Expo Router pages
+│   │   ├── (auth)/         # Authentication routes
 │   │   │   ├── _layout.tsx
-│   │   │   ├── sign-in.tsx
-│   │   │   ├── sign-up.tsx
-│   │   │   └── welcome.tsx
-│   │   ├── (tabs)/        # Tab-based routes
+│   │   │   ├── signIn.tsx
+│   │   │   ├── signUp.tsx
+│   │   │   ├── welcome.tsx
+│   │   │   ├── welcome2.tsx
+│   │   │   └── welcome3.tsx
+│   │   ├── (tabs)/         # Tab-based routes
 │   │   │   ├── _layout.tsx
 │   │   │   ├── index.tsx
 │   │   │   ├── daily-routine.tsx
 │   │   │   ├── focus-timer.tsx
-│   │   │   ├── todo-list.tsx
 │   │   │   ├── profile.tsx
-│   │   │   └── settings.tsx
-│   │   ├── _layout.tsx    # Root layout
-│   │   └── index.tsx      # Home page
-│   ├── components/
-│   │   ├── screens/       # Screen components
-│   │   │   ├── ProfileView.tsx
-│   │   │   ├── RoutineView.tsx
-│   │   │   ├── TimerView.tsx
-│   │   │   └── TodoView.tsx
-│   │   └── ui/            # Reusable UI components
-│   │       ├── Button.tsx
-│   │       ├── Card.tsx
-│   │       └── Input.tsx
-│   ├── context/           # React Context providers
+│   │   │   ├── settings.tsx
+│   │   │   └── todo-list.tsx
+│   │   ├── _layout.tsx     # Root layout
+│   │   └── index.tsx       # Home page
+│   ├── assets/             # Static assets
+│   │   ├── bg.png
+│   │   ├── welcome1.png
+│   │   └── welcome/
+│   │       ├── welcome2.png
+│   │       └── welcome3.png
+│   ├── components/         # Reusable UI components
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   └── Input.tsx
+│   ├── constants/          # App constants
+│   │   └── theme.ts
+│   ├── context/            # React Context providers
 │   │   ├── AuthContext.tsx
 │   │   └── ThemeContext.tsx
-│   ├── hooks/             # Custom React hooks
+│   ├── hooks/              # Custom React hooks
 │   │   ├── useAuth.ts
 │   │   ├── useTheme.ts
 │   │   └── useTimer.ts
-│   ├── services/          # API services
+│   ├── services/           # API services
 │   │   ├── auth.ts
 │   │   ├── routines.ts
 │   │   ├── supabase.ts
 │   │   └── tasks.ts
-│   ├── types/             # TypeScript type definitions
+│   ├── types/              # TypeScript type definitions
 │   │   └── index.ts
-│   ├── constants/         # App constants
-│   │   └── theme.ts
-│   ├── assets/            # Images, fonts, etc.
-│   │   └── images/
-│   ├── .env.example       # Environment variables template
+│   ├── .env.example        # Environment variables template
 │   ├── .gitignore
-│   ├── app.json           # Expo configuration
+│   ├── app.json            # Expo configuration
+│   ├── babel.config.js     # Babel configuration
+│   ├── env.d.ts
+│   ├── eslint.config.js    # ESLint configuration
+│   ├── package-lock.json
 │   ├── package.json
-│   ├── tsconfig.json
+│   ├── tailwind.config.js  # Tailwind configuration
+│   ├── tsconfig.json      # TypeScript configuration
 │   └── README.md
 │
 ├── .gitignore
-├── package.json           # Root package.json for running both services
+├── package-lock.json
+├── package.json            # Root package.json for running both services
 └── README.md
 ```
 
@@ -112,9 +119,9 @@ neurosync-app/
 - **Expo** - Development platform
 - **Expo Router** - File-based routing
 - **TypeScript** - Type safety
+- **Tailwind CSS** - Utility-first CSS framework
 - **Supabase** - Backend services
 - **Firebase** - Authentication and database
-- **Axios** - HTTP client
 
 ## 📋 Prerequisites
 
@@ -226,7 +233,7 @@ npm run dev      # Development with nodemon
 **Frontend only:**
 ```bash
 cd frontend
-npm dev          # Start Expo development server
+npm run dev      # Start Expo development server
 ```
 
 ## 📱 Running on Mobile Device
@@ -241,23 +248,6 @@ npm dev          # Start Expo development server
 1. Run `npm run dev` in the project root
 2. Press `w` in the terminal to open in a web browser
 3. Or navigate to `http://localhost:19006`
-
-## 🧪 Testing
-
-### Backend
-
-```bash
-cd backend
-npm test
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm run lint        # Lint code
-npm run typecheck   # Type check
-```
 
 ## 📚 API Documentation
 
@@ -276,26 +266,32 @@ For detailed frontend documentation, see [`frontend/README.md`](frontend/README.
 
 ### Main Screens
 
-- **Welcome** - Landing page
-- **Sign In/Sign Up** - Authentication
-- **Home** - Dashboard
-- **Daily Routine** - Routine management
-- **Focus Timer** - Pomodoro timer
-- **Todo List** - Task management
-- **Profile** - User profile and settings
+| Screen | Route | Description |
+|--------|-------|-------------|
+| Welcome | `(auth)/welcome` | Onboarding landing page |
+| Welcome 2 | `(auth)/welcome2` | Onboarding step 2 |
+| Welcome 3 | `(auth)/welcome3` | Onboarding step 3 |
+| Sign In | `(auth)/signIn` | User sign in |
+| Sign Up | `(auth)/signUp` | User registration |
+| Home | `(tabs)/index` | Dashboard |
+| Daily Routine | `(tabs)/daily-routine` | Routine management |
+| Focus Timer | `(tabs)/focus-timer` | Pomodoro timer |
+| Todo List | `(tabs)/todo-list` | Task management |
+| Profile | `(tabs)/profile` | User profile |
+| Settings | `(tabs)/settings` | App settings |
 
 ## 🔧 Development
 
 ### Adding New Features
 
 1. **Backend**: Create routes, controllers, and services following the MVC pattern
-2. **Frontend**: Create screens in `app/` or `components/screens/` and add routes
+2. **Frontend**: Create screens in `app/` directory and add routes
 3. **API Integration**: Add service methods in `frontend/services/`
 
 ### Code Style
 
 - Backend: JavaScript with Express.js
-- Frontend: TypeScript with React Native
+- Frontend: TypeScript with React Native and Tailwind CSS
 - Follow existing patterns and conventions
 
 ## 📝 Environment Variables

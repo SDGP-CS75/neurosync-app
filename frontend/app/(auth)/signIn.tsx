@@ -6,11 +6,9 @@ import { Image, StyleSheet, useWindowDimensions } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { router } from "expo-router";
 import Icon from "react-native-vector-icons/FontAwesome";
-
-type FormData = {
-  email: string;
-  password: string;
-};
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../../services/firebase'; // Import your Firebase configuration
 
 const styles = StyleSheet.create({
   container: {
@@ -35,13 +33,33 @@ export default function signIn() {
     },
   });
 
-  const onSubmit = (data: FormData) => {
-    // This is where you'll handle the form data
-    // For example, sending it to your backend
-    console.log("Form submitted:", data);
+type FormData = {
+  email: string;
+  password: string;
+};
 
-    // Example: navigating to a dashboard after login
-    // router.push("/dashboard");
+  const onSubmit = async (data: FormData) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
+      const user = userCredential.user;
+
+      const docRef = doc(db, 'users', user.uid);
+      const docSnap = await getDoc(docRef);
+
+      if (docSnap.exists()) {
+        console.log('User profile:', docSnap.data());
+      } else {
+        console.log('No user document found!');
+      }
+
+      router.push('/(tabs)/profile');
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Login error:', error.message);
+      } else {
+        console.error('Login error:', error);
+      }
+    }
   };
 
   
@@ -130,7 +148,14 @@ export default function signIn() {
         <Button
           mode="contained"
           theme={buttonTheme}
-          style={{ marginTop: 30, margin:20, marginBottom:0 }}
+          style={{
+            paddingVertical: isSmallScreen ? 5 : 7,
+            paddingHorizontal: isSmallScreen ? 5: 7,
+            width: '100%',
+            marginTop: 'auto',
+            marginBottom: isSmallScreen ? 10 : 15,
+            maxWidth: 400,
+          }}
           onPress={handleSubmit(onSubmit)} 
         >
           Login
