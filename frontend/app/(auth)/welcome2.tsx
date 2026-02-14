@@ -2,8 +2,8 @@ import React from "react";
 import { Image, StyleSheet, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Text } from "react-native-paper";
-import { buttonTheme, theme } from "../../constants/theme";
 import { router } from "expo-router";
+import { useAppTheme } from "../../context/ThemeContext";
 
 const styles = StyleSheet.create({
   container: {
@@ -13,74 +13,77 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   image: {
-    width: 450, // width of image
-    height: 450, // height of image
-    resizeMode: "contain", // fit image inside box without stretching
+    width:       450,
+    height:      450,
+    resizeMode:  "contain",
   },
 });
 
-function welcome2() {
-  const { width, height } = useWindowDimensions();
+export default function Welcome2() {
+  const { width } = useWindowDimensions();
+  const { theme } = useAppTheme();
+
   const isSmallScreen = width < 375;
-  const isMediumScreen = width >= 375 && width < 768;
 
   return (
     <SafeAreaView style={styles.container}>
+
       <Image
-        source={require("../../assets/welcome/welcome2.png")} // relative path to the image
-        style={styles.image}
+        source={require("../../assets/welcome/welcome2.png")}
+        style={[
+          styles.image,
+          {
+            width:  isSmallScreen ? 300 : 450,
+            height: isSmallScreen ? 300 : 450,
+          },
+        ]}
       />
-      <Text
-        theme={theme}
-        style={{
-          fontSize: 25,
-          fontWeight: "bold",
-          marginBottom: 10,
-          marginLeft: 20,
-          marginRight: 20,
-          textAlign: "center",
-        }}
-      >
+
+      <Text style={{
+        fontSize:     isSmallScreen ? 22 : 25,
+        fontWeight:   "bold",
+        marginBottom: 10,
+        marginLeft:   20,
+        marginRight:  20,
+        textAlign:    "center",
+        color:        theme.colors.onBackground,
+      }}>
         Reach your full potential
       </Text>
 
-      <Text
-        theme={theme}
-        style={{
-          fontSize: 16,
-          color: "#6E6A7C",
-          marginBottom: 80,
-          marginLeft: 20,
-          marginRight: 20,
-          textAlign: "center",
-        }}
-      >
+      <Text style={{
+        fontSize:     isSmallScreen ? 14 : 16,
+        color:        theme.colors.textMuted,
+        marginBottom: 80,
+        marginLeft:   20,
+        marginRight:  20,
+        textAlign:    "center",
+      }}>
         Develop new habits and build lifelong skills
       </Text>
+
       <Button
-          mode="contained"
-          theme={buttonTheme}
-          style={{
-            paddingVertical: isSmallScreen ? 5 : 7,
-            paddingHorizontal: isSmallScreen ? 5: 7,
-            width: '100%',
-            marginTop: 'auto',
-            marginBottom: isSmallScreen ? 10 : 15,
-            maxWidth: 400,
-          }}
+        mode="contained"
+        style={{
+          paddingVertical:   isSmallScreen ? 5 : 7,
+          paddingHorizontal: isSmallScreen ? 5 : 7,
+          width:             "100%",
+          marginTop:         "auto",
+          marginBottom:      isSmallScreen ? 10 : 15,
+          maxWidth:          400,
+        }}
         onPress={() => router.push("/(auth)/welcome3")}
       >
         Let's Start
       </Button>
-      <Text
-        style={{
-          fontSize: isSmallScreen ? 14 : 16,
-          color: theme.colors.otherText,
-          textAlign: "center",
-          fontWeight: "bold",
-          marginTop: 10,
-        }}
-      >
+
+      <Text style={{
+        fontSize:   isSmallScreen ? 14 : 16,
+        color:      theme.colors.textMuted,
+        textAlign:  "center",
+        fontWeight: "bold",
+        marginTop:  10,
+      }}>
         Already have an account?{" "}
         <Text
           onPress={() => router.push("/(auth)/signIn")}
@@ -89,8 +92,7 @@ function welcome2() {
           Login
         </Text>
       </Text>
+
     </SafeAreaView>
   );
 }
-
-export default welcome2;

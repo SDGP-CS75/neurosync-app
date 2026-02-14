@@ -1,24 +1,20 @@
-// keyboard bug need to fix
-//terms and comdition
-//duplicate emails need to implement
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput, Button, HelperText, Text } from "react-native-paper";
-import { inputTheme, theme, buttonTheme } from "../../constants/theme";
-import { Image, StyleSheet, useWindowDimensions } from "react-native";
+import { StyleSheet, useWindowDimensions } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { router } from "expo-router";
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../../services/firebase'; 
-
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../../services/firebase";
+import { useAppTheme } from "../../context/ThemeContext";
 
 type FormData = {
-    firstName: string;
-    lastName: string;
-    email: string;
-    password: string;
-    confirmPassword: string
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
 };
 
 const styles = StyleSheet.create({
@@ -29,42 +25,41 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function signUp() {
-    const { width, height } = useWindowDimensions();
-    const isSmallScreen = width < 375;
-    const isMediumScreen = width >= 375 && width < 768;
+export default function SignUp() {
+  const { width } = useWindowDimensions();
+  const { theme } = useAppTheme();
 
-    const {
-        control,
-        handleSubmit,
-        watch,
-        formState: { isSubmitted },
-    } = useForm<FormData>({
-        defaultValues: {
-            email: "",
-            password: "",
-        },
-    });
+  const isSmallScreen = width < 375;
 
-    const passwordValue = watch("password"); // watch the password field
+  const {
+    control,
+    handleSubmit,
+    watch,
+    formState: { isSubmitted },
+  } = useForm<FormData>({
+    defaultValues: { email: "", password: "" },
+  });
+
+  const passwordValue = watch("password");
+
   const onSubmit = async (data: FormData) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
 
-      await setDoc(doc(db, 'users', user.uid), {
+      await setDoc(doc(db, "users", user.uid), {
         firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
+        lastName:  data.lastName,
+        email:     data.email,
         createdAt: new Date(),
       });
 
-      router.push('/(tabs)/home');
+      router.push("/(tabs)/home");
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.error('Sign up error:', error.message);
+        console.error("Sign up error:", error.message);
       } else {
-        console.error('Sign up error:', error);
+        console.error("Sign up error:", error);
       }
     }
   };
@@ -72,20 +67,18 @@ export default function signUp() {
   return (
     <SafeAreaView style={styles.container}>
       <>
-        <Text
-          theme={theme}
-          style={{
-            fontSize: 30,
-            fontWeight: "bold",
-            marginBottom: 60,
-            textAlign: "center",
-          }}
-        >
+        {/* ── Title ── */}
+        <Text style={{
+          fontSize:     30,
+          fontWeight:   "bold",
+          marginBottom: 60,
+          textAlign:    "center",
+          color:        theme.colors.onBackground,
+        }}>
           Create Your Account
         </Text>
 
-        
-       
+        {/* ── First name ── */}
         <Controller
           control={control}
           name="firstName"
@@ -95,7 +88,6 @@ export default function signUp() {
               <TextInput
                 label="First Name"
                 mode="outlined"
-                theme={inputTheme}
                 value={value}
                 onChangeText={onChange}
                 error={!!error && isSubmitted}
@@ -107,6 +99,7 @@ export default function signUp() {
           )}
         />
 
+        {/* ── Last name ── */}
         <Controller
           control={control}
           name="lastName"
@@ -116,7 +109,6 @@ export default function signUp() {
               <TextInput
                 label="Last Name"
                 mode="outlined"
-                theme={inputTheme}
                 value={value}
                 onChangeText={onChange}
                 error={!!error && isSubmitted}
@@ -128,6 +120,7 @@ export default function signUp() {
           )}
         />
 
+        {/* ── Email ── */}
         <Controller
           control={control}
           name="email"
@@ -137,7 +130,6 @@ export default function signUp() {
               <TextInput
                 label="Email"
                 mode="outlined"
-                theme={inputTheme}
                 value={value}
                 onChangeText={onChange}
                 error={!!error && isSubmitted}
@@ -149,11 +141,12 @@ export default function signUp() {
           )}
         />
 
+        {/* ── Password ── */}
         <Controller
           control={control}
           name="password"
           rules={{
-            required: "Password is required",
+            required:  "Password is required",
             minLength: { value: 6, message: "Min 6 characters" },
           }}
           render={({ field: { onChange, value }, fieldState: { error } }) => (
@@ -164,7 +157,6 @@ export default function signUp() {
                 secureTextEntry
                 value={value}
                 onChangeText={onChange}
-                theme={inputTheme}
                 error={!!error && isSubmitted}
               />
               <HelperText type="error" visible={!!error && isSubmitted}>
@@ -173,13 +165,15 @@ export default function signUp() {
             </>
           )}
         />
+
+        {/* ── Confirm password ── */}
         <Controller
           control={control}
           name="confirmPassword"
           rules={{
-                required: "Confirm password is required",
-                validate: (value) =>
-                value === passwordValue || "Passwords do not match",
+            required: "Confirm password is required",
+            validate:  (value) =>
+              value === passwordValue || "Passwords do not match",
           }}
           render={({ field: { onChange, value }, fieldState: { error } }) => (
             <>
@@ -189,7 +183,6 @@ export default function signUp() {
                 secureTextEntry
                 value={value}
                 onChangeText={onChange}
-                theme={inputTheme}
                 error={!!error && isSubmitted}
               />
               <HelperText type="error" visible={!!error && isSubmitted}>
@@ -199,31 +192,30 @@ export default function signUp() {
           )}
         />
 
+        {/* ── Sign up button ── */}
         <Button
           mode="contained"
-          theme={buttonTheme}
           style={{
-            paddingVertical: isSmallScreen ? 5 : 7,
-            paddingHorizontal: isSmallScreen ? 5: 7,
-            width: '100%',
-            marginTop: 'auto',
-            marginBottom: isSmallScreen ? 10 : 15,
-            maxWidth: 400,
+            paddingVertical:   isSmallScreen ? 5 : 7,
+            paddingHorizontal: isSmallScreen ? 5 : 7,
+            width:             "100%",
+            marginTop:         "auto",
+            marginBottom:      isSmallScreen ? 10 : 15,
+            maxWidth:          400,
           }}
-          onPress={handleSubmit(onSubmit)} 
+          onPress={handleSubmit(onSubmit)}
         >
           Sign Up
         </Button>
 
-        <Text
-          style={{
-            fontSize: isSmallScreen ? 14 : 16,
-            color: theme.colors.otherText,
-            textAlign: "center",
-            fontWeight: "bold",
-            marginTop: 40,
-          }}
-        >
+        {/* ── Sign in link ── */}
+        <Text style={{
+          fontSize:   isSmallScreen ? 14 : 16,
+          color:      theme.colors.textMuted,
+          textAlign:  "center",
+          fontWeight: "bold",
+          marginTop:  40,
+        }}>
           Already have an account?{" "}
           <Text
             onPress={() => router.push("/(auth)/signIn")}
