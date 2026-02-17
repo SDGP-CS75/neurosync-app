@@ -1,9 +1,12 @@
 import { ImageBackground,View, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { router } from 'expo-router';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export default function WelcomeScreen() {
-  const { width, height } = useWindowDimensions();
-  const isSmallScreen = width < 375;
+  const { width } = useWindowDimensions();
+  const { theme } = useAppTheme();
+
+  const isSmallScreen  = width < 375;
   const isMediumScreen = width >= 375 && width < 768;
   const isLargeScreen = width >= 768;
 
@@ -68,7 +71,7 @@ export default function WelcomeScreen() {
             maxWidth: isSmallScreen ? 250 : isMediumScreen ? 300 : 350,
             alignSelf: 'center'
           }}
-          onPress={() => router.push('/(auth)/sign-in')}
+          onPress={() => router.push('/(auth)/welcome2')}
         >
           <Text style={{ 
             color: '#ffffff', 

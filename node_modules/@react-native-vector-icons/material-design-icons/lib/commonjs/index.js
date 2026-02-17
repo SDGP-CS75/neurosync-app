@@ -1,0 +1,26 @@
+"use strict";
+'use client';
+
+/**
+ * This is a generated file. If you modify it manually, your changes will be lost!
+ * This file was generated from packages/generator-react-native-vector-icons/src/app/templates
+ * If you're contributing to react-native-vector-icons, make the change there; otherwise it'll be lost
+ *
+ * MaterialDesignIcons icon set component.
+ * Usage: <MaterialDesignIcons name="icon-name" size={20} color="#4F8EF7" />
+ */
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = exports.MaterialDesignIcons = void 0;
+var _common = require("@react-native-vector-icons/common");
+var _MaterialDesignIcons = _interopRequireDefault(require("../../glyphmaps/MaterialDesignIcons.json"));
+function _interopRequireDefault(e) { return e && e.__esModule ? e : { default: e }; }
+const MaterialDesignIcons = exports.MaterialDesignIcons = (0, _common.createIconSet)(_MaterialDesignIcons.default, {
+  postScriptName: 'MaterialDesignIcons',
+  fontFileName: 'MaterialDesignIcons.ttf',
+  fontSource: require('../../fonts/MaterialDesignIcons.ttf') // eslint-disable-line @typescript-eslint/no-require-imports, global-require
+});
+/** @alias */
+var _default = exports.default = MaterialDesignIcons;
+//# sourceMappingURL=index.js.map
