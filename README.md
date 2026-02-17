@@ -34,8 +34,8 @@ neurosync-app/
 │   │   ├── types/          # TypeScript types
 │   │   │   └── index.js
 │   │   ├── utils/          # Utility functions
-│   │   │   └── validators.js
-│   │   └── server.js       # Entry point
+│   │       └── validators.js
+│   │── server.js           # Entry point
 │   ├── .env.example        # Environment variables template
 │   ├── .gitignore
 │   ├── package-lock.json
@@ -57,23 +57,14 @@ neurosync-app/
 │   │   │   ├── daily-routine.tsx
 │   │   │   ├── focus-timer.tsx
 │   │   │   ├── profile.tsx
-│   │   │   ├── settings.tsx
-│   │   │   └── todo-list.tsx
-│   │   ├── _layout.tsx     # Root layout
-│   │   └── index.tsx       # Home page
-│   ├── assets/             # Static assets
-│   │   ├── bg.png
-│   │   ├── welcome1.png
-│   │   └── welcome/
-│   │       ├── welcome2.png
-│   │       └── welcome3.png
-│   ├── components/         # Reusable UI components
+│   │   │   └── settings.tsx
+│   │   ├── _layout.tsx    # Root layout
+│   │   └── index.tsx      # Home page
+│   ├── components/
 │   │   ├── Button.tsx
 │   │   ├── Card.tsx
 │   │   └── Input.tsx
-│   ├── constants/          # App constants
-│   │   └── theme.ts
-│   ├── context/            # React Context providers
+│   ├── context/           # React Context providers
 │   │   ├── AuthContext.tsx
 │   │   └── ThemeContext.tsx
 │   ├── hooks/              # Custom React hooks
