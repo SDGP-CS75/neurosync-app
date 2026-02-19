@@ -101,7 +101,7 @@ export default function WelcomeScreen() {
               fontWeight: 'bold',
               fontSize: isSmallScreen ? 12 : isMediumScreen ? 14 : 16
             }} 
-            onPress={() => router.push('/(auth)/sign-in')}>
+            onPress={() => router.push('/(auth)/signIn')}>
               Login
             </Text>
           </Text>
