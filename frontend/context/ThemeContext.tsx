@@ -1,13 +1,9 @@
 /**
- * ThemeContext.tsx
+ * app/context/ThemeContext.tsx
  * ─────────────────────────────────────────────────────────────────
- * Wraps the whole app so any screen can:
- *   1. Read the active theme     → const { theme } = useAppTheme()
- *   2. Read the active palette   → const { palette } = useAppTheme()
- *   3. Switch to another palette → setPalette(COLOR_PALETTES[2])
- *
- * Usage in a screen:
- *   import { useAppTheme } from "../context/ThemeContext";
+ * Global theme state management.
+ * 
+ * Usage in any screen:
  *   const { theme, palette, setPalette } = useAppTheme();
  */
 
@@ -33,7 +29,7 @@ type ThemeContextType = {
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
 // ─────────────────────────────────────────────────────────────────
-// Provider  (put this in your root _layout.tsx)
+// Provider
 // ─────────────────────────────────────────────────────────────────
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
