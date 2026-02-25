@@ -12,92 +12,76 @@ import {
   TouchableOpacity,
   StyleSheet,
   useWindowDimensions,
+  Platform,
+  Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAppTheme } from "../context/ThemeContext";
+import { useTasks, type Task, type TaskStatus } from "../context/TasksContext";
 import Nav from "./Nav";
 
-type TaskStatus = "done" | "in-progress" | "todo";
-
-interface Task {
-  id: string;
-  category: string;
-  title: string;
-  time: string;
-  status: TaskStatus;
-  icon: string;
-  iconBg: string;
-}
-
 interface DateItem {
+  dateKey: string;
   month: string;
   day: number;
   weekday: string;
   isToday: boolean;
 }
 
-const MOCK_DATES: DateItem[] = [
-  { month: "May", day: 23, weekday: "Fri", isToday: false },
-  { month: "May", day: 24, weekday: "Sat", isToday: false },
-  { month: "May", day: 25, weekday: "Sun", isToday: true },
-  { month: "May", day: 26, weekday: "Mon", isToday: false },
-  { month: "May", day: 27, weekday: "Tue", isToday: false },
-];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const MOCK_TASKS: Task[] = [
-  {
-    id: "1",
-    category: "Grocery shopping app design",
-    title: "Market Research",
-    time: "10:00 AM",
-    status: "done",
-    icon: "🛒",
-    iconBg: "#FFE4E8",
-  },
-  {
-    id: "2",
-    category: "Grocery shopping app design",
-    title: "Competitive Analysis",
-    time: "12:00 PM",
-    status: "in-progress",
-    icon: "🛒",
-    iconBg: "#FFE4E8",
-  },
-  {
-    id: "3",
-    category: "Uber Eats redesign challenge",
-    title: "Create Low-fidelity Wireframe",
-    time: "07:00 PM",
-    status: "todo",
-    icon: "👤",
-    iconBg: "#E6E4FF",
-  },
-  {
-    id: "4",
-    category: "About design sprint",
-    title: "How to pitch a Design Sprint",
-    time: "09:00 PM",
-    status: "todo",
-    icon: "📖",
-    iconBg: "#FFE9D5",
-  },
-];
+function getDatesAroundToday(): DateItem[] {
+  const items: DateItem[] = [];
+  const today = new Date();
+  const todayKey = today.toISOString().slice(0, 10);
+  for (let offset = -2; offset <= 2; offset++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() + offset);
+    const dateKey = d.toISOString().slice(0, 10);
+    items.push({
+      dateKey,
+      month: MONTHS[d.getMonth()],
+      day: d.getDate(),
+      weekday: WEEKDAYS[d.getDay()],
+      isToday: dateKey === todayKey,
+    });
+  }
+  return items;
+}
+
+// Match Nav.tsx so scroll padding clears the bottom bar
+const BASE_WIDTH = 390;
+
+const todayDateKey = () => new Date().toISOString().slice(0, 10);
 
 export default function TodoListScreen() {
   const { theme } = useAppTheme();
+  const { tasks, isLoading, removeTask } = useTasks();
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
-  const [selectedDate, setSelectedDate] = useState<number>(25);
+  const scale = Math.min(width / BASE_WIDTH, 1.35);
+  const NAV_HEIGHT = Math.round(64 * scale);
+  const safeBottom =
+    Platform.OS === "ios"
+      ? insets.bottom
+      : Math.max(insets.bottom, 8);
+  const bottomPadding = NAV_HEIGHT + safeBottom + 80;
+
+  const [selectedDate, setSelectedDate] = useState<string>(todayDateKey());
   const [filter, setFilter] = useState<"all" | TaskStatus>("all");
 
   const isSmallScreen = width < 375;
   const cardPadding   = isSmallScreen ? 14 : 18;
 
+  const dateItems = getDatesAroundToday();
+  const tasksForDate = tasks.filter((t) => t.dateKey === selectedDate);
   const filteredTasks =
     filter === "all"
-      ? MOCK_TASKS
-      : MOCK_TASKS.filter((t) => t.status === filter);
+      ? tasksForDate
+      : tasksForDate.filter((t) => t.status === filter);
 
   const getStatusConfig = (status: TaskStatus) => {
     switch (status) {
@@ -139,16 +123,19 @@ export default function TodoListScreen() {
       </View>
 
       <ScrollView
+        style={styles.scroll}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{
+          paddingBottom: bottomPadding,
+        }}
       >
         <View style={styles.dateRow}>
-          {MOCK_DATES.map((date) => {
-            const isSelected = date.day === selectedDate;
+          {dateItems.map((date) => {
+            const isSelected = date.dateKey === selectedDate;
             return (
               <TouchableOpacity
-                key={date.day}
-                onPress={() => setSelectedDate(date.day)}
+                key={date.dateKey}
+                onPress={() => setSelectedDate(date.dateKey)}
                 activeOpacity={0.8}
                 style={[
                   styles.dateCard,
@@ -188,11 +175,13 @@ export default function TodoListScreen() {
           })}
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
-        >
+        <View style={styles.filterRowWrap}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+            style={styles.filterScroll}
+          >
           {[
             { key: "all", label: "All" },
             { key: "todo", label: "To do" },
@@ -225,16 +214,38 @@ export default function TodoListScreen() {
               </TouchableOpacity>
             );
           })}
-        </ScrollView>
+          </ScrollView>
+        </View>
 
         <View style={styles.taskList}>
+          {!isLoading && filteredTasks.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Text style={[styles.emptyText, { color: theme.colors.textMuted }]}>
+                No tasks for this day. Tap + to add one.
+              </Text>
+            </View>
+          ) : null}
           {filteredTasks.map((task) => {
             const statusConfig = getStatusConfig(task.status);
 
+            const handleDelete = () => {
+              Alert.alert(
+                "Delete task",
+                `Remove "${task.title}" from your list?`,
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: () => removeTask(task.id),
+                  },
+                ]
+              );
+            };
+
             return (
-              <TouchableOpacity
+              <View
                 key={task.id}
-                activeOpacity={0.9}
                 style={[
                   styles.taskCard,
                   {
@@ -247,8 +258,18 @@ export default function TodoListScreen() {
                   <Text style={[styles.taskCategory, { color: theme.colors.textMuted }]}>
                     {task.category}
                   </Text>
-                  <View style={[styles.taskIconBox, { backgroundColor: task.iconBg }]}>
-                    <Text style={styles.taskIcon}>{task.icon}</Text>
+                  <View style={styles.taskHeaderRight}>
+                    <View style={[styles.taskIconBox, { backgroundColor: task.iconBg }]}>
+                      <Text style={styles.taskIcon}>{task.icon}</Text>
+                    </View>
+                    <TouchableOpacity
+                      onPress={handleDelete}
+                      hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                      style={styles.deleteBtn}
+                      activeOpacity={0.7}
+                    >
+                      <Ionicons name="trash-outline" size={22} color={theme.colors.textMuted} />
+                    </TouchableOpacity>
                   </View>
                 </View>
 
@@ -275,7 +296,7 @@ export default function TodoListScreen() {
                     </Text>
                   </View>
                 </View>
-              </TouchableOpacity>
+              </View>
             );
           })}
         </View>
@@ -331,10 +352,23 @@ const styles = StyleSheet.create({
     fontSize:   13,
     fontWeight: "500",
   },
-  filterRow: {
+  scroll: {
+    flex: 1,
+  },
+  filterRowWrap: {
     paddingHorizontal: 20,
-    paddingVertical:   12,
+    marginBottom: 4,
+    height: 48,
+    justifyContent: "center",
+  },
+  filterScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
+  },
+  filterRow: {
+    paddingVertical: 0,
     gap: 10,
+    alignItems: "center",
   },
   filterPill: {
     paddingHorizontal: 22,
@@ -345,6 +379,7 @@ const styles = StyleSheet.create({
     shadowOpacity:     0.06,
     shadowRadius:      4,
     elevation:         2,
+    alignSelf:         "center",
   },
   filterText: {
     fontSize:   15,
@@ -353,6 +388,14 @@ const styles = StyleSheet.create({
   taskList: {
     paddingHorizontal: 20,
     gap: 14,
+  },
+  emptyWrap: {
+    paddingVertical: 32,
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    textAlign: "center",
   },
   taskCard: {
     borderRadius:  16,
@@ -367,6 +410,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems:     "center",
     marginBottom:   8,
+  },
+  taskHeaderRight: {
+    flexDirection: "row",
+    alignItems:     "center",
+    gap:            8,
+  },
+  deleteBtn: {
+    padding: 10,
+    margin: -6,
   },
   taskCategory: {
     fontSize:   13,
