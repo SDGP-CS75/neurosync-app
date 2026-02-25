@@ -1,6 +1,6 @@
 # NeuroSync Backend API
 
-The backend server for the NeuroSync productivity application.
+The backend server for the NeuroSync productivity application, built with Node.js and Express.
 
 ## Tech Stack
 
@@ -15,28 +15,28 @@ The backend server for the NeuroSync productivity application.
 ```
 backend/
 ├── src/
-│   ├── controllers/      # Request handlers
+│   ├── controllers/        # Request handlers
 │   │   ├── routineController.js
 │   │   ├── taskController.js
 │   │   └── userController.js
-│   ├── middleware/       # Custom middleware
+│   ├── middleware/         # Custom middleware
 │   │   ├── auth.js
 │   │   └── errorHandler.js
-│   ├── routes/          # API routes
+│   ├── routes/            # API routes
 │   │   ├── routines.js
 │   │   ├── tasks.js
 │   │   └── users.js
-│   ├── services/        # Business logic
+│   ├── services/           # Business logic
 │   │   ├── aiService.js
 │   │   └── supabase.js
-│   ├── types/           # TypeScript types
+│   ├── types/             # TypeScript types
 │   │   └── index.js
-│   ├── utils/           # Utility functions
+│   ├── utils/             # Utility functions
 │   │   └── validators.js
-│   └── server.js        # Entry point
-├── .env                 # Environment variables (not in git)
-├── .env.example         # Environment variables template
+│   └── server.js          # Entry point
+├── .env.example           # Environment variables template
 ├── .gitignore
+├── package-lock.json
 ├── package.json
 └── README.md
 ```
@@ -89,33 +89,62 @@ The server will start on `http://localhost:3000` by default.
 ## API Endpoints
 
 ### Authentication
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/logout` - Logout user
+| Method | Endpoint | Description |
+|--------|---------|------------|
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Login user |
+| POST | `/api/auth/logout` | Logout user |
 
 ### Users
-- `GET /api/users/:id` - Get user profile
-- `PUT /api/users/:id` - Update user profile
+| Method | Endpoint | Description |
+|--------|---------|------------|
+| GET | `/api/users/:id` | Get user profile |
+| PUT | `/api/users/:id` | Update user profile |
 
 ### Tasks
-- `GET /api/tasks` - Get all tasks
-- `POST /api/tasks` - Create a new task
-- `PUT /api/tasks/:id` - Update a task
-- `DELETE /api/tasks/:id` - Delete a task
+| Method | Endpoint | Description |
+|--------|---------|------------|
+| GET | `/api/tasks` | Get all tasks |
+| POST | `/api/tasks` | Create a new task |
+| PUT | `/api/tasks/:id` | Update a task |
+| DELETE | `/api/tasks/:id` | Delete a task |
 
 ### Routines
-- `GET /api/routines` - Get all routines
-- `POST /api/routines` - Create a new routine
-- `PUT /api/routines/:id` - Update a routine
-- `DELETE /api/routines/:id` - Delete a routine
+| Method | Endpoint | Description |
+|--------|---------|------------|
+| GET | `/api/routines` | Get all routines |
+| POST | `/api/routines` | Create a new routine |
+| PUT | `/api/routines/:id` | Update a routine |
+| DELETE | `/api/routines/:id` | Delete a routine |
 
 ## Development
+
+### Architecture
+
+The backend follows the MVC (Model-View-Controller) pattern:
+- **Routes** - Define API endpoints and map them to controllers
+- **Controllers** - Handle incoming requests and return responses
+- **Services** - Contain business logic and interact with external APIs/databases
+- **Middleware** - Handle authentication, error handling, etc.
 
 ### Adding New Routes
 
 1. Create a new route file in `src/routes/`
 2. Create corresponding controller in `src/controllers/`
-3. Add the route to `src/server.js`
+3. Import and use the route in `src/server.js`
+
+Example:
+```javascript
+// src/routes/example.js
+const express = require('express');
+const router = express.Router();
+const exampleController = require('../controllers/exampleController');
+
+router.get('/', exampleController.getAll);
+router.post('/', exampleController.create);
+
+module.exports = router;
+```
 
 ### Adding New Services
 

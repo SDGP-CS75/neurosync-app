@@ -1,6 +1,4 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# Dependencies
 node_modules/
 
 # Expo
@@ -21,7 +19,7 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
-# debug
+# Debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
@@ -30,14 +28,105 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
+# Local environment files
 .env*.local
 
-# typescript
+# TypeScript
 *.tsbuildinfo
 
-app-example
-
-# generated native folders
+# Generated native folders
 /ios
 /android
+
+# Expo specific
+/.expo-shared/
+/.expo-internal/
+
+# React Native
+/.vscode-react-native/
+
+# Metro bundler
+/.metro/
+
+# Yarn
+/.yarn/
+/.pnp.js
+
+# TypeScript cache
+/.tsbuildinfo
+
+# ESLint
+/.eslintcache
+
+# Prettier
+/.prettierignore
+
+# Testing
+/coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build output
+dist/
+build/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Cache directories
+.cache/
+__pycache__/
+
+# Database files
+*.db
+*.sqlite
+
+# Media files (if not needed in repo)
+*.mp4
+*.mp3
+*.avi
+*.mov
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Temporary directories
+tmp/
+temp/
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Package files
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Crash logs
+hs_err_pid*
