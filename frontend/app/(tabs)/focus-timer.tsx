@@ -159,8 +159,47 @@ export default function FocusTimer() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      {/* Header */}
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 }}>
+        <Text style={{ fontSize: 28, fontWeight: "bold", color: theme.colors.onBackground }}>Focus Timer</Text>
+        <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: theme.colors.surface, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 4 }}>
+          <Ionicons name="flame" size={16} color={theme.colors.primary} />
+          <Text style={{ fontSize: 14, color: theme.colors.onSurface, fontWeight: "500" }}>{sessionsCompleted} sessions</Text>
+        </View>
+      </View>
+
+      {/* Mode Toggle */}
+      <View style={{ flexDirection: "row", justifyContent: "center", gap: 12, marginTop: 16, paddingHorizontal: 24 }}>
+        <TouchableOpacity
+          style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25, backgroundColor: mode === "focus" ? theme.colors.primary : theme.colors.surface }}
+          onPress={() => {
+            if (!isRunning) {
+              setMode("focus");
+              setTimeLeft(focusDuration * 60);
+            }
+          }}
+          disabled={isRunning}
+        >
+          <Ionicons name="bulb" size={20} color={mode === "focus" ? "#fff" : theme.colors.onSurface} />
+          <Text style={{ fontSize: 16, fontWeight: "600", color: mode === "focus" ? "#fff" : theme.colors.onSurface }}>Focus</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25, backgroundColor: mode === "break" ? theme.colors.primary : theme.colors.surface }}
+          onPress={() => {
+            if (!isRunning) {
+              setMode("break");
+              setTimeLeft(breakDuration * 60);
+            }
+          }}
+          disabled={isRunning}
+        >
+          <Ionicons name="cafe" size={20} color={mode === "break" ? "#fff" : theme.colors.onSurface} />
+          <Text style={{ fontSize: 16, fontWeight: "600", color: mode === "break" ? "#fff" : theme.colors.onSurface }}>Break</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Timer Display */}
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        {/* Animated Timer Circle */}
         <Animated.View
           style={{
             width: CIRCLE_SIZE,
@@ -184,20 +223,49 @@ export default function FocusTimer() {
             {mode === "focus" ? "Stay focused!" : "Take a break"}
           </Text>
         </Animated.View>
-        
-        {/* Basic Controls */}
-        <View style={{ flexDirection: "row", gap: 24, marginTop: 32 }}>
-          <TouchableOpacity onPress={handleReset} style={{ padding: 12 }}>
-            <Ionicons name="refresh" size={24} color={theme.colors.onSurface} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleStartPause} style={{ padding: 12 }}>
-            <Ionicons name={isRunning ? "pause" : "play"} size={32} color={theme.colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleSkip} style={{ padding: 12 }}>
-            <Ionicons name="play-skip-forward" size={24} color={theme.colors.onSurface} />
-          </TouchableOpacity>
+      </View>
+
+      {/* Duration Presets */}
+      <View style={{ paddingHorizontal: 24, marginBottom: 24 }}>
+        <Text style={{ fontSize: 14, color: theme.colors.onSurfaceVariant, marginBottom: 12, textAlign: "center" }}>
+          {mode === "focus" ? "Focus Duration" : "Break Duration"}
+        </Text>
+        <View style={{ flexDirection: "row", justifyContent: "center", gap: 10 }}>
+          {(mode === "focus" ? FOCUS_PRESETS : BREAK_PRESETS).map((duration) => (
+            <TouchableOpacity
+              key={duration}
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                borderRadius: 20,
+                backgroundColor: (mode === "focus" ? focusDuration : breakDuration) === duration ? theme.colors.primary : theme.colors.surface,
+                minWidth: 50,
+                alignItems: "center",
+              }}
+              onPress={() => handleDurationChange(duration)}
+              disabled={isRunning}
+            >
+              <Text style={{ fontSize: 14, fontWeight: "600", color: (mode === "focus" ? focusDuration : breakDuration) === duration ? "#fff" : theme.colors.onSurface }}>
+                {duration}m
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
+
+      {/* Control Buttons */}
+      <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 24, paddingBottom: 24 }}>
+        <TouchableOpacity style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: theme.colors.surface, justifyContent: "center", alignItems: "center" }} onPress={handleReset}>
+          <Ionicons name="refresh" size={24} color={theme.colors.onSurface} />
+        </TouchableOpacity>
+        <TouchableOpacity style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: theme.colors.primary, justifyContent: "center", alignItems: "center", shadowColor: theme.colors.primary, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 6 }} onPress={handleStartPause}>
+          <Ionicons name={isRunning ? "pause" : "play"} size={32} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity style={{ width: 52, height: 52, borderRadius: 26, backgroundColor: theme.colors.surface, justifyContent: "center", alignItems: "center" }} onPress={handleSkip}>
+          <Ionicons name="play-skip-forward" size={24} color={theme.colors.onSurface} />
+        </TouchableOpacity>
+      </View>
+
       <Nav />
     </SafeAreaView>
   );
