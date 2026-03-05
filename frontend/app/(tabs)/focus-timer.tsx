@@ -7,6 +7,7 @@ import {
   Animated,
   Vibration,
   Dimensions,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -161,8 +162,12 @@ export default function FocusTimer() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Header */}
+        <View style={styles.header}>
         <Text style={styles.title}>Focus Timer</Text>
         <View style={styles.sessionBadge}>
           <Ionicons name="flame" size={16} color={theme.colors.primary} />
@@ -293,6 +298,7 @@ export default function FocusTimer() {
           <Ionicons name="play-skip-forward" size={24} color={theme.colors.onSurface} />
         </TouchableOpacity>
       </View>
+      </ScrollView>
 
       <Nav />
     </SafeAreaView>
@@ -304,6 +310,9 @@ const createStyles = (theme: any, mode: TimerMode) =>
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
+    },
+    scrollContent: {
+      flexGrow: 1,
     },
     header: {
       flexDirection: "row",
