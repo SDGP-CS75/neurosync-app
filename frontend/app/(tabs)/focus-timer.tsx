@@ -245,6 +245,25 @@ export default function FocusTimer() {
             <Text style={styles.timerLabel}>
               {mode === "focus" ? "Stay focused!" : "Take a break"}
             </Text>
+            
+            {/* Control Buttons inside circle */}
+            <View style={styles.controlsContainer}>
+              <TouchableOpacity style={styles.secondaryButton} onPress={handleReset}>
+                <Ionicons name="refresh" size={20} color={theme.colors.onSurface} />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.primaryButton} onPress={handleStartPause}>
+                <Ionicons
+                  name={isRunning ? "pause" : "play"}
+                  size={24}
+                  color="#fff"
+                />
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
+                <Ionicons name="play-skip-forward" size={20} color={theme.colors.onSurface} />
+              </TouchableOpacity>
+            </View>
           </View>
         </Animated.View>
       </View>
@@ -278,25 +297,6 @@ export default function FocusTimer() {
             </TouchableOpacity>
           ))}
         </View>
-      </View>
-
-      {/* Control Buttons */}
-      <View style={styles.controlsContainer}>
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleReset}>
-          <Ionicons name="refresh" size={24} color={theme.colors.onSurface} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.primaryButton} onPress={handleStartPause}>
-          <Ionicons
-            name={isRunning ? "pause" : "play"}
-            size={32}
-            color="#fff"
-          />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
-          <Ionicons name="play-skip-forward" size={24} color={theme.colors.onSurface} />
-        </TouchableOpacity>
       </View>
       </ScrollView>
 
@@ -372,6 +372,8 @@ const createStyles = (theme: any, mode: TimerMode) =>
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
+      marginTop: -100,
+      minHeight: 320,
     },
     timerCircle: {
       width: CIRCLE_SIZE,
@@ -436,12 +438,13 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     presetsContainer: {
       paddingHorizontal: 24,
-      marginBottom: 24,
+      marginTop: -40,
+      marginBottom: 100,
     },
     presetsLabel: {
       fontSize: 14,
       color: theme.colors.onSurfaceVariant,
-      marginBottom: 12,
+      marginBottom: 20,
       textAlign: "center",
     },
     presetsList: {
@@ -472,27 +475,27 @@ const createStyles = (theme: any, mode: TimerMode) =>
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
-      gap: 24,
-      paddingBottom: 24,
+      gap: 16,
+      marginTop: 12,
     },
     primaryButton: {
-      width: 72,
-      height: 72,
-      borderRadius: 36,
+      width: 52,
+      height: 52,
+      borderRadius: 26,
       backgroundColor: theme.colors.primary,
       justifyContent: "center",
       alignItems: "center",
       shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 6,
+      shadowRadius: 4,
+      elevation: 4,
     },
     secondaryButton: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
-      backgroundColor: theme.colors.surface,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.colors.background,
       justifyContent: "center",
       alignItems: "center",
     },
