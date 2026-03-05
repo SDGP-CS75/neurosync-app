@@ -37,11 +37,81 @@ export default function FocusTimer() {
   const progressAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
+  // Get total duration based on mode
+  const getTotalDuration = useCallback(() => {
+    return (mode === "focus" ? focusDuration : breakDuration) * 60;
+  }, [mode, focusDuration, breakDuration]);
+
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  // Timer countdown logic
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    if (isRunning && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      // Timer completed
+      Vibration.vibrate([0, 500, 200, 500]);
+      setIsRunning(false);
+
+      if (mode === "focus") {
+        setSessionsCompleted((prev) => prev + 1);
+        // Switch to break mode
+        setMode("break");
+        setTimeLeft(breakDuration * 60);
+      } else {
+        // Switch back to focus mode
+        setMode("focus");
+        setTimeLeft(focusDuration * 60);
+      }
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRunning, timeLeft, mode, focusDuration, breakDuration]);
+
+  // Control functions
+  const handleStartPause = () => {
+    setIsRunning((prev) => !prev);
+  };
+
+  const handleReset = () => {
+    setIsRunning(false);
+    setTimeLeft(getTotalDuration());
+  };
+
+  const handleSkip = () => {
+    setIsRunning(false);
+    if (mode === "focus") {
+      setMode("break");
+      setTimeLeft(breakDuration * 60);
+    } else {
+      setMode("focus");
+      setTimeLeft(focusDuration * 60);
+    }
+  };
+
+  const handleDurationChange = (duration: number) => {
+    if (mode === "focus") {
+      setFocusDuration(duration);
+      if (!isRunning) {
+        setTimeLeft(duration * 60);
+      }
+    } else {
+      setBreakDuration(duration);
+      if (!isRunning) {
+        setTimeLeft(duration * 60);
+      }
+    }
   };
 
   return (
@@ -53,6 +123,19 @@ export default function FocusTimer() {
         <Text style={{ color: theme.colors.onSurface, fontSize: 16, marginTop: 8 }}>
           {mode === "focus" ? "Focus Mode" : "Break Mode"}
         </Text>
+        
+        {/* Basic Controls */}
+        <View style={{ flexDirection: "row", gap: 16, marginTop: 24 }}>
+          <TouchableOpacity onPress={handleReset} style={{ padding: 12 }}>
+            <Ionicons name="refresh" size={24} color={theme.colors.onSurface} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleStartPause} style={{ padding: 12 }}>
+            <Ionicons name={isRunning ? "pause" : "play"} size={32} color={theme.colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSkip} style={{ padding: 12 }}>
+            <Ionicons name="play-skip-forward" size={24} color={theme.colors.onSurface} />
+          </TouchableOpacity>
+        </View>
       </View>
       <Nav />
     </SafeAreaView>
