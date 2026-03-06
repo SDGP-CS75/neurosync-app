@@ -11,13 +11,21 @@ export default function MoodTracking() {
     <View style={{ flex: 1, backgroundColor: 'white', padding: 16, paddingTop: 40 }}>
 
       {/* Header */}
-      <View className="items-center">
-        <Text className="text-6xl">😊</Text>
-        <Text className="text-xl font-semibold mt-2">
-          Feeling Good
+      <View style={{ alignItems: "center", marginTop: 40 }}>
+        <Text style={{ fontSize: 16, color: "#888" }}>
+          Thu, Feb 26 • 01:28 PM
         </Text>
-        <Text className="text-gray-400">
-          Your energy feels bright today
+
+        <Text style={{ fontSize: 60, marginTop: 10 }}>
+          🤩
+        </Text>
+
+        <Text style={{ fontSize: 26, fontWeight: "600", color: "#4F7CF7" }}>
+          Feeling Amazing
+        </Text>
+
+        <Text style={{ color: "#888", marginTop: 4 }}>
+          You're absolutely radiating today!
         </Text>
       </View>
 
