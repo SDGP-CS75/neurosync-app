@@ -6,8 +6,21 @@ export default function MoodTracking() {
   const [note, setNote] = useState("");
   const [mood, setMood] = useState(3);
   const [energyLevel, setEnergyLevel] = useState(3);
+  const [selectedTag, setSelectedTag] = useState(null);
 
-  const emojis = ["😡","😕","🙂","😊","😍"];
+  const tags = ["Work", "Family", "Sleep", "Friends", "Health", "Hobby", "Love"];
+
+  const moods = [
+    { emoji: "😡", label: "Feeling Angry", message: "Take a breath. It's okay to slow down." },
+    { emoji: "😕", label: "Feeling Off", message: "Something feels a bit off today." },
+    { emoji: "🙂", label: "Feeling Okay", message: "A calm and steady day." },
+    { emoji: "😊", label: "Feeling Good", message: "Things are looking pretty nice." },
+    { emoji: "😍", label: "Feeling Amazing", message: "You're absolutely radiating today!" }
+  ];
+
+  const currentMood = moods[mood];
+  
+  
 
   return (
     <View 
@@ -20,17 +33,14 @@ export default function MoodTracking() {
           <Text style={{ fontSize: 16, color: "#888" }}>
             Thu, Feb 26 • 01:28 PM
           </Text>
-
           <Text style={{ fontSize: 60, marginTop: 10 }}>
-            🤩
+            {currentMood.emoji}
           </Text>
-
           <Text style={{ fontSize: 26, fontWeight: "600", color: "#4F7CF7" }}>
-            Feeling Amazing
+            {currentMood.label}
           </Text>
-
           <Text style={{ color: "#888", marginTop: 4 }}>
-            You're absolutely radiating today!
+            {currentMood.message}
           </Text>
         </View>
 
@@ -49,6 +59,32 @@ export default function MoodTracking() {
           }}
         />
 
+        {/* Tags */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 16 }}>
+          {tags.map((tag, index) => {
+            const isSelected = selectedTag === tag;
+
+            return (
+              <TouchableOpacity
+                key={index}
+                onPress={() => setSelectedTag(tag)}
+                style={{
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  borderRadius: 20,
+                  marginRight: 8,
+                  marginBottom: 8,
+                  backgroundColor: isSelected ? "#4F7CF7" : "#e5e7eb"
+                }}
+              >
+                <Text style={{ color: isSelected ? "white" : "#333" }}>
+                  {tag}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         {/* Mood Selector */}
         <View  
           style={{
@@ -57,7 +93,7 @@ export default function MoodTracking() {
             marginTop: 30
           }}
         >
-          {emojis.map((e, index) => {
+          {moods.map((m, index) => {
             const isSelected = mood === index;
 
             return (
@@ -71,7 +107,7 @@ export default function MoodTracking() {
                 }}
               >
                 <Text style={{ fontSize: 30 }}>
-                  {e}
+                  {m.emoji}
                 </Text>
               </TouchableOpacity>
             );
