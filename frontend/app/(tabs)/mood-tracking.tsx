@@ -1,8 +1,10 @@
 import { View, Text, TextInput, TouchableOpacity } from "react-native";
 import { useState } from "react";
+import Slider from "@react-native-community/slider";
 
 export default function MoodTracking() {
   const [note, setNote] = useState("");
+  const [mood, setMood] = useState(3);
   const [energyLevel, setEnergyLevel] = useState(3);
 
   const emojis = ["😡","😕","🙂","😊","😍"];
@@ -47,7 +49,7 @@ export default function MoodTracking() {
           }}
         />
 
-        {/* Energy Selector */}
+        {/* Mood Selector */}
         <View  
           style={{
             flexDirection: "row",
@@ -56,12 +58,12 @@ export default function MoodTracking() {
           }}
         >
           {emojis.map((e, index) => {
-            const isSelected = energyLevel === index;
+            const isSelected = mood === index;
 
             return (
               <TouchableOpacity
                 key={index}
-                onPress={() => setEnergyLevel(index)}
+                onPress={() => setMood(index)}
                 style={{
                   padding: 10,
                   borderRadius: 12,
@@ -75,6 +77,42 @@ export default function MoodTracking() {
             );
           })}
 
+        </View>
+
+        {/* Energy Level */}
+        <View style={{ marginTop: 30 }}>
+          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
+            ⚡ Energy Level
+          </Text>
+
+          <Slider
+            minimumValue={0}
+            maximumValue={10}
+            step={1}
+            value={energyLevel}
+            onValueChange={(value) => setEnergyLevel(value)}
+            minimumTrackTintColor="#4F7CF7"
+            maximumTrackTintColor="#d1d5db"
+            thumbTintColor="#4F7CF7"
+          />
+          <View style={{ flexDirection: "row", marginTop: 10 }}>
+            {[...Array(10)].map((_, index) => (
+              <View
+                key={index}
+                style={{
+                  flex: 1,
+                  height: 6,
+                  marginRight: index === 9 ? 0 : 4,
+                  borderRadius: 4,
+                  backgroundColor: index < energyLevel ? "#4F7CF7" : "#e5e7eb"
+                }}
+              />
+            ))}
+          </View>
+
+          <Text style={{ textAlign: "right", marginTop: 4 }}>
+            Energy: {energyLevel}
+          </Text>
         </View>
 
         {/* Save Button */}
