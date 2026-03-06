@@ -6,11 +6,11 @@ export default function MoodTracking() {
   const [note, setNote] = useState("");
   const [mood, setMood] = useState(3);
   const [energyLevel, setEnergyLevel] = useState(3);
-  const [selectedTag, setSelectedTag] = useState(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   const tags = ["Work", "Family", "Sleep", "Friends", "Health", "Hobby", "Love"];
 
-  const moods = [
+  const moods: { emoji: string; label: string; message: string }[] = [
     { emoji: "😡", label: "Feeling Angry", message: "Take a breath. It's okay to slow down." },
     { emoji: "😕", label: "Feeling Off", message: "Something feels a bit off today." },
     { emoji: "🙂", label: "Feeling Okay", message: "A calm and steady day." },
@@ -18,9 +18,15 @@ export default function MoodTracking() {
     { emoji: "😍", label: "Feeling Amazing", message: "You're absolutely radiating today!" }
   ];
 
-  const currentMood = moods[mood];
+  const currentMood = moods[mood] ?? moods[0];
   
-  
+  const toggleTag = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags(selectedTags.filter(t => t !== tag));
+    } else {
+      setSelectedTags([...selectedTags, tag]);
+    }
+  };
 
   return (
     <View 
@@ -62,12 +68,12 @@ export default function MoodTracking() {
         {/* Tags */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 16 }}>
           {tags.map((tag, index) => {
-            const isSelected = selectedTag === tag;
+            const isSelected = selectedTags.includes(tag);
 
             return (
               <TouchableOpacity
                 key={index}
-                onPress={() => setSelectedTag(tag)}
+                onPress={() => toggleTag(tag)}
                 style={{
                   paddingVertical: 8,
                   paddingHorizontal: 14,
@@ -126,7 +132,7 @@ export default function MoodTracking() {
             maximumValue={10}
             step={1}
             value={energyLevel}
-            onValueChange={(value) => setEnergyLevel(value)}
+            onValueChange={(value: number) => setEnergyLevel(value)}
             minimumTrackTintColor="#4F7CF7"
             maximumTrackTintColor="#d1d5db"
             thumbTintColor="#4F7CF7"
