@@ -28,6 +28,31 @@ export default function MoodTracking() {
     }
   };
 
+  const now = new Date();
+
+  const dateString = now.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric"
+  });
+
+  const timeString = now.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  const saveEntry = () => {
+    const entry = {
+      mood,
+      energyLevel,
+      note,
+      tags: selectedTags,
+      timestamp: new Date().toISOString()
+    };
+
+    console.log("Mood Entry:", entry);
+  };
+
   return (
     <View 
       style={{ flex: 1, alignItems: "center",justifyContent:"flex-start" , backgroundColor: "#f3f4f6", paddingTop: 40}}>
@@ -37,7 +62,7 @@ export default function MoodTracking() {
         {/* Header */}
         <View style={{ alignItems: "center", marginTop: 40 }}>
           <Text style={{ fontSize: 16, color: "#888" }}>
-            Thu, Feb 26 • 01:28 PM
+            {dateString} • {timeString}
           </Text>
           <Text style={{ fontSize: 60, marginTop: 10 }}>
             {currentMood.emoji}
@@ -159,6 +184,7 @@ export default function MoodTracking() {
 
         {/* Save Button */}
         <TouchableOpacity 
+          onPress={saveEntry}
           style={{
             backgroundColor: "#7C3AED",
             padding: 16,
