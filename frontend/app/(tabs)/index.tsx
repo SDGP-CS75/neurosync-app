@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import CircularProgress from 'react-native-circular-progress-indicator';
+import { useRouter } from 'expo-router'; // <-- Added router import
 
 // Import your components
 import SectionTitle from '../../components/SectionTitle';
@@ -11,13 +12,19 @@ import TaskGroupCard from '../../components/TaskGroupCard';
 import BottomNavBar from '../../components/BottomNavBar';
 
 export default function DashboardScreen() {
+  const router = useRouter(); // <-- Initialize the router
+
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView className="flex-1 px-5 pt-2" showsVerticalScrollIndicator={false}>
         
-        {/* Header */}
+        {/* Header - Now Clickable! */}
         <View className="flex-row justify-between items-center mb-6">
-          <View className="flex-row items-center">
+          <TouchableOpacity 
+            className="flex-row items-center"
+            onPress={() => router.push('/profile')} // <-- Navigates to profile.tsx
+            activeOpacity={0.7}
+          >
             <Image
               source={{ uri: 'https://i.pravatar.cc/300' }}
               className="w-12 h-12 rounded-full mr-3"
@@ -26,8 +33,9 @@ export default function DashboardScreen() {
               <Text className="text-gray-500 text-base">Hello!</Text>
               <Text className="text-xl font-bold text-gray-800">Desmond Miles</Text>
             </View>
-          </View>
-          <TouchableOpacity className="bg-white p-2 rounded-full">
+          </TouchableOpacity>
+          
+          <TouchableOpacity className="bg-white p-2 rounded-full shadow-sm shadow-gray-200">
             <Ionicons name="notifications-outline" size={24} color="black" />
           </TouchableOpacity>
         </View>
