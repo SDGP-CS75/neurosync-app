@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import CircularProgress from 'react-native-circular-progress-indicator';
-import { useRouter } from 'expo-router'; // <-- Added router import
+import { useRouter } from 'expo-router';
 
 // Import your components
 import SectionTitle from '../../components/SectionTitle';
@@ -12,22 +12,24 @@ import TaskGroupCard from '../../components/TaskGroupCard';
 import BottomNavBar from '../../components/BottomNavBar';
 
 export default function DashboardScreen() {
-  const router = useRouter(); // <-- Initialize the router
+  const router = useRouter();
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
       <ScrollView className="flex-1 px-5 pt-2" showsVerticalScrollIndicator={false}>
         
-        {/* Header - Now Clickable! */}
+        {/* Header - Clickable routing to Profile */}
         <View className="flex-row justify-between items-center mb-6">
           <TouchableOpacity 
             className="flex-row items-center"
-            onPress={() => router.push('/profile')} // <-- Navigates to profile.tsx
+            onPress={() => router.push('/profile')}
             activeOpacity={0.7}
           >
+            {/* FIXED IMAGE: Explicit inline styles applied */}
             <Image
-              source={{ uri: 'https://i.pravatar.cc/300' }}
-              className="w-12 h-12 rounded-full mr-3"
+              source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}
+              style={{ width: 48, height: 48, borderRadius: 24 }}
+              className="mr-3"
             />
             <View>
               <Text className="text-gray-500 text-base">Hello!</Text>
