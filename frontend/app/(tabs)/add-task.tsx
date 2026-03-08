@@ -7,7 +7,6 @@ import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -24,6 +23,7 @@ import { useTasks } from "../../context/TasksContext";
 import { API_BASE } from "../../constants/api";
 import Nav from "../../components/Nav";
 import InputDialog from "../../components/InputDialog";
+import { TextInput } from "react-native-paper";
 
 interface SubTask {
   id: string;
@@ -186,7 +186,7 @@ export default function AddTaskScreen() {
     router.back();
   };
 
-  const inputBg = theme.colors.surfaceVariant || "#F0F0F0";
+  const inputBg = theme.colors.surface || "#FFFFFF";
   const rowBg = theme.colors.surfaceVariant || "#F5F5F5";
   const editTint = theme.colors.primary + "CC";
 
@@ -230,29 +230,47 @@ export default function AddTaskScreen() {
           ]}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
-        >
+        > 
+
+          {/* sub task input dialog */}
           <InputDialog
             visible={dialogBoxVisible}
             hideDialog={() => setDialogBoxVisible(false)}
-            title="Enter the sub-task"
+            title="Enter the sub task"
             onSubmit={addSubTask}
           />
           {/* Main task input */}
-          <TextInput
-            style={[
-              styles.mainInput,
-              {
-                backgroundColor: inputBg,
-                color: theme.colors.text,
-              },
-            ]}
-            placeholder={PLACEHOLDER_MAIN}
-            placeholderTextColor={theme.colors.textMuted}
-            value={mainTask}
-            onChangeText={setMainTask}
-            multiline
-            textAlignVertical="top"
-          />
+          <View style={{ position: "relative" }}>
+            <TextInput
+              style={[
+                styles.mainInput,
+                {
+                  backgroundColor: inputBg,
+                  color: theme.colors.text,
+                },
+              ]}
+              placeholder={PLACEHOLDER_MAIN}
+              placeholderTextColor={theme.colors.textMuted}
+              value={mainTask}
+              onChangeText={setMainTask}
+              multiline
+              textAlignVertical="top"
+              mode="outlined"
+              outlineStyle={{ borderRadius: 16 }}
+            />
+            <TouchableOpacity
+              // onPress={handleMicPress}   need to implement voice input
+              style={{
+                position: "absolute",
+                right: 10,
+                bottom: 25,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Ionicons name="mic" size={28} color={theme.colors.textMuted} />
+            </TouchableOpacity>
+          </View>
 
           {/* Break into steps with AI */}
           {aiError ? (
@@ -461,9 +479,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   mainInput: {
-    borderRadius: 16,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     paddingVertical: 16,
+    paddingBottom: 35,
     fontSize: 16,
     minHeight: 100,
     marginBottom: 16,

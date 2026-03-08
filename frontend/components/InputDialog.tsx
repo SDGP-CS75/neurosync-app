@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Portal, Dialog, Button, TextInput } from "react-native-paper";
+import { theme } from "../constants/theme";
 
 interface InputDialogProps {
   visible: boolean;
@@ -29,7 +30,7 @@ const InputDialog: React.FC<InputDialogProps> = ({
         <Portal>
             <Dialog visible={visible} onDismiss={hideDialog}>
             
-            <Dialog.Title>{title}</Dialog.Title>
+            <Dialog.Title style={{ color: theme.colors.textMuted }}>{title}</Dialog.Title>
 
             <Dialog.Content>
                 <TextInput
@@ -37,6 +38,7 @@ const InputDialog: React.FC<InputDialogProps> = ({
                 value={text}
                 onChangeText={setText}
                 mode="outlined"
+                style={{ borderRadius: 30 }}
                 />
             </Dialog.Content>
 

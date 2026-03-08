@@ -11,11 +11,10 @@ import {
   Modal,
   TouchableOpacity,
   StyleSheet,
-  TextInput,
   ScrollView,
   useWindowDimensions,
 } from "react-native";
-import { Button } from "react-native-paper";
+import { Button, TextInput } from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAppTheme } from "../context/ThemeContext";
 
