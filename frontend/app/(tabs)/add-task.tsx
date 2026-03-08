@@ -23,6 +23,7 @@ import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks } from "../../context/TasksContext";
 import { API_BASE } from "../../constants/api";
 import Nav from "../../components/Nav";
+import InputDialog from "../../components/InputDialog";
 
 interface SubTask {
   id: string;
@@ -98,6 +99,7 @@ export default function AddTaskScreen() {
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [dialogBoxVisible, setDialogBoxVisible] = useState(false);
 
   const handleBack = () => router.back();
 
@@ -107,10 +109,10 @@ export default function AddTaskScreen() {
     );
   };
 
-  const addSubTask = () => {
+  const addSubTask = (text: string) => {
     setSubTasks((prev) => [
       ...prev,
-      { id: String(Date.now()), text: "New sub-task", done: false },
+      { id: String(Date.now()), text, done: false },
     ]);
   };
 
@@ -229,6 +231,12 @@ export default function AddTaskScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
+          <InputDialog
+            visible={dialogBoxVisible}
+            hideDialog={() => setDialogBoxVisible(false)}
+            title="Enter the sub-task"
+            onSubmit={addSubTask}
+          />
           {/* Main task input */}
           <TextInput
             style={[
@@ -391,7 +399,7 @@ export default function AddTaskScreen() {
           ))}
           <TouchableOpacity
             style={[styles.addSubTaskBtn, { borderColor: theme.colors.primary }]}
-            onPress={addSubTask}
+            onPress={() => setDialogBoxVisible(true)}
             activeOpacity={0.7}
           >
             <Ionicons name="add" size={20} color={theme.colors.primary} />
