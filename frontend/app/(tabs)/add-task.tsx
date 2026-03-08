@@ -24,6 +24,7 @@ import { API_BASE } from "../../constants/api";
 import Nav from "../../components/Nav";
 import InputDialog from "../../components/InputDialog";
 import { TextInput } from "react-native-paper";
+import SparkleLoader from "../../components/SparkleLoader";
 
 interface SubTask {
   id: string;
@@ -125,6 +126,9 @@ export default function AddTaskScreen() {
     // #region agent log
     fetch(`${API_BASE}/api/debug-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'add-task.tsx:handleBreakIntoSteps',message:'AI breakdown request',data:{apiBase:API_BASE,url},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
     // #endregion
+
+    const startTime = Date.now();
+
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -165,8 +169,16 @@ export default function AddTaskScreen() {
           : msg
       );
     } finally {
-      setAiLoading(false);
+      const elapsed = Date.now() - startTime;
+      const remaining = 700 - elapsed;
+
+      if (remaining > 0) {
+        setTimeout(() => setAiLoading(false), remaining);
+      } else {
+        setAiLoading(false);
+      }
     }
+      
   };
 
   const handleSave = () => {
@@ -186,20 +198,36 @@ export default function AddTaskScreen() {
     router.back();
   };
 
+  
+
   const inputBg = theme.colors.surface || "#FFFFFF";
   const rowBg = theme.colors.surfaceVariant || "#F5F5F5";
   const editTint = theme.colors.primary + "CC";
 
   return (
+    
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
       edges={["top"]}
     >
+      {aiLoading && (
+        <View style={{ 
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: theme.colors.surfaceVariant,
+          zIndex: 999
+        }}>
+          <SparkleLoader />
+        </View>
+      )}
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
-      >
+        >
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBack} hitSlop={12} activeOpacity={0.7}>
@@ -303,6 +331,7 @@ export default function AddTaskScreen() {
               </>
             )}
           </TouchableOpacity>
+
 
           {/* When / Location / Reminder */}
           <View style={[styles.detailRow, { backgroundColor: rowBg }]}>
