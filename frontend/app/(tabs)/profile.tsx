@@ -63,7 +63,7 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
-      {/* Background Glassmorphism Blobs (Matching your Onboarding screens) */}
+      {/* Background Glassmorphism Blobs */}
       <View className="absolute top-0 left-0 w-64 h-64 bg-green-200 rounded-full blur-3xl opacity-30 -translate-x-10 -translate-y-10" />
       <View className="absolute top-40 right-0 w-64 h-64 bg-purple-200 rounded-full blur-3xl opacity-30 translate-x-10" />
 
@@ -92,8 +92,8 @@ export default function ProfileScreen() {
               <Ionicons name="camera" size={14} color="white" />
             </TouchableOpacity>
           </View>
-          <Text className="text-2xl font-bold text-gray-800">Desmond Miles</Text>
-          <Text className="text-gray-500 text-sm mt-1">desmond.miles@gmail.com</Text>
+          <Text className="text-2xl font-bold text-gray-800">Sujaya</Text>
+          <Text className="text-gray-500 text-sm mt-1">sujaya@example.com</Text>
           
           <TouchableOpacity className="mt-4 bg-white px-6 py-2 rounded-full border border-gray-200 shadow-sm shadow-gray-100">
             <Text className="text-gray-700 font-semibold">Edit Profile</Text>
@@ -124,11 +124,14 @@ export default function ProfileScreen() {
 
         {/* Customization */}
         <SettingsGroupTitle title="Customization" />
+        
+        {/* FIX: This now routes to your Settings screen! */}
         <SettingsItem
           icon={<Ionicons name="color-palette" size={22} color="#10B981" />}
           label="App Theme"
-          onPress={() => {}} 
+          onPress={() => router.push('/settings')} 
         />
+        
         <SettingsItem
           icon={<Ionicons name="notifications" size={22} color="#10B981" />}
           label="Notification Schedule"
