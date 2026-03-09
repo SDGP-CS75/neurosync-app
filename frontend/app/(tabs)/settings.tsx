@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -16,11 +16,32 @@ const THEMES = [
 
 export default function SettingsScreen() {
   const router = useRouter();
+  
+  // Theme State
   const [activeTheme, setActiveTheme] = useState('violet');
   
+  // Dynamically grabs the actual hex code of the selected theme
+  const activeColor = THEMES.find(t => t.id === activeTheme)?.color || '#7C3AED';
+  
+  // Profile States
+  const [name, setName] = useState('Sujaya');
+  const [email, setEmail] = useState('sujaya@example.com');
+  const [age, setAge] = useState('21');
+  const [about, setAbout] = useState('Computer Science undergraduate at University of Westminster.');
+
+  // Preference States
   const [dailyReminders, setDailyReminders] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [strictFocus, setStrictFocus] = useState(false);
+
+  // Handle Save Button Press
+  const handleSave = () => {
+    Alert.alert(
+      "Settings Saved",
+      "Your profile and app preferences have been updated successfully.",
+      [{ text: "Awesome!", style: "default" }]
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -32,12 +53,67 @@ export default function SettingsScreen() {
             <Ionicons name="arrow-back" size={20} color="#1F2937" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Settings</Text>
-          <View style={{ width: 40 }} />
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+             <Text style={[styles.saveButtonText, { color: activeColor }]}>Save</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Theme Picker */}
+        {/* --- USER PROFILE SECTION --- */}
+        <Text style={[styles.sectionSubtitle, { color: activeColor }]}>USER PROFILE</Text>
         <View style={styles.card}>
-          <Text style={styles.sectionSubtitle}>APP COLOUR THEME</Text>
+          
+          {/* Name Input */}
+          <View style={styles.inputRow}>
+            <Text style={styles.inputLabel}>Name</Text>
+            <TextInput 
+              style={styles.inputField} 
+              value={name} 
+              onChangeText={setName}
+              placeholder="Enter your name"
+            />
+          </View>
+
+          {/* Email Input */}
+          <View style={styles.inputRow}>
+            <Text style={styles.inputLabel}>Email</Text>
+            <TextInput 
+              style={styles.inputField} 
+              value={email} 
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+          </View>
+
+          {/* Age Input */}
+          <View style={styles.inputRow}>
+            <Text style={styles.inputLabel}>Age</Text>
+            <TextInput 
+              style={styles.inputField} 
+              value={age} 
+              onChangeText={setAge}
+              keyboardType="numeric"
+            />
+          </View>
+
+          {/* About Input */}
+          <View style={[styles.inputRow, { borderBottomWidth: 0, flexDirection: 'column', alignItems: 'flex-start' }]}>
+            <Text style={[styles.inputLabel, { marginBottom: 8 }]}>About Me</Text>
+            <TextInput 
+              style={[styles.inputField, styles.textArea]} 
+              value={about} 
+              onChangeText={setAbout}
+              multiline={true}
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+          </View>
+
+        </View>
+
+        {/* --- THEME PICKER SECTION --- */}
+        <Text style={[styles.sectionSubtitle, { color: activeColor, marginTop: 10 }]}>APP COLOUR THEME</Text>
+        <View style={styles.card}>
           <View style={styles.themeRow}>
             {THEMES.map((theme) => (
               <TouchableOpacity
@@ -46,49 +122,51 @@ export default function SettingsScreen() {
                 style={[
                   styles.themeCircle,
                   { backgroundColor: theme.color },
-                  activeTheme === theme.id && styles.activeThemeCircle
+                  activeTheme === theme.id && { borderWidth: 4, borderColor: theme.color + '40' } // Adds a glowing ring
                 ]}
               >
                 {activeTheme === theme.id && <Ionicons name="checkmark" size={20} color="white" />}
               </TouchableOpacity>
             ))}
           </View>
-          <Text style={styles.themeLabel}>{THEMES.find(t => t.id === activeTheme)?.label}</Text>
+          <Text style={[styles.themeLabel, { color: activeColor }]}>
+            {THEMES.find(t => t.id === activeTheme)?.label}
+          </Text>
         </View>
 
-        {/* Preferences */}
-        <Text style={styles.sectionTitle}>PREFERENCES</Text>
-        
+        {/* --- PREFERENCES SECTION --- */}
+        <Text style={[styles.sectionSubtitle, { color: activeColor, marginTop: 10 }]}>PREFERENCES</Text>
         <View style={styles.card}>
+          
           {/* Setting Row */}
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
-              <View style={[styles.iconWrapper, { backgroundColor: '#F3E8FF' }]}>
-                <Ionicons name="notifications" size={16} color="#7C3AED" />
+              <View style={[styles.iconWrapper, { backgroundColor: activeColor + '15' }]}>
+                <Ionicons name="notifications" size={16} color={activeColor} />
               </View>
               <Text style={styles.settingText}>Daily Reminders</Text>
             </View>
             <Switch 
               value={dailyReminders} 
               onValueChange={setDailyReminders}
-              trackColor={{ false: "#E5E7EB", true: "#C4B5FD" }}
-              thumbColor={dailyReminders ? "#7C3AED" : "#f4f3f4"}
+              trackColor={{ false: "#E5E7EB", true: activeColor + '80' }}
+              thumbColor={dailyReminders ? activeColor : "#f4f3f4"}
             />
           </View>
 
           {/* Setting Row */}
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
-              <View style={[styles.iconWrapper, { backgroundColor: '#F3E8FF' }]}>
-                <Ionicons name="phone-portrait" size={16} color="#7C3AED" />
+              <View style={[styles.iconWrapper, { backgroundColor: activeColor + '15' }]}>
+                <Ionicons name="phone-portrait" size={16} color={activeColor} />
               </View>
               <Text style={styles.settingText}>Haptic Feedback</Text>
             </View>
             <Switch 
               value={hapticFeedback} 
               onValueChange={setHapticFeedback}
-              trackColor={{ false: "#E5E7EB", true: "#C4B5FD" }}
-              thumbColor={hapticFeedback ? "#7C3AED" : "#f4f3f4"}
+              trackColor={{ false: "#E5E7EB", true: activeColor + '80' }}
+              thumbColor={hapticFeedback ? activeColor : "#f4f3f4"}
             />
           </View>
 
@@ -151,6 +229,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1F2937',
   },
+  saveButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  saveButtonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   card: {
     backgroundColor: 'white',
     borderRadius: 24,
@@ -165,18 +251,46 @@ const styles = StyleSheet.create({
     borderColor: '#F3F4F6',
   },
   sectionSubtitle: {
-    color: '#7C3AED',
     fontWeight: 'bold',
     fontSize: 12,
     letterSpacing: 1,
-    textAlign: 'center',
-    marginBottom: 20,
+    marginLeft: 12,
+    marginBottom: 12,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  inputLabel: {
+    width: 80,
+    color: '#9CA3AF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  inputField: {
+    flex: 1,
+    color: '#374151',
+    fontWeight: '500',
+    fontSize: 16,
+    padding: 0, 
+  },
+  textArea: {
+    backgroundColor: '#F9FAFB',
+    width: '100%',
+    borderRadius: 12,
+    padding: 12,
+    minHeight: 80,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
   },
   themeRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    marginBottom: 16,
+    marginBottom: 8,
   },
   themeCircle: {
     width: 44,
@@ -186,23 +300,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  activeThemeCircle: {
-    borderWidth: 4,
-    borderColor: '#E9D5FF',
-  },
   themeLabel: {
-    color: '#7C3AED',
     fontWeight: 'bold',
     textAlign: 'center',
     marginTop: 8,
-  },
-  sectionTitle: {
-    color: '#9CA3AF',
-    fontWeight: 'bold',
-    fontSize: 12,
-    letterSpacing: 1,
-    marginBottom: 12,
-    marginLeft: 4,
   },
   settingRow: {
     flexDirection: 'row',
