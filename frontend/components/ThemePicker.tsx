@@ -1,12 +1,7 @@
 /**
- * ThemePicker.tsx
+ * app/components/ThemePicker.tsx
  * ─────────────────────────────────────────────────────────────────
- * Drop this anywhere in your settings screen.
- * Tapping a swatch instantly changes the whole app's theme.
- *
- * Usage:
- *   import ThemePicker from "../components/ThemePicker";
- *   <ThemePicker />
+ * Drop into any settings screen to let users choose color themes.
  */
 
 import React from "react";
@@ -45,7 +40,6 @@ export default function ThemePicker() {
                 },
               ]}
             >
-              {/* Outer ring shows when selected */}
               <View
                 style={[
                   styles.swatch,
@@ -62,7 +56,6 @@ export default function ThemePicker() {
         })}
       </View>
 
-      {/* Name of current palette */}
       <Text style={[styles.paletteName, { color: theme.colors.primary }]}>
         {palette.name}
       </Text>
@@ -94,7 +87,7 @@ const styles = StyleSheet.create({
     justifyContent:"center",
   },
   swatch: {
-    // background set inline
+    // set inline
   },
   paletteName: {
     marginTop:  12,

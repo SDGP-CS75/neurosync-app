@@ -105,8 +105,8 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     key:     "calendar",
-    path:    "/(tabs)/daily-routine",
-    segment: "daily-routine",
+    path:    "/(tabs)/todo-list",
+    segment: "todo-list",
     renderIcon: (size, color) => (
       <Ionicons name="calendar" size={size} color={color} />
     ),
@@ -236,7 +236,7 @@ export default function CustomNavBar() {
             shadowColor:  theme.colors.primary,
           },
         ]}
-        onPress={() => router.push("/(tabs)/todo-list")}
+        onPress={() => router.push("/(tabs)/add-task")}
         activeOpacity={0.85}
       >
         <View
