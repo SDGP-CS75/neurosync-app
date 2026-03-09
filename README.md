@@ -17,6 +17,8 @@ A productivity application with AI-powered features, built with React Native (Ex
 neurosync-app/
 ├── backend/                 # Node.js/Express API server
 │   ├── src/
+│   │   ├── config/         # Configuration files
+│   │   │   └── firebase-adminsdk.json
 │   │   ├── controllers/     # Request handlers
 │   │   │   ├── routineController.js
 │   │   │   ├── taskController.js
@@ -56,14 +58,24 @@ neurosync-app/
 │   │   │   ├── index.tsx
 │   │   │   ├── daily-routine.tsx
 │   │   │   ├── focus-timer.tsx
+│   │   │   ├── home.tsx
 │   │   │   ├── profile.tsx
-│   │   │   └── settings.tsx
+│   │   │   ├── settings.tsx
+│   │   │   └── todo-list.tsx
 │   │   ├── _layout.tsx    # Root layout
 │   │   └── index.tsx      # Home page
-│   ├── components/
-│   │   ├── Button.tsx
-│   │   ├── Card.tsx
-│   │   └── Input.tsx
+│   ├── assets/             # Static assets
+│   │   ├── bg.png
+│   │   ├── welcome1.png
+│   │   └── welcome/
+│   │       ├── welcome2.png
+│   │       └── welcome3.png
+│   ├── components/         # Reusable UI components
+│   │   ├── AddTaskModal.tsx
+│   │   ├── Nav.tsx
+│   │   └── ThemePicker.tsx
+│   ├── constants/          # App constants
+│   │   └── theme.ts
 │   ├── context/           # React Context providers
 │   │   ├── AuthContext.tsx
 │   │   └── ThemeContext.tsx
@@ -71,10 +83,13 @@ neurosync-app/
 │   │   ├── useAuth.ts
 │   │   ├── useTheme.ts
 │   │   └── useTimer.ts
+│   ├── images/             # Image assets
+│   │   ├── bgimg.png
+│   │   └── welcome1.png
 │   ├── services/           # API services
 │   │   ├── auth.ts
+│   │   ├── firebase.ts
 │   │   ├── routines.ts
-│   │   ├── supabase.ts
 │   │   └── tasks.ts
 │   ├── types/              # TypeScript type definitions
 │   │   └── index.ts
@@ -264,7 +279,7 @@ For detailed frontend documentation, see [`frontend/README.md`](frontend/README.
 | Welcome 3 | `(auth)/welcome3` | Onboarding step 3 |
 | Sign In | `(auth)/signIn` | User sign in |
 | Sign Up | `(auth)/signUp` | User registration |
-| Home | `(tabs)/index` | Dashboard |
+| Home | `(tabs)/home` | Dashboard |
 | Daily Routine | `(tabs)/daily-routine` | Routine management |
 | Focus Timer | `(tabs)/focus-timer` | Pomodoro timer |
 | Todo List | `(tabs)/todo-list` | Task management |
