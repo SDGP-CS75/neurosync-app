@@ -298,6 +298,25 @@ export default function FocusTimerCounting() {
             >
               <View style={styles.screenSaverContent}>
                 <Text style={styles.screenSaverTime}>{formatTime(timeLeft)}</Text>
+                
+                {/* Progress Bar */}
+                <View style={styles.screenSaverProgressContainer}>
+                  <View style={styles.screenSaverProgressBackground}>
+                    <Animated.View 
+                      style={[
+                        styles.screenSaverProgressFill,
+                        { 
+                          width: `${(1 - getProgress()) * 100}%`,
+                          backgroundColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
+                        }
+                      ]} 
+                    />
+                  </View>
+                  <Text style={styles.screenSaverProgressText}>
+                    {Math.round((1 - getProgress()) * 100)}% complete
+                  </Text>
+                </View>
+                
                 <Text style={styles.screenSaverHint}>Tap anywhere to exit</Text>
               </View>
             </Animated.View>
@@ -751,6 +770,28 @@ const createStyles = (theme: any, mode: TimerMode) =>
       textShadowColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
       textShadowOffset: { width: 0, height: 0 },
       textShadowRadius: 30,
+    },
+    screenSaverProgressContainer: {
+      alignItems: "center",
+      marginTop: 32,
+      width: SCREEN_WIDTH * 0.7,
+    },
+    screenSaverProgressBackground: {
+      width: "100%",
+      height: 6,
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      borderRadius: 3,
+      overflow: "hidden",
+    },
+    screenSaverProgressFill: {
+      height: "100%",
+      borderRadius: 3,
+    },
+    screenSaverProgressText: {
+      fontSize: 14,
+      color: "rgba(255, 255, 255, 0.6)",
+      marginTop: 12,
+      fontWeight: "500",
     },
     screenSaverHint: {
       fontSize: 14,
