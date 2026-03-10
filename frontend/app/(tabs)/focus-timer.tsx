@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Dimensions,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -29,6 +30,8 @@ export default function FocusTimer() {
   const [mode, setMode] = useState<TimerMode>("focus");
   const [focusDuration, setFocusDuration] = useState(25);
   const [breakDuration, setBreakDuration] = useState(5);
+  const [customFocusInput, setCustomFocusInput] = useState("");
+  const [customBreakInput, setCustomBreakInput] = useState("");
 
   const handleStartTimer = () => {
     router.push({
@@ -44,9 +47,36 @@ export default function FocusTimer() {
   const handleDurationChange = (duration: number) => {
     if (mode === "focus") {
       setFocusDuration(duration);
+      setCustomFocusInput("");
     } else {
       setBreakDuration(duration);
+      setCustomBreakInput("");
     }
+  };
+
+  const handleCustomDurationChange = (text: string) => {
+    // Only allow numbers
+    const numericValue = text.replace(/[^0-9]/g, "");
+    
+    if (mode === "focus") {
+      setCustomFocusInput(numericValue);
+      if (numericValue) {
+        const value = Math.min(Math.max(parseInt(numericValue) || 1, 1), 180);
+        setFocusDuration(value);
+      }
+    } else {
+      setCustomBreakInput(numericValue);
+      if (numericValue) {
+        const value = Math.min(Math.max(parseInt(numericValue) || 1, 1), 60);
+        setBreakDuration(value);
+      }
+    }
+  };
+
+  const isCustomValue = () => {
+    const currentDuration = mode === "focus" ? focusDuration : breakDuration;
+    const presets = mode === "focus" ? FOCUS_PRESETS : BREAK_PRESETS;
+    return !presets.includes(currentDuration);
   };
 
   const styles = createStyles(theme, mode);
@@ -112,13 +142,18 @@ export default function FocusTimer() {
           <Text style={styles.sectionTitle}>
             {mode === "focus" ? "Focus Duration" : "Break Duration"}
           </Text>
-          <View style={styles.presetsList}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.presetsScrollContent}
+          >
             {(mode === "focus" ? FOCUS_PRESETS : BREAK_PRESETS).map((duration) => (
               <TouchableOpacity
                 key={duration}
                 style={[
                   styles.presetButton,
                   (mode === "focus" ? focusDuration : breakDuration) === duration &&
+                    !isCustomValue() &&
                     styles.presetButtonActive,
                 ]}
                 onPress={() => handleDurationChange(duration)}
@@ -127,6 +162,7 @@ export default function FocusTimer() {
                   style={[
                     styles.presetText,
                     (mode === "focus" ? focusDuration : breakDuration) === duration &&
+                      !isCustomValue() &&
                       styles.presetTextActive,
                   ]}
                 >
@@ -136,6 +172,7 @@ export default function FocusTimer() {
                   style={[
                     styles.presetUnit,
                     (mode === "focus" ? focusDuration : breakDuration) === duration &&
+                      !isCustomValue() &&
                       styles.presetTextActive,
                   ]}
                 >
@@ -143,6 +180,23 @@ export default function FocusTimer() {
                 </Text>
               </TouchableOpacity>
             ))}
+          </ScrollView>
+          
+          {/* Custom Duration Input */}
+          <View style={styles.customInputContainer}>
+            <Text style={styles.customInputLabel}>Or set custom time:</Text>
+            <View style={[styles.customInputWrapper, isCustomValue() && styles.customInputWrapperActive]}>
+              <TextInput
+                style={styles.customInput}
+                placeholder={mode === "focus" ? "1-180" : "1-60"}
+                placeholderTextColor={theme.colors.onSurfaceVariant}
+                keyboardType="number-pad"
+                maxLength={3}
+                value={mode === "focus" ? customFocusInput : customBreakInput}
+                onChangeText={handleCustomDurationChange}
+              />
+              <Text style={styles.customInputUnit}>min</Text>
+            </View>
           </View>
         </View>
 
@@ -261,7 +315,6 @@ const createStyles = (theme: any, mode: TimerMode) =>
       color: "rgba(255,255,255,0.8)",
     },
     durationSection: {
-      paddingHorizontal: 24,
       marginTop: 32,
     },
     sectionTitle: {
@@ -269,19 +322,19 @@ const createStyles = (theme: any, mode: TimerMode) =>
       fontWeight: "600",
       color: theme.colors.onBackground,
       marginBottom: 16,
+      paddingHorizontal: 24,
     },
-    presetsList: {
-      flexDirection: "row",
-      flexWrap: "wrap",
+    presetsScrollContent: {
+      paddingHorizontal: 24,
       gap: 10,
     },
     presetButton: {
-      paddingHorizontal: 20,
+      paddingHorizontal: 18,
       paddingVertical: 14,
-      borderRadius: 12,
+      borderRadius: 24,
       backgroundColor: theme.colors.surface,
       alignItems: "center",
-      minWidth: 70,
+      minWidth: 65,
     },
     presetButtonActive: {
       backgroundColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
@@ -297,6 +350,42 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     presetTextActive: {
       color: "#fff",
+    },
+    customInputContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: 16,
+      paddingHorizontal: 24,
+    },
+    customInputLabel: {
+      fontSize: 14,
+      color: theme.colors.onSurfaceVariant,
+    },
+    customInputWrapper: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.colors.surface,
+      borderRadius: 24,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      gap: 6,
+      borderWidth: 2,
+      borderColor: "transparent",
+    },
+    customInputWrapperActive: {
+      borderColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
+    },
+    customInput: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: theme.colors.onSurface,
+      minWidth: 50,
+      textAlign: "center",
+    },
+    customInputUnit: {
+      fontSize: 14,
+      color: theme.colors.onSurfaceVariant,
     },
     previewSection: {
       paddingHorizontal: 24,
