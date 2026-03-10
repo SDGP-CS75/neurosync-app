@@ -262,13 +262,7 @@ export default function FocusTimerCounting() {
 
   const handleStop = () => {
     setIsRunning(false);
-    setLoadingMessage("Saving your session...");
-    setShowLoading(true);
-    
-    setTimeout(() => {
-      setShowLoading(false);
-      router.back();
-    }, 2000);
+    router.back();
   };
 
   // Progress circle interpolation
@@ -357,18 +351,9 @@ export default function FocusTimerCounting() {
           <Text style={styles.title}>
             {mode === "focus" ? "Focus Mode" : "Break Time"}
           </Text>
-          <View style={styles.headerRight}>
-            <TouchableOpacity onPress={toggleMusic} style={styles.musicButton}>
-              <Ionicons 
-                name={isMusicOn ? "musical-notes" : "musical-notes-outline"} 
-                size={20} 
-                color={isMusicOn ? theme.colors.primary : theme.colors.onSurfaceVariant} 
-              />
-            </TouchableOpacity>
-            <View style={styles.sessionBadge}>
-              <Ionicons name="flame" size={16} color={theme.colors.primary} />
-              <Text style={styles.sessionText}>{sessionsCompleted}</Text>
-            </View>
+          <View style={styles.sessionBadge}>
+            <Ionicons name="flame" size={16} color={theme.colors.primary} />
+            <Text style={styles.sessionText}>{sessionsCompleted}</Text>
           </View>
         </View>
 
@@ -451,6 +436,18 @@ export default function FocusTimerCounting() {
             <Text style={styles.buttonLabel}>Skip</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Music Button */}
+        <TouchableOpacity style={styles.musicButton} onPress={toggleMusic}>
+          <Ionicons 
+            name={isMusicOn ? "musical-notes" : "musical-notes-outline"} 
+            size={24} 
+            color={isMusicOn ? theme.colors.primary : theme.colors.onSurface} 
+          />
+          <Text style={[styles.buttonLabel, isMusicOn && { color: theme.colors.primary }]}>
+            {isMusicOn ? "Music On" : "Music Off"}
+          </Text>
+        </TouchableOpacity>
 
         {/* Stop Button */}
         <TouchableOpacity style={styles.stopButton} onPress={handleStop}>
@@ -654,6 +651,18 @@ const createStyles = (theme: any, mode: TimerMode) =>
       color: theme.colors.onSurfaceVariant,
       marginTop: 2,
     },
+    musicButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginTop: 20,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      alignSelf: "center",
+      backgroundColor: theme.colors.surface,
+      borderRadius: 25,
+    },
     stopButton: {
       flexDirection: "row",
       alignItems: "center",
@@ -723,20 +732,6 @@ const createStyles = (theme: any, mode: TimerMode) =>
       height: 8,
       borderRadius: 4,
       backgroundColor: theme.colors.primary,
-    },
-    // Header right section with music and sessions
-    headerRight: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    musicButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
-      backgroundColor: theme.colors.surface,
-      justifyContent: "center",
-      alignItems: "center",
     },
     // Screen saver styles
     screenSaverContainer: {
