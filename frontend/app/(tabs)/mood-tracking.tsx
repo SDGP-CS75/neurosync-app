@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useState } from "react";
 import Slider from "@react-native-community/slider";
 
@@ -54,7 +54,7 @@ export default function MoodTracking() {
   };
 
   return (
-    <View 
+    <ScrollView
       style={{ flex: 1, alignItems: "center",justifyContent:"flex-start" , backgroundColor: "#f3f4f6", paddingTop: 40}}>
       
       <View style={{ width: "100%", maxWidth: 420, backgroundColor:"white", borderRadius: 20, padding: 20 }} >
@@ -189,7 +189,8 @@ export default function MoodTracking() {
             backgroundColor: "#7C3AED",
             padding: 16,
             borderRadius: 16,
-            marginTop: 40
+            marginTop: 40,
+            marginBottom: 30
           }}>
           <Text style={{ color: "white", textAlign: "center", fontWeight: "600" }}>
             Save Entry
@@ -197,6 +198,6 @@ export default function MoodTracking() {
         </TouchableOpacity>
 
       </View>
-    </View>
+    </ScrollView>
   );
 }
