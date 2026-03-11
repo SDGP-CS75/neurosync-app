@@ -1,8 +1,12 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
 import { useState } from "react";
 import Slider from "@react-native-community/slider";
+import { useTheme } from "react-native-paper";
 
 export default function MoodTracking() {
+
+  const { colors } = useTheme() as any;
+
   const [note, setNote] = useState("");
   const [mood, setMood] = useState(3);
   const [energyLevel, setEnergyLevel] = useState(3);
@@ -10,7 +14,7 @@ export default function MoodTracking() {
 
   const tags = ["Work", "Family", "Sleep", "Friends", "Health", "Hobby", "Love"];
 
-  const moods: { emoji: string; label: string; message: string }[] = [
+  const moods = [
     { emoji: "😡", label: "Feeling Angry", message: "Take a breath. It's okay to slow down." },
     { emoji: "😕", label: "Feeling Off", message: "Something feels a bit off today." },
     { emoji: "🙂", label: "Feeling Okay", message: "A calm and steady day." },
@@ -19,13 +23,11 @@ export default function MoodTracking() {
   ];
 
   const currentMood = moods[mood] ?? moods[0];
-  
+
   const toggleTag = (tag: string) => {
-    if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter(t => t !== tag));
-    } else {
-      setSelectedTags([...selectedTags, tag]);
-    }
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
   };
 
   const now = new Date();
@@ -54,45 +56,75 @@ export default function MoodTracking() {
   };
 
   return (
+
     <ScrollView
-      style={{ flex: 1, alignItems: "center",justifyContent:"flex-start" , backgroundColor: "#f3f4f6", paddingTop: 40}}>
-      
-      <View style={{ width: "100%", maxWidth: 420, backgroundColor:"white", borderRadius: 20, padding: 20 }} >
+      style={{ flex: 1, backgroundColor: colors.background }}
+      contentContainerStyle={{
+        paddingTop: 40,
+        paddingBottom: 40,
+        alignItems: "center"
+      }}
+    >
+
+      <View
+        style={{
+          width: "100%",
+          maxWidth: 420,
+          backgroundColor: colors.surface,
+          borderRadius: 20,
+          padding: 20
+        }}
+      >
 
         {/* Header */}
-        <View style={{ alignItems: "center", marginTop: 40 }}>
-          <Text style={{ fontSize: 16, color: "#888" }}>
+
+        <View style={{ alignItems: "center", marginTop: 20 }}>
+
+          <Text style={{ fontSize: 16, color: colors.textMuted }}>
             {dateString} • {timeString}
           </Text>
+
           <Text style={{ fontSize: 60, marginTop: 10 }}>
             {currentMood.emoji}
           </Text>
-          <Text style={{ fontSize: 26, fontWeight: "600", color: "#4F7CF7" }}>
+
+          <Text style={{ fontSize: 26, fontWeight: "600", color: colors.primary }}>
             {currentMood.label}
           </Text>
-          <Text style={{ color: "#888", marginTop: 4 }}>
+
+          <Text style={{ color: colors.textMuted, marginTop: 4 }}>
             {currentMood.message}
           </Text>
+
         </View>
 
+
         {/* Note Input */}
+
         <TextInput
           placeholder="What made you feel this way?"
+          placeholderTextColor={colors.textMuted}
           value={note}
           onChangeText={setNote}
           multiline
           style={{
-            backgroundColor: "#f3f4f6",
+            backgroundColor: colors.surfaceVariant,
             borderRadius: 16,
             padding: 16,
             marginTop: 24,
-            minHeight: 80
+            minHeight: 80,
+            color: colors.onBackground,
+            textAlignVertical: "top"
           }}
         />
 
+
         {/* Tags */}
+
         <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 16 }}>
+
           {tags.map((tag, index) => {
+
             const isSelected = selectedTags.includes(tag);
 
             return (
@@ -105,26 +137,33 @@ export default function MoodTracking() {
                   borderRadius: 20,
                   marginRight: 8,
                   marginBottom: 8,
-                  backgroundColor: isSelected ? "#4F7CF7" : "#e5e7eb"
+                  backgroundColor: isSelected ? colors.primary : colors.primaryContainer
                 }}
               >
-                <Text style={{ color: isSelected ? "white" : "#333" }}>
+
+                <Text style={{ color: isSelected ? colors.onPrimary : colors.onPrimaryContainer }}>
                   {tag}
                 </Text>
+
               </TouchableOpacity>
             );
           })}
+
         </View>
 
+
         {/* Mood Selector */}
-        <View  
+
+        <View
           style={{
             flexDirection: "row",
             justifyContent: "space-between",
             marginTop: 30
           }}
         >
+
           {moods.map((m, index) => {
+
             const isSelected = mood === index;
 
             return (
@@ -134,21 +173,26 @@ export default function MoodTracking() {
                 style={{
                   padding: 10,
                   borderRadius: 12,
-                  backgroundColor: isSelected ? "#e0e7ff" : "transparent"
+                  backgroundColor: isSelected ? colors.primaryContainer : "transparent"
                 }}
               >
+
                 <Text style={{ fontSize: 30 }}>
                   {m.emoji}
                 </Text>
+
               </TouchableOpacity>
             );
           })}
 
         </View>
 
+
         {/* Energy Level */}
+
         <View style={{ marginTop: 30 }}>
-          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
+
+          <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8, color: colors.onBackground }}>
             ⚡ Energy Level
           </Text>
 
@@ -158,11 +202,13 @@ export default function MoodTracking() {
             step={1}
             value={energyLevel}
             onValueChange={(value: number) => setEnergyLevel(value)}
-            minimumTrackTintColor="#4F7CF7"
-            maximumTrackTintColor="#d1d5db"
-            thumbTintColor="#4F7CF7"
+            minimumTrackTintColor={colors.primary}
+            maximumTrackTintColor={colors.outline}
+            thumbTintColor={colors.primary}
           />
+
           <View style={{ flexDirection: "row", marginTop: 10 }}>
+
             {[...Array(10)].map((_, index) => (
               <View
                 key={index}
@@ -171,33 +217,41 @@ export default function MoodTracking() {
                   height: 6,
                   marginRight: index === 9 ? 0 : 4,
                   borderRadius: 4,
-                  backgroundColor: index < energyLevel ? "#4F7CF7" : "#e5e7eb"
+                  backgroundColor: index < energyLevel ? colors.primary : colors.outline
                 }}
               />
             ))}
+
           </View>
 
-          <Text style={{ textAlign: "right", marginTop: 4 }}>
+          <Text style={{ textAlign: "right", marginTop: 4, color: colors.textMuted }}>
             Energy: {energyLevel}
           </Text>
+
         </View>
 
+
         {/* Save Button */}
-        <TouchableOpacity 
+
+        <TouchableOpacity
           onPress={saveEntry}
           style={{
-            backgroundColor: "#7C3AED",
+            backgroundColor: colors.secondary,
             padding: 16,
             borderRadius: 16,
             marginTop: 40,
             marginBottom: 30
-          }}>
-          <Text style={{ color: "white", textAlign: "center", fontWeight: "600" }}>
+          }}
+        >
+
+          <Text style={{ color: colors.onSecondary, textAlign: "center", fontWeight: "600" }}>
             Save Entry
           </Text>
+
         </TouchableOpacity>
 
       </View>
+
     </ScrollView>
   );
 }
