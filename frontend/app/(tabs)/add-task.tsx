@@ -3,7 +3,7 @@
  * When/Location/Reminder rows, and sub-tasks.
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import Nav from "../../components/Nav";
 import InputDialog from "../../components/InputDialog";
 import { TextInput } from "react-native-paper";
 import SparkleLoader from "../../components/SparkleLoader";
+import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent,} from 'expo-speech-recognition';
 
 interface SubTask {
   id: string;
@@ -101,6 +102,7 @@ export default function AddTaskScreen() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [dialogBoxVisible, setDialogBoxVisible] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
 
   const handleBack = () => router.back();
 
@@ -198,6 +200,54 @@ export default function AddTaskScreen() {
     router.back();
   };
 
+  {/* text to ai */}
+
+    // Called every time a word/phrase is recognized
+  useSpeechRecognitionEvent('result', (event) => {
+    setMainTask(event.results[0]?.transcript ?? '');
+  });
+
+  useSpeechRecognitionEvent('error', (event) => {
+    // setError(event.message);
+    setIsRecording(false);
+  });
+
+  useSpeechRecognitionEvent('end', () => {
+    setIsRecording(false);
+  });
+
+  const startRecording = async () => {
+    // setError(null);
+    setMainTask('');
+
+    const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!granted) {
+      // setError('Microphone permission denied');
+      console.log('Microphone permission denied');
+      return;
+    }
+
+    ExpoSpeechRecognitionModule.start({
+      lang: 'en-US',
+      interimResults: true,   // show words as you speak
+      continuous: true,        // keep listening until stopRecording()
+    });
+
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    ExpoSpeechRecognitionModule.stop();
+    setIsRecording(false);
+  };
+
+  const reset = () => {
+    setMainTask('');
+    // setError(null);
+  };
+
+
+
   
 
   const inputBg = theme.colors.surface || "#FFFFFF";
@@ -287,7 +337,7 @@ export default function AddTaskScreen() {
               outlineStyle={{ borderRadius: 16 }}
             />
             <TouchableOpacity
-              // onPress={handleMicPress}   need to implement voice input
+              onPress={isRecording ? stopRecording : startRecording} 
               style={{
                 position: "absolute",
                 right: 10,
