@@ -24,6 +24,82 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CIRCLE_SIZE = Math.min(SCREEN_WIDTH * 0.7, 280);
 const SCREEN_SAVER_TIMEOUT = 10000; // 10 seconds
 
+type MusicStream = {
+  id: string;
+  name: string;
+  url: string;
+  icon: keyof typeof Ionicons.glyphMap;
+};
+
+// Music categories with streams
+const MUSIC_CATEGORIES: {
+  id: string;
+  name: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  streams: MusicStream[];
+}[] = [
+  {
+    id: "focus",
+    name: "Focus Music",
+    icon: "bulb",
+    streams: [
+      { 
+        id: "lofi", 
+        name: "Lo-Fi Beats", 
+        url: "https://streams.ilovemusic.de/iloveradio17.mp3",
+        icon: "musical-notes"
+      },
+      { 
+        id: "piano", 
+        name: "Piano Chill", 
+        url: "https://streams.ilovemusic.de/iloveradio10.mp3",
+        icon: "musical-note"
+      },
+    ]
+  },
+  {
+    id: "ambient",
+    name: "Ambient & Nature",
+    icon: "leaf",
+    streams: [
+      { 
+        id: "ambient", 
+        name: "Ambient", 
+        url: "https://streams.ilovemusic.de/iloveradio19.mp3",
+        icon: "cloudy-night"
+      },
+      { 
+        id: "rain", 
+        name: "Rain Sounds", 
+        url: "https://rainymood.com/audio1112/0.m4a",
+        icon: "rainy"
+      },
+    ]
+  },
+  {
+    id: "chill",
+    name: "Chill & Relaxation",
+    icon: "cafe",
+    streams: [
+      { 
+        id: "chillout", 
+        name: "Chillout", 
+        url: "https://streams.ilovemusic.de/iloveradio7.mp3",
+        icon: "heart"
+      },
+      { 
+        id: "jazz", 
+        name: "Smooth Jazz", 
+        url: "https://streams.ilovemusic.de/iloveradio14.mp3",
+        icon: "wine"
+      },
+    ]
+  },
+];
+
+// Flatten streams for easy access
+const ALL_STREAMS: MusicStream[] = MUSIC_CATEGORIES.flatMap(cat => cat.streams);
+
 type TimerMode = "focus" | "break";
 
 export default function FocusTimerCounting() {
@@ -51,6 +127,8 @@ export default function FocusTimerCounting() {
   // Music state
   const [isMusicOn, setIsMusicOn] = useState(false);
   const [isMusicLoading, setIsMusicLoading] = useState(false);
+  const [showMusicPicker, setShowMusicPicker] = useState(false);
+  const [selectedStream, setSelectedStream] = useState<MusicStream>(ALL_STREAMS[0]);
   const soundRef = useRef<Audio.Sound | null>(null);
   
   // Screen saver state
@@ -141,42 +219,64 @@ export default function FocusTimerCounting() {
 
   // Toggle music - plays ambient/lo-fi music for focus
   const toggleMusic = async () => {
-    try {
-      if (isMusicOn) {
-        // Stop and unload the sound
-        if (soundRef.current) {
-          await soundRef.current.stopAsync();
-          await soundRef.current.unloadAsync();
-          soundRef.current = null;
-        }
-        setIsMusicOn(false);
-      } else {
-        setIsMusicLoading(true);
-        
-        // Load and play ambient music (using a free lo-fi stream URL)
-        // You can replace this URL with your own audio file or stream
-        const { sound } = await Audio.Sound.createAsync(
-          { uri: "https://streams.ilovemusic.de/iloveradio17.mp3" }, // Lo-fi radio stream
-          { 
-            shouldPlay: true, 
-            isLooping: true,
-            volume: 0.5,
-          }
-        );
-        
-        soundRef.current = sound;
-        setIsMusicOn(true);
-        setIsMusicLoading(false);
+    if (isMusicOn) {
+      // Stop the music
+      await stopMusic();
+    } else {
+      // Show music picker to select a stream
+      setShowMusicPicker(true);
+    }
+  };
 
-        // Handle playback status updates
-        sound.setOnPlaybackStatusUpdate((status) => {
-          if (status.isLoaded && !status.isPlaying && !status.didJustFinish) {
-            // Sound was stopped externally
-          }
-        });
+  // Stop music playback
+  const stopMusic = async () => {
+    try {
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
       }
+      setIsMusicOn(false);
     } catch (error) {
-      console.log("Error toggling music:", error);
+      console.log("Error stopping music:", error);
+    }
+  };
+
+  // Play selected music stream
+  const playMusicStream = async (stream: MusicStream) => {
+    try {
+      // Stop any currently playing music
+      if (soundRef.current) {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+
+      setSelectedStream(stream);
+      setShowMusicPicker(false);
+      setIsMusicLoading(true);
+      
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: stream.url },
+        { 
+          shouldPlay: true, 
+          isLooping: true,
+          volume: 0.5,
+        }
+      );
+      
+      soundRef.current = sound;
+      setIsMusicOn(true);
+      setIsMusicLoading(false);
+
+      // Handle playback status updates
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && !status.isPlaying && !status.didJustFinish) {
+          // Sound was stopped externally
+        }
+      });
+    } catch (error) {
+      console.log("Error playing music:", error);
       setIsMusicLoading(false);
       setIsMusicOn(false);
     }
@@ -450,6 +550,106 @@ export default function FocusTimerCounting() {
         </View>
       </Modal>
 
+      {/* Music Picker Modal */}
+      <Modal
+        visible={showMusicPicker}
+        transparent
+        animationType="slide"
+      >
+        <View style={styles.musicPickerOverlay}>
+          <View style={styles.musicPickerContainer}>
+            <View style={styles.musicPickerHeader}>
+              <Text style={styles.musicPickerTitle}>Choose Music</Text>
+              <TouchableOpacity 
+                onPress={() => setShowMusicPicker(false)}
+                style={styles.musicPickerClose}
+              >
+                <Ionicons name="close" size={24} color={theme.colors.onSurface} />
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.musicPickerScroll} showsVerticalScrollIndicator={false}>
+              {/* No Music Option */}
+              <TouchableOpacity
+                style={[
+                  styles.musicPickerItem,
+                  !isMusicOn && styles.musicPickerItemActive
+                ]}
+                onPress={async () => {
+                  await stopMusic();
+                  setShowMusicPicker(false);
+                }}
+              >
+                <View style={[
+                  styles.musicPickerIcon,
+                  !isMusicOn && styles.musicPickerIconActive
+                ]}>
+                  <Ionicons 
+                    name="volume-mute" 
+                    size={24} 
+                    color={!isMusicOn ? "#fff" : theme.colors.onSurfaceVariant} 
+                  />
+                </View>
+                <Text style={[
+                  styles.musicPickerItemText,
+                  !isMusicOn && styles.musicPickerItemTextActive
+                ]}>
+                  No Music
+                </Text>
+                {!isMusicOn && (
+                  <Ionicons name="checkmark-circle" size={20} color={theme.colors.primary} />
+                )}
+              </TouchableOpacity>
+
+              {/* Music Categories */}
+              {MUSIC_CATEGORIES.map((category) => (
+                <View key={category.id} style={styles.musicCategory}>
+                  <View style={styles.musicCategoryHeader}>
+                    <Ionicons name={category.icon} size={18} color={theme.colors.primary} />
+                    <Text style={styles.musicCategoryTitle}>{category.name}</Text>
+                  </View>
+                  
+                  {category.streams.map((stream) => (
+                    <TouchableOpacity
+                      key={stream.id}
+                      style={[
+                        styles.musicPickerItem,
+                        selectedStream.id === stream.id && isMusicOn && styles.musicPickerItemActive
+                      ]}
+                      onPress={() => playMusicStream(stream as MusicStream)}
+                    >
+                      <View style={[
+                        styles.musicPickerIcon,
+                        selectedStream.id === stream.id && isMusicOn && styles.musicPickerIconActive
+                      ]}>
+                        <Ionicons 
+                          name={stream.icon} 
+                          size={24} 
+                          color={selectedStream.id === stream.id && isMusicOn ? "#fff" : theme.colors.primary} 
+                        />
+                      </View>
+                      <Text style={[
+                        styles.musicPickerItemText,
+                        selectedStream.id === stream.id && isMusicOn && styles.musicPickerItemTextActive
+                      ]}>
+                        {stream.name}
+                      </Text>
+                      {selectedStream.id === stream.id && isMusicOn && (
+                        <Ionicons name="volume-high" size={20} color={theme.colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ))}
+            </ScrollView>
+
+            <Text style={styles.musicPickerHint}>
+              🎵 Music will play in the background while you focus
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -558,13 +758,13 @@ export default function FocusTimerCounting() {
             <ActivityIndicator size="small" color={theme.colors.primary} />
           ) : (
             <Ionicons 
-              name={isMusicOn ? "musical-notes" : "musical-notes-outline"} 
+              name={isMusicOn ? selectedStream.icon : "musical-notes-outline"} 
               size={24} 
               color={isMusicOn ? theme.colors.primary : theme.colors.onSurface} 
             />
           )}
           <Text style={[styles.buttonLabel, isMusicOn && { color: theme.colors.primary }]}>
-            {isMusicLoading ? "Loading..." : isMusicOn ? "Music On" : "Music Off"}
+            {isMusicLoading ? "Loading..." : isMusicOn ? selectedStream.name : "Play Music"}
           </Text>
         </TouchableOpacity>
 
@@ -805,6 +1005,100 @@ const createStyles = (theme: any, mode: TimerMode) =>
       fontSize: 14,
       fontWeight: "600",
       color: theme.colors.error || "#ef4444",
+    },
+    // Music picker styles
+    musicPickerOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      justifyContent: "flex-end",
+    },
+    musicPickerContainer: {
+      backgroundColor: theme.colors.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 24,
+      paddingBottom: 40,
+    },
+    musicPickerHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 20,
+    },
+    musicPickerTitle: {
+      fontSize: 20,
+      fontWeight: "bold",
+      color: theme.colors.onSurface,
+    },
+    musicPickerClose: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: theme.colors.background,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    musicPickerList: {
+      gap: 12,
+    },
+    musicPickerScroll: {
+      maxHeight: SCREEN_HEIGHT * 0.5,
+    },
+    musicCategory: {
+      marginTop: 16,
+    },
+    musicCategoryHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 10,
+      paddingHorizontal: 4,
+    },
+    musicCategoryTitle: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: theme.colors.onSurfaceVariant,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    musicPickerItem: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 16,
+      backgroundColor: theme.colors.background,
+      borderRadius: 16,
+      gap: 16,
+    },
+    musicPickerItemActive: {
+      backgroundColor: theme.colors.primary + "20",
+      borderWidth: 2,
+      borderColor: theme.colors.primary,
+    },
+    musicPickerIcon: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: theme.colors.primary + "20",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    musicPickerIconActive: {
+      backgroundColor: theme.colors.primary,
+    },
+    musicPickerItemText: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: "600",
+      color: theme.colors.onSurface,
+    },
+    musicPickerItemTextActive: {
+      color: theme.colors.primary,
+    },
+    musicPickerHint: {
+      fontSize: 13,
+      color: theme.colors.onSurfaceVariant,
+      textAlign: "center",
+      marginTop: 20,
     },
     // Loading styles
     loadingOverlay: {
