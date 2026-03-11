@@ -210,17 +210,34 @@ export default function FocusTimerCounting() {
 
   // Play selected music stream
   const playMusicStream = async (stream: MusicStream) => {
+    // Prevent switching if already loading
+    if (isMusicLoading) return;
+    
+    setSelectedStream(stream);
+    setShowMusicPicker(false);
+    setIsMusicLoading(true);
+    
     try {
-      // Stop any currently playing music
+      // Stop any currently playing music first
       if (soundRef.current) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
+        const currentSound = soundRef.current;
+        soundRef.current = null; // Clear ref immediately to prevent race conditions
+        
+        try {
+          await currentSound.stopAsync();
+        } catch (e) {
+          // Ignore stop errors
+        }
+        
+        try {
+          await currentSound.unloadAsync();
+        } catch (e) {
+          // Ignore unload errors
+        }
+        
+        // Small delay to ensure audio system is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-
-      setSelectedStream(stream);
-      setShowMusicPicker(false);
-      setIsMusicLoading(true);
       
       const { sound } = await Audio.Sound.createAsync(
         { uri: stream.url },
@@ -456,7 +473,7 @@ export default function FocusTimerCounting() {
             >
               <View style={styles.screenSaverContent}>
                 <Text style={styles.screenSaverTime}>{formatTime(timeLeft)}</Text>
-~                
+                
                 {/* Progress Bar */}
                 <View style={styles.screenSaverProgressContainer}>
                   <View style={styles.screenSaverProgressBackground}>
@@ -673,25 +690,51 @@ export default function FocusTimerCounting() {
           </TouchableOpacity>
         </View>
 
-        {/* Music Button */}
-        <TouchableOpacity 
-          style={[styles.musicButton, isMusicOn && styles.musicButtonActive]} 
-          onPress={toggleMusic}
-          disabled={isMusicLoading}
-        >
-          {isMusicLoading ? (
-            <ActivityIndicator size="small" color={theme.colors.primary} />
-          ) : (
+        {/* Music Controls */}
+        <View style={styles.musicControlsContainer}>
+          {/* Music On/Off Toggle */}
+          <TouchableOpacity 
+            style={[styles.musicToggleButton, isMusicOn && styles.musicToggleButtonActive]} 
+            onPress={async () => {
+              if (isMusicOn) {
+                await stopMusic();
+              } else if (selectedStream) {
+                await playMusicStream(selectedStream);
+              } else {
+                setShowMusicPicker(true);
+              }
+            }}
+            disabled={isMusicLoading}
+          >
+            {isMusicLoading ? (
+              <ActivityIndicator size="small" color={theme.colors.primary} />
+            ) : (
+              <Ionicons 
+                name={isMusicOn ? "volume-high" : "volume-mute"} 
+                size={24} 
+                color={isMusicOn ? theme.colors.primary : theme.colors.onSurface} 
+              />
+            )}
+            <Text style={[styles.musicButtonLabel, isMusicOn && { color: theme.colors.primary }]}>
+              {isMusicLoading ? "Loading..." : isMusicOn ? "Music On" : "Music Off"}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Choose Genre Button */}
+          <TouchableOpacity 
+            style={styles.musicGenreButton} 
+            onPress={() => setShowMusicPicker(true)}
+          >
             <Ionicons 
-              name={isMusicOn ? selectedStream.icon : "musical-notes-outline"} 
+              name={selectedStream.icon} 
               size={24} 
-              color={isMusicOn ? theme.colors.primary : theme.colors.onSurface} 
+              color={theme.colors.onSurface} 
             />
-          )}
-          <Text style={[styles.buttonLabel, isMusicOn && { color: theme.colors.primary }]}>
-            {isMusicLoading ? "Loading..." : isMusicOn ? selectedStream.name : "Play Music"}
-          </Text>
-        </TouchableOpacity>
+            <Text style={styles.musicButtonLabel}>
+              {selectedStream.name}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Stop Button */}
         <TouchableOpacity style={styles.stopButton} onPress={handleStop}>
@@ -895,21 +938,41 @@ const createStyles = (theme: any, mode: TimerMode) =>
       color: theme.colors.onSurfaceVariant,
       marginTop: 2,
     },
-    musicButton: {
+    musicControlsContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 24,
+      marginTop: 20,
+      paddingHorizontal: 24,
+    },
+    musicToggleButton: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
-      marginTop: 20,
       paddingVertical: 12,
       paddingHorizontal: 24,
-      alignSelf: "center",
       backgroundColor: theme.colors.surface,
       borderRadius: 25,
     },
-    musicButtonActive: {
+    musicToggleButtonActive: {
       borderWidth: 2,
       borderColor: theme.colors.primary,
+    },
+    musicGenreButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 25,
+    },
+    musicButtonLabel: {
+      fontSize: 14,
+      color: theme.colors.onSurface,
     },
     stopButton: {
       flexDirection: "row",
