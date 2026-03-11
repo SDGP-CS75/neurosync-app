@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { Audio } from "expo-av";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 
@@ -49,6 +50,8 @@ export default function FocusTimerCounting() {
   
   // Music state
   const [isMusicOn, setIsMusicOn] = useState(false);
+  const [isMusicLoading, setIsMusicLoading] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
   
   // Screen saver state
   const [showScreenSaver, setShowScreenSaver] = useState(false);
@@ -112,11 +115,90 @@ export default function FocusTimerCounting() {
     };
   }, [isRunning]);
 
-  // Toggle music
-  const toggleMusic = () => {
-    setIsMusicOn((prev) => !prev);
-    // TODO: Add actual audio playback logic here
+  // Setup audio mode on mount
+  useEffect(() => {
+    const setupAudio = async () => {
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: true,
+          shouldDuckAndroid: true,
+        });
+      } catch (error) {
+        console.log("Error setting audio mode:", error);
+      }
+    };
+    setupAudio();
+
+    // Cleanup on unmount
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync();
+      }
+    };
+  }, []);
+
+  // Toggle music - plays ambient/lo-fi music for focus
+  const toggleMusic = async () => {
+    try {
+      if (isMusicOn) {
+        // Stop and unload the sound
+        if (soundRef.current) {
+          await soundRef.current.stopAsync();
+          await soundRef.current.unloadAsync();
+          soundRef.current = null;
+        }
+        setIsMusicOn(false);
+      } else {
+        setIsMusicLoading(true);
+        
+        // Load and play ambient music (using a free lo-fi stream URL)
+        // You can replace this URL with your own audio file or stream
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: "https://streams.ilovemusic.de/iloveradio17.mp3" }, // Lo-fi radio stream
+          { 
+            shouldPlay: true, 
+            isLooping: true,
+            volume: 0.5,
+          }
+        );
+        
+        soundRef.current = sound;
+        setIsMusicOn(true);
+        setIsMusicLoading(false);
+
+        // Handle playback status updates
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && !status.isPlaying && !status.didJustFinish) {
+            // Sound was stopped externally
+          }
+        });
+      }
+    } catch (error) {
+      console.log("Error toggling music:", error);
+      setIsMusicLoading(false);
+      setIsMusicOn(false);
+    }
   };
+
+  // Pause/resume music when timer pauses/resumes
+  useEffect(() => {
+    const handleMusicWithTimer = async () => {
+      if (soundRef.current && isMusicOn) {
+        try {
+          if (isRunning) {
+            await soundRef.current.playAsync();
+          } else {
+            await soundRef.current.pauseAsync();
+          }
+        } catch (error) {
+          console.log("Error handling music with timer:", error);
+        }
+      }
+    };
+    handleMusicWithTimer();
+  }, [isRunning, isMusicOn]);
 
   // Get total duration based on mode
   const getTotalDuration = useCallback(() => {
@@ -260,8 +342,18 @@ export default function FocusTimerCounting() {
     }, 1500);
   };
 
-  const handleStop = () => {
+  const handleStop = async () => {
     setIsRunning(false);
+    // Stop and cleanup music before leaving
+    if (soundRef.current) {
+      try {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      } catch (error) {
+        console.log("Error stopping music:", error);
+      }
+    }
     router.back();
   };
 
@@ -298,7 +390,7 @@ export default function FocusTimerCounting() {
             >
               <View style={styles.screenSaverContent}>
                 <Text style={styles.screenSaverTime}>{formatTime(timeLeft)}</Text>
-                
+~                
                 {/* Progress Bar */}
                 <View style={styles.screenSaverProgressContainer}>
                   <View style={styles.screenSaverProgressBackground}>
@@ -457,14 +549,22 @@ export default function FocusTimerCounting() {
         </View>
 
         {/* Music Button */}
-        <TouchableOpacity style={styles.musicButton} onPress={toggleMusic}>
-          <Ionicons 
-            name={isMusicOn ? "musical-notes" : "musical-notes-outline"} 
-            size={24} 
-            color={isMusicOn ? theme.colors.primary : theme.colors.onSurface} 
-          />
+        <TouchableOpacity 
+          style={[styles.musicButton, isMusicOn && styles.musicButtonActive]} 
+          onPress={toggleMusic}
+          disabled={isMusicLoading}
+        >
+          {isMusicLoading ? (
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          ) : (
+            <Ionicons 
+              name={isMusicOn ? "musical-notes" : "musical-notes-outline"} 
+              size={24} 
+              color={isMusicOn ? theme.colors.primary : theme.colors.onSurface} 
+            />
+          )}
           <Text style={[styles.buttonLabel, isMusicOn && { color: theme.colors.primary }]}>
-            {isMusicOn ? "Music On" : "Music Off"}
+            {isMusicLoading ? "Loading..." : isMusicOn ? "Music On" : "Music Off"}
           </Text>
         </TouchableOpacity>
 
@@ -681,6 +781,10 @@ const createStyles = (theme: any, mode: TimerMode) =>
       alignSelf: "center",
       backgroundColor: theme.colors.surface,
       borderRadius: 25,
+    },
+    musicButtonActive: {
+      borderWidth: 2,
+      borderColor: theme.colors.primary,
     },
     stopButton: {
       flexDirection: "row",
