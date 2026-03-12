@@ -11,6 +11,7 @@ import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
+import { Easing } from "react-native";
 import * as Progress from "react-native-progress";
 import { router } from "expo-router";
 export default function AppLayout() {
@@ -69,20 +70,23 @@ const TodayTaskCard = () => {
       </View>
 
       <AnimatedCircularProgress
-        size={84}
-        width={8}
+        style={{ marginRight: 15 }}
+        size={102}
+        width={9}
         fill={85}
         tintColor="#fff"
         backgroundColor="#8A78F3"
+        duration={1200}
+        easing={Easing.out(Easing.ease)}
       >
-        {(fill: number) => <Text style={styles.progressText}>{`${fill}%`}</Text>}
+        {() => <Text style={styles.progressText}>{`85%`}</Text>}
       </AnimatedCircularProgress>
 
       <TouchableOpacity 
         style={styles.moreButton}
         onPress={() => router.push("/(tabs)/todo-list" as any)}
       >
-        <Ionicons name="ellipsis-horizontal" size={16} color="#fff" />
+        <Ionicons name="ellipsis-horizontal" size={14} color="#fff" />
       </TouchableOpacity>
     </View>
   );
@@ -234,8 +238,10 @@ const TaskGroupCard = ({
         fill={progress}
         tintColor={color}
         backgroundColor="#eee"
+        duration={1000}
+        easing={Easing.out(Easing.ease)}
       >
-        {(fill: number) => <Text style={{ fontSize: 10 }}>{fill}%</Text>}
+        {() => <Text style={{ fontSize: 10 }}>{progress}%</Text>}
       </AnimatedCircularProgress>
     </View>
   );
@@ -290,7 +296,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     backgroundColor: "#6A5AE0",
     borderRadius: 24,
-    padding: 24,
+    paddingVertical: 28,
+    paddingHorizontal: 24,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -298,41 +305,41 @@ const styles = StyleSheet.create({
 
   todayText: {
     color: "white",
-    fontSize: 18,
-    lineHeight: 26,
+    fontSize: 20,
+    lineHeight: 28,
     fontWeight: "500",
-    width: 180,
+    width: 190,
   },
 
   taskButton: {
-    marginTop: 16,
+    marginTop: 18,
     backgroundColor: "#F2EFFE",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+    paddingVertical: 11,
+    paddingHorizontal: 22,
+    borderRadius: 13,
     alignSelf: "flex-start",
   },
 
   taskButtonText: {
     color: "#6A5AE0",
     fontWeight: "600",
-    fontSize: 14,
+    fontSize: 15,
   },
 
   progressText: {
     color: "white",
     fontWeight: "700",
-    fontSize: 18,
+    fontSize: 20,
   },
   
   moreButton: {
     position: 'absolute',
-    top: 16,
-    right: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    top: 12,
+    right: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
     borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
