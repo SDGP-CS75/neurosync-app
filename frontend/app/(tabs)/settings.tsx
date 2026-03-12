@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, TextInput, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, TextInput, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Nav from '../../components/Nav'; 
 
 const THEMES = [
   { id: 'violet', color: '#7C3AED', label: 'Violet' },
@@ -19,13 +20,11 @@ export default function SettingsScreen() {
   
   // Theme State
   const [activeTheme, setActiveTheme] = useState('violet');
-  
-  // Dynamically grabs the actual hex code of the selected theme
   const activeColor = THEMES.find(t => t.id === activeTheme)?.color || '#7C3AED';
   
   // Profile States
-  const [name, setName] = useState('Sujaya');
-  const [email, setEmail] = useState('sujaya@example.com');
+  const [name, setName] = useState('Sandun');
+  const [email, setEmail] = useState('sandun@example.com');
   const [age, setAge] = useState('21');
   const [about, setAbout] = useState('Computer Science undergraduate at University of Westminster.');
 
@@ -61,6 +60,19 @@ export default function SettingsScreen() {
         {/* --- USER PROFILE SECTION --- */}
         <Text style={[styles.sectionSubtitle, { color: activeColor }]}>USER PROFILE</Text>
         <View style={styles.card}>
+          
+          {/* NEW: Profile Photo Area */}
+          <View style={styles.profileImageContainer}>
+            <View>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80' }}
+                style={[styles.profileImage, { borderColor: activeColor }]} 
+              />
+              <TouchableOpacity style={[styles.editImageBadge, { backgroundColor: activeColor }]}>
+                <Ionicons name="camera" size={14} color="white" />
+              </TouchableOpacity>
+            </View>
+          </View>
           
           {/* Name Input */}
           <View style={styles.inputRow}>
@@ -122,7 +134,7 @@ export default function SettingsScreen() {
                 style={[
                   styles.themeCircle,
                   { backgroundColor: theme.color },
-                  activeTheme === theme.id && { borderWidth: 4, borderColor: theme.color + '40' } // Adds a glowing ring
+                  activeTheme === theme.id && { borderWidth: 4, borderColor: theme.color + '40' }
                 ]}
               >
                 {activeTheme === theme.id && <Ionicons name="checkmark" size={20} color="white" />}
@@ -138,7 +150,6 @@ export default function SettingsScreen() {
         <Text style={[styles.sectionSubtitle, { color: activeColor, marginTop: 10 }]}>PREFERENCES</Text>
         <View style={styles.card}>
           
-          {/* Setting Row */}
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: activeColor + '15' }]}>
@@ -154,7 +165,6 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* Setting Row */}
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: activeColor + '15' }]}>
@@ -170,7 +180,6 @@ export default function SettingsScreen() {
             />
           </View>
 
-          {/* Setting Row (No bottom border) */}
           <View style={[styles.settingRow, { borderBottomWidth: 0 }]}>
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: '#FEE2E2' }]}>
@@ -191,148 +200,37 @@ export default function SettingsScreen() {
         </View>
 
       </ScrollView>
+      <Nav />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  scrollContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    backgroundColor: 'white',
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  saveButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  saveButtonText: {
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  card: {
-    backgroundColor: 'white',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  sectionSubtitle: {
-    fontWeight: 'bold',
-    fontSize: 12,
-    letterSpacing: 1,
-    marginLeft: 12,
-    marginBottom: 12,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  inputLabel: {
-    width: 80,
-    color: '#9CA3AF',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  inputField: {
-    flex: 1,
-    color: '#374151',
-    fontWeight: '500',
-    fontSize: 16,
-    padding: 0, 
-  },
-  textArea: {
-    backgroundColor: '#F9FAFB',
-    width: '100%',
-    borderRadius: 12,
-    padding: 12,
-    minHeight: 80,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-  },
-  themeRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    marginBottom: 8,
-  },
-  themeCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    margin: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  themeLabel: {
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  settingLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  settingText: {
-    color: '#374151',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  settingSubtext: {
-    color: '#9CA3AF',
-    fontSize: 12,
-    marginTop: 2,
-  },
+  safeArea: { flex: 1, backgroundColor: '#F9FAFB' },
+  scrollContainer: { paddingHorizontal: 24, paddingTop: 8, paddingBottom: 40 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 },
+  backButton: { width: 40, height: 40, backgroundColor: 'white', borderRadius: 20, alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+  headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#1F2937' },
+  saveButton: { paddingHorizontal: 12, paddingVertical: 8 },
+  saveButtonText: { fontWeight: 'bold', fontSize: 16 },
+  card: { backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, borderWidth: 1, borderColor: '#F3F4F6' },
+  sectionSubtitle: { fontWeight: 'bold', fontSize: 12, letterSpacing: 1, marginLeft: 12, marginBottom: 12 },
+  
+  // New Profile Image Styles
+  profileImageContainer: { alignItems: 'center', marginBottom: 24, marginTop: 8 },
+  profileImage: { width: 100, height: 100, borderRadius: 50, borderWidth: 4 },
+  editImageBadge: { position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 3 },
+  
+  inputRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  inputLabel: { width: 80, color: '#9CA3AF', fontWeight: '600', fontSize: 14 },
+  inputField: { flex: 1, color: '#374151', fontWeight: '500', fontSize: 16, padding: 0 },
+  textArea: { backgroundColor: '#F9FAFB', width: '100%', borderRadius: 12, padding: 12, minHeight: 80, borderWidth: 1, borderColor: '#F3F4F6', marginTop: 8 },
+  themeRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginBottom: 8 },
+  themeCircle: { width: 44, height: 44, borderRadius: 22, margin: 6, alignItems: 'center', justifyContent: 'center' },
+  themeLabel: { fontWeight: 'bold', textAlign: 'center', marginTop: 8 },
+  settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  settingLeft: { flexDirection: 'row', alignItems: 'center' },
+  iconWrapper: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  settingText: { color: '#374151', fontWeight: '600', fontSize: 16 },
+  settingSubtext: { color: '#9CA3AF', fontSize: 12, marginTop: 2 },
 });
