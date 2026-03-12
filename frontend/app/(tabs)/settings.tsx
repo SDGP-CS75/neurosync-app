@@ -3,8 +3,9 @@ import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, TextInput
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker'; // <-- NEW IMPORT
-import Nav from '../../components/Nav'; 
+import * as ImagePicker from 'expo-image-picker';
+import Nav from '../../components/Nav';
+import { useUser } from '../../context/UserContext'; 
 
 const THEMES = [
   { id: 'violet', color: '#7C3AED', label: 'Violet' },
@@ -18,33 +19,23 @@ const THEMES = [
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { profile, updateProfile, setProfileImage } = useUser();
   
   // Theme State
   const [activeTheme, setActiveTheme] = useState('violet');
   const activeColor = THEMES.find(t => t.id === activeTheme)?.color || '#7C3AED';
-  
-  // --- NEW: Profile Image State ---
-  // Starts with the default placeholder, updates when you pick a new one
-  const [profileImage, setProfileImage] = useState('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80');
-
-  // Profile States
-  const [name, setName] = useState('Sujaya Nimneth');
-  const [email, setEmail] = useState('sujaya@example.com');
-  const [age, setAge] = useState('22');
-  const [about, setAbout] = useState('Computer Science undergraduate at University of Westminster.');
 
   // Preference States
   const [dailyReminders, setDailyReminders] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [strictFocus, setStrictFocus] = useState(false);
 
-  // --- NEW: Function to open the phone gallery ---
+  // Function to open the phone gallery
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, // Lets the user crop the image!
-      aspect: [1, 1],      // Forces a square crop so it fits the circle perfectly
+      allowsEditing: true,
+      aspect: [1, 1],
       quality: 0.8,
     });
 
@@ -84,9 +75,9 @@ export default function SettingsScreen() {
           {/* Profile Photo Area */}
           <View style={styles.profileImageContainer}>
             <View>
-              {/* Image source now uses the state variable! */}
+              {/* Image source now uses the context! */}
               <Image
-                source={{ uri: profileImage }}
+                source={{ uri: profile.profileImage }}
                 style={[styles.profileImage, { borderColor: activeColor }]} 
               />
               {/* The button now triggers the pickImage function */}
@@ -105,8 +96,8 @@ export default function SettingsScreen() {
             <Text style={styles.inputLabel}>Name</Text>
             <TextInput 
               style={styles.inputField} 
-              value={name} 
-              onChangeText={setName}
+              value={profile.name} 
+              onChangeText={(text) => updateProfile({ name: text })}
               placeholder="Enter your name"
             />
           </View>
@@ -116,8 +107,8 @@ export default function SettingsScreen() {
             <Text style={styles.inputLabel}>Email</Text>
             <TextInput 
               style={styles.inputField} 
-              value={email} 
-              onChangeText={setEmail}
+              value={profile.email} 
+              onChangeText={(text) => updateProfile({ email: text })}
               keyboardType="email-address"
               autoCapitalize="none"
             />
@@ -128,8 +119,8 @@ export default function SettingsScreen() {
             <Text style={styles.inputLabel}>Age</Text>
             <TextInput 
               style={styles.inputField} 
-              value={age} 
-              onChangeText={setAge}
+              value={profile.age} 
+              onChangeText={(text) => updateProfile({ age: text })}
               keyboardType="numeric"
             />
           </View>
@@ -139,8 +130,8 @@ export default function SettingsScreen() {
             <Text style={[styles.inputLabel, { marginBottom: 8 }]}>About Me</Text>
             <TextInput 
               style={[styles.inputField, styles.textArea]} 
-              value={about} 
-              onChangeText={setAbout}
+              value={profile.about} 
+              onChangeText={(text) => updateProfile({ about: text })}
               multiline={true}
               numberOfLines={3}
               textAlignVertical="top"
