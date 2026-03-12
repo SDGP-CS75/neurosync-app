@@ -37,6 +37,33 @@ const inProgressTasks = [
   },
 ];
 
+const taskGroups = [
+  {
+    id: 1,
+    title: "Office Project",
+    tasks: 23,
+    progress: 78,
+    color: "#5838b5",
+    icon: "briefcase",
+  },
+  {
+    id: 2,
+    title: "Personal Project",
+    tasks: 12,
+    progress: 45,
+    color: "#E91E63",
+    icon: "person",
+  },
+  {
+    id: 3,
+    title: "Daily Study",
+    tasks: 8,
+    progress: 92,
+    color: "#4CAF50",
+    icon: "book",
+  },
+];
+
 // Circular Progress Component
 interface CircularProgressProps {
   percentage: number;
@@ -84,6 +111,62 @@ function CircularProgress({
       </Svg>
       <View style={[StyleSheet.absoluteFill, styles.progressTextContainer]}>
         <Text style={[styles.progressText, { color: "#fff" }]}>
+          {percentage}%
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+// Small Circular Progress for Task Groups
+interface SmallCircularProgressProps {
+  percentage: number;
+  size: number;
+  strokeWidth: number;
+  progressColor: string;
+  bgColor?: string;
+  textColor?: string;
+}
+
+function SmallCircularProgress({
+  percentage,
+  size,
+  strokeWidth,
+  progressColor,
+  bgColor = "#E0E0E0",
+  textColor = "#333",
+}: SmallCircularProgressProps) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <View style={{ width: size, height: size }}>
+      <Svg width={size} height={size}>
+        <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={bgColor}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+          />
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={progressColor}
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+          />
+        </G>
+      </Svg>
+      <View style={[StyleSheet.absoluteFill, styles.progressTextContainer]}>
+        <Text style={[styles.smallProgressText, { color: textColor }]}>
           {percentage}%
         </Text>
       </View>
@@ -232,6 +315,41 @@ export default function HomeScreen() {
                 </View>
               ))}
             </ScrollView>
+          </View>
+
+          {/* Task Groups Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+                Task Groups
+              </Text>
+            </View>
+            {taskGroups.map((group) => (
+              <TouchableOpacity
+                key={group.id}
+                style={[styles.taskGroupCard, { backgroundColor: theme.colors.surface }]}
+              >
+                <View style={[styles.taskGroupIcon, { backgroundColor: group.color + "20" }]}>
+                  <Ionicons name={group.icon as any} size={20} color={group.color} />
+                </View>
+                <View style={styles.taskGroupInfo}>
+                  <Text style={[styles.taskGroupTitle, { color: theme.colors.onSurface }]}>
+                    {group.title}
+                  </Text>
+                  <Text style={[styles.taskGroupCount, { color: theme.colors.onSurfaceVariant }]}>
+                    {group.tasks} Tasks
+                  </Text>
+                </View>
+                <SmallCircularProgress
+                  percentage={group.progress}
+                  size={45}
+                  strokeWidth={4}
+                  progressColor={group.color}
+                  bgColor={group.color + "30"}
+                  textColor={theme.colors.onSurface}
+                />
+              </TouchableOpacity>
+            ))}
           </View>
           
           {/* Bottom spacing for nav */}
@@ -403,5 +521,41 @@ const styles = StyleSheet.create({
   progressBarFill: {
     height: "100%",
     borderRadius: 3,
+  },
+  // Task Groups Section Styles
+  smallProgressText: {
+    fontSize: 10,
+    fontWeight: "bold",
+  },
+  taskGroupCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    borderRadius: 16,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  taskGroupIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  taskGroupInfo: {
+    flex: 1,
+  },
+  taskGroupTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginBottom: 4,
+  },
+  taskGroupCount: {
+    fontSize: 12,
   },
 });
