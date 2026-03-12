@@ -3,6 +3,7 @@ import { View, Text, ScrollView, Image, TouchableOpacity, Switch } from 'react-n
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useUser } from '../../context/UserContext';
 
 // Reusable component for grouped settings items to keep the code clean
 interface SettingsItemProps {
@@ -56,6 +57,7 @@ const SettingsGroupTitle = ({ title }: { title: string }) => (
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { profile } = useUser();
   
   // State for our ADHD-friendly toggles
   const [isAiSuggestionsEnabled, setIsAiSuggestionsEnabled] = useState(true);
@@ -85,17 +87,23 @@ export default function ProfileScreen() {
         <View className="items-center mb-2">
           <View className="relative mb-4">
             <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80' }}
+              source={{ uri: profile.profileImage }}
               style={{ width: 100, height: 100, borderRadius: 50, borderWidth: 4, borderColor: '#FFFFFF' }}
             />
-            <TouchableOpacity className="absolute bottom-0 right-0 bg-purple-600 w-8 h-8 rounded-full border-2 border-white items-center justify-center shadow-sm">
+            <TouchableOpacity 
+              className="absolute bottom-0 right-0 bg-purple-600 w-8 h-8 rounded-full border-2 border-white items-center justify-center shadow-sm"
+              onPress={() => router.push('/(tabs)/settings')}
+            >
               <Ionicons name="camera" size={14} color="white" />
             </TouchableOpacity>
           </View>
-          <Text className="text-2xl font-bold text-gray-800">Sujaya</Text>
-          <Text className="text-gray-500 text-sm mt-1">sujaya@example.com</Text>
+          <Text className="text-2xl font-bold text-gray-800">{profile.name}</Text>
+          <Text className="text-gray-500 text-sm mt-1">{profile.email}</Text>
           
-          <TouchableOpacity className="mt-4 bg-white px-6 py-2 rounded-full border border-gray-200 shadow-sm shadow-gray-100">
+          <TouchableOpacity 
+            className="mt-4 bg-white px-6 py-2 rounded-full border border-gray-200 shadow-sm shadow-gray-100"
+            onPress={() => router.push('/(tabs)/settings')}
+          >
             <Text className="text-gray-700 font-semibold">Edit Profile</Text>
           </TouchableOpacity>
         </View>

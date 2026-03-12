@@ -12,8 +12,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, G } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
+import { useUser } from "../../context/UserContext";
 
 const { width } = Dimensions.get("window");
 
@@ -176,6 +178,8 @@ function SmallCircularProgress({
 
 export default function HomeScreen() {
   const { theme } = useAppTheme();
+  const { profile } = useUser();
+  const router = useRouter();
 
   return (
     <LinearGradient
@@ -192,10 +196,14 @@ export default function HomeScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.headerLeft}>
+            <TouchableOpacity 
+              style={styles.headerLeft}
+              onPress={() => router.push("/(tabs)/settings")}
+              activeOpacity={0.7}
+            >
               <Image
                 source={{
-                  uri: "https://i.pravatar.cc/100?img=12",
+                  uri: profile.profileImage,
                 }}
                 style={styles.avatar}
               />
@@ -204,10 +212,10 @@ export default function HomeScreen() {
                   Hello!
                 </Text>
                 <Text style={[styles.userName, { color: theme.colors.onSurface }]}>
-                  Desmond Miles
+                  {profile.name}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.notificationBtn}>
               <Ionicons
                 name="notifications-outline"
