@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, TextInput
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker'; // <-- NEW IMPORT
 import Nav from '../../components/Nav'; 
 
 const THEMES = [
@@ -22,16 +23,35 @@ export default function SettingsScreen() {
   const [activeTheme, setActiveTheme] = useState('violet');
   const activeColor = THEMES.find(t => t.id === activeTheme)?.color || '#7C3AED';
   
+  // --- NEW: Profile Image State ---
+  // Starts with the default placeholder, updates when you pick a new one
+  const [profileImage, setProfileImage] = useState('https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80');
+
   // Profile States
-  const [name, setName] = useState('Sandun');
-  const [email, setEmail] = useState('sandun@example.com');
-  const [age, setAge] = useState('21');
+  const [name, setName] = useState('Sujaya Nimneth');
+  const [email, setEmail] = useState('sujaya@example.com');
+  const [age, setAge] = useState('22');
   const [about, setAbout] = useState('Computer Science undergraduate at University of Westminster.');
 
   // Preference States
   const [dailyReminders, setDailyReminders] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [strictFocus, setStrictFocus] = useState(false);
+
+  // --- NEW: Function to open the phone gallery ---
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true, // Lets the user crop the image!
+      aspect: [1, 1],      // Forces a square crop so it fits the circle perfectly
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setProfileImage(result.assets[0].uri);
+    }
+  };
 
   // Handle Save Button Press
   const handleSave = () => {
@@ -61,14 +81,20 @@ export default function SettingsScreen() {
         <Text style={[styles.sectionSubtitle, { color: activeColor }]}>USER PROFILE</Text>
         <View style={styles.card}>
           
-          {/* NEW: Profile Photo Area */}
+          {/* Profile Photo Area */}
           <View style={styles.profileImageContainer}>
             <View>
+              {/* Image source now uses the state variable! */}
               <Image
-                source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80' }}
+                source={{ uri: profileImage }}
                 style={[styles.profileImage, { borderColor: activeColor }]} 
               />
-              <TouchableOpacity style={[styles.editImageBadge, { backgroundColor: activeColor }]}>
+              {/* The button now triggers the pickImage function */}
+              <TouchableOpacity 
+                style={[styles.editImageBadge, { backgroundColor: activeColor }]}
+                onPress={pickImage}
+                activeOpacity={0.8}
+              >
                 <Ionicons name="camera" size={14} color="white" />
               </TouchableOpacity>
             </View>
@@ -216,7 +242,6 @@ const styles = StyleSheet.create({
   card: { backgroundColor: 'white', borderRadius: 24, padding: 20, marginBottom: 24, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, borderWidth: 1, borderColor: '#F3F4F6' },
   sectionSubtitle: { fontWeight: 'bold', fontSize: 12, letterSpacing: 1, marginLeft: 12, marginBottom: 12 },
   
-  // New Profile Image Styles
   profileImageContainer: { alignItems: 'center', marginBottom: 24, marginTop: 8 },
   profileImage: { width: 100, height: 100, borderRadius: 50, borderWidth: 4 },
   editImageBadge: { position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: 'white', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 3, elevation: 3 },
