@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -13,6 +14,28 @@ import Svg, { Circle, G } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
+
+const { width } = Dimensions.get("window");
+
+// Mock Data
+const inProgressTasks = [
+  {
+    id: 1,
+    category: "Office Project",
+    title: "Grocery shopping app design",
+    progress: 0.7,
+    color: "#5838b5",
+    icon: "briefcase",
+  },
+  {
+    id: 2,
+    category: "Personal Project",
+    title: "Uber Eats redesign challenge",
+    progress: 0.4,
+    color: "#E91E63",
+    icon: "person",
+  },
+];
 
 // Circular Progress Component
 interface CircularProgressProps {
@@ -143,6 +166,73 @@ export default function HomeScreen() {
               </View>
             </View>
           </LinearGradient>
+
+          {/* In Progress Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
+                In Progress
+              </Text>
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{inProgressTasks.length}</Text>
+              </View>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.inProgressScroll}
+            >
+              {inProgressTasks.map((task) => (
+                <View
+                  key={task.id}
+                  style={[styles.inProgressCard, { backgroundColor: theme.colors.surface }]}
+                >
+                  <View style={styles.inProgressHeader}>
+                    <Text
+                      style={[
+                        styles.inProgressCategory,
+                        { color: theme.colors.onSurfaceVariant },
+                      ]}
+                    >
+                      {task.category}
+                    </Text>
+                    <View
+                      style={[
+                        styles.categoryIcon,
+                        { backgroundColor: task.color + "20" },
+                      ]}
+                    >
+                      <Ionicons name={task.icon as any} size={14} color={task.color} />
+                    </View>
+                  </View>
+                  <Text
+                    style={[styles.inProgressTitle, { color: theme.colors.onSurface }]}
+                    numberOfLines={2}
+                  >
+                    {task.title}
+                  </Text>
+                  <View style={styles.progressBarContainer}>
+                    <View
+                      style={[
+                        styles.progressBar,
+                        { backgroundColor: task.color + "30" },
+                      ]}
+                    >
+                      <View
+                        style={[
+                          styles.progressBarFill,
+                          {
+                            backgroundColor: task.color,
+                            width: `${task.progress * 100}%`,
+                          },
+                        ]}
+                      />
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
           
           {/* Bottom spacing for nav */}
           <View style={{ height: 100 }} />
@@ -239,5 +329,79 @@ const styles = StyleSheet.create({
   progressText: {
     fontSize: 18,
     fontWeight: "bold",
+  },
+  // In Progress Section Styles
+  section: {
+    marginBottom: 25,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  badge: {
+    backgroundColor: "#5838b5",
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginLeft: 10,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  inProgressScroll: {
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+  },
+  inProgressCard: {
+    width: width * 0.6,
+    padding: 15,
+    borderRadius: 16,
+    marginRight: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  inProgressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  inProgressCategory: {
+    fontSize: 12,
+  },
+  categoryIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  inProgressTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  progressBarContainer: {
+    marginTop: 5,
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 3,
   },
 });
