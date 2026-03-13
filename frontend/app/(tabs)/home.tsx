@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
 
   todayCard: {
     marginTop: 20,
-    backgroundColor: "#6A5AE0",
+    backgroundColor: "#6C5BA1",
     borderRadius: 24,
     paddingVertical: 28,
     paddingHorizontal: 24,
