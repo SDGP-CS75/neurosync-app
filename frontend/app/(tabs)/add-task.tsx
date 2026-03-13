@@ -205,9 +205,8 @@ export default function AddTaskScreen() {
   const editTint = theme.colors.primary + "CC";
 
   return (
-    
     <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={styles.container}
       edges={["top"]}
     >
       {aiLoading && (

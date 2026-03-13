@@ -68,7 +68,7 @@ export default function TodoListScreen() {
     Platform.OS === "ios"
       ? insets.bottom
       : Math.max(insets.bottom, 8);
-  const bottomPadding = NAV_HEIGHT + safeBottom + 80;
+  const bottomPadding = NAV_HEIGHT + safeBottom + 180;
 
   const [selectedDate, setSelectedDate] = useState<string>(todayDateKey());
   const [filter, setFilter] = useState<"all" | TaskStatus>("all");
@@ -107,7 +107,7 @@ export default function TodoListScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color={theme.colors.text} />

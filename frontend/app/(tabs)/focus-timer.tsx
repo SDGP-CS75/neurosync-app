@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { AnimatedCircularProgress } from "react-native-circular-progress";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 
@@ -35,7 +36,6 @@ export default function FocusTimer() {
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
 
   // Animation
-  const progressAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
 
   // Get total duration based on mode
@@ -56,14 +56,7 @@ export default function FocusTimer() {
     return timeLeft / total;
   }, [timeLeft, getTotalDuration]);
 
-  // Update progress animation
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: getProgress(),
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [timeLeft, progressAnim, getProgress]);
+
 
   // Pulse animation when running
   useEffect(() => {
@@ -152,12 +145,6 @@ export default function FocusTimer() {
     }
   };
 
-  // Progress circle interpolation
-  const progressInterpolate = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  });
-
   const styles = createStyles(theme, mode);
 
   return (
@@ -225,46 +212,44 @@ export default function FocusTimer() {
             { transform: [{ scale: pulseAnim }] },
           ]}
         >
-          {/* Progress Ring */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBackground} />
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  transform: [{ rotate: progressInterpolate }],
-                },
-              ]}
-            />
-            <View style={styles.progressCover} />
-          </View>
+          <AnimatedCircularProgress
+            size={CIRCLE_SIZE}
+            width={8}
+            fill={getProgress() * 100}
+            rotation={0}
+            lineCap="round"
+            tintColor={mode === "focus" ? theme.colors.primary : theme.colors.secondary}
+            backgroundColor={theme.colors.background}
+            duration={isRunning ? 1000 : 300}
+          >
+            {() => (
+              <View style={styles.timerContent}>
+                <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+                <Text style={styles.timerLabel}>
+                  {mode === "focus" ? "Stay focused!" : "Take a break"}
+                </Text>
+                
+                {/* Control Buttons inside circle */}
+                <View style={styles.controlsContainer}>
+                  <TouchableOpacity style={styles.secondaryButton} onPress={handleReset}>
+                    <Ionicons name="refresh" size={20} color={theme.colors.onSurface} />
+                  </TouchableOpacity>
 
-          {/* Timer Content */}
-          <View style={styles.timerContent}>
-            <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-            <Text style={styles.timerLabel}>
-              {mode === "focus" ? "Stay focused!" : "Take a break"}
-            </Text>
-            
-            {/* Control Buttons inside circle */}
-            <View style={styles.controlsContainer}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleReset}>
-                <Ionicons name="refresh" size={20} color={theme.colors.onSurface} />
-              </TouchableOpacity>
+                  <TouchableOpacity style={styles.primaryButton} onPress={handleStartPause}>
+                    <Ionicons
+                      name={isRunning ? "pause" : "play"}
+                      size={24}
+                      color="#fff"
+                    />
+                  </TouchableOpacity>
 
-              <TouchableOpacity style={styles.primaryButton} onPress={handleStartPause}>
-                <Ionicons
-                  name={isRunning ? "pause" : "play"}
-                  size={24}
-                  color="#fff"
-                />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
-                <Ionicons name="play-skip-forward" size={20} color={theme.colors.onSurface} />
-              </TouchableOpacity>
-            </View>
-          </View>
+                  <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
+                    <Ionicons name="play-skip-forward" size={20} color={theme.colors.onSurface} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </AnimatedCircularProgress>
         </Animated.View>
       </View>
 
@@ -309,18 +294,18 @@ const createStyles = (theme: any, mode: TimerMode) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
     },
     scrollContent: {
       flexGrow: 1,
+      paddingBottom: 100,
     },
     header: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
       paddingHorizontal: 24,
-      paddingTop: 16,
-      paddingBottom: 8,
+      paddingTop: 40,
+      paddingBottom: 24,
     },
     title: {
       fontSize: 28,
@@ -372,7 +357,8 @@ const createStyles = (theme: any, mode: TimerMode) =>
       flex: 1,
       justifyContent: "center",
       alignItems: "center",
-      marginTop: -100,
+      marginTop: 20,
+      marginBottom: 30,
       minHeight: 320,
     },
     timerCircle: {
@@ -388,40 +374,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       shadowRadius: 20,
       elevation: 10,
     },
-    progressContainer: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      overflow: "hidden",
-    },
-    progressBackground: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      borderWidth: 8,
-      borderColor: theme.colors.background,
-    },
-    progressFill: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      borderWidth: 8,
-      borderColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
-      borderTopColor: "transparent",
-      borderRightColor: "transparent",
-    },
-    progressCover: {
-      position: "absolute",
-      width: CIRCLE_SIZE - 16,
-      height: CIRCLE_SIZE - 16,
-      borderRadius: (CIRCLE_SIZE - 16) / 2,
-      backgroundColor: theme.colors.surface,
-      top: 8,
-      left: 8,
-    },
+
     timerContent: {
       alignItems: "center",
     },
@@ -438,8 +391,8 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     presetsContainer: {
       paddingHorizontal: 24,
-      marginTop: -40,
-      marginBottom: 100,
+      marginTop: 20,
+      marginBottom: 60,
     },
     presetsLabel: {
       fontSize: 14,

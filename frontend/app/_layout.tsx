@@ -31,6 +31,7 @@ function AppShell() {
             screenOptions={{
               headerShown: false,
               contentStyle: { backgroundColor: "transparent" },
+              animation: "fade",
             }}
           >
             <Stack.Screen
