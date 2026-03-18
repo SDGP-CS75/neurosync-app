@@ -17,6 +17,7 @@ interface SubTask {
   text: string;
   isAdding: boolean;
   isGenarated: boolean;
+  isDone: boolean;
 }
 export interface Task {
   id: string;
@@ -34,6 +35,7 @@ type TasksContextType = {
   tasks: Task[];
   addTask: (task: Omit<Task, "id">) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
+  toggleSubtaskDone: (taskId: string, subtaskId: string) => void;
   removeTask: (id: string) => void;
   isLoading: boolean;
   userId: string | null;
@@ -108,10 +110,27 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   const removeTask = useCallback((id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }, []);
+  
+  const toggleSubtaskDone = useCallback(
+    (taskId: string, subtaskId: string) => {
+      setTasks((prev) =>
+        prev.map((task) => {
+          if (task.id === taskId && task.subtasks) {
+            const updatedSubtasks = task.subtasks.map((sub) =>
+              sub.id === subtaskId ? { ...sub, isDone: !sub.isDone } : sub
+            );
+            return { ...task, subtasks: updatedSubtasks };
+          }
+          return task;
+        })
+      );
+    },
+    []
+  );
 
   return (
     <TasksContext.Provider
-      value={{ tasks, addTask, updateTask, removeTask, isLoading, userId }}
+      value={{ tasks, addTask, updateTask, removeTask, toggleSubtaskDone, isLoading, userId }}
     >
       {children}
     </TasksContext.Provider>

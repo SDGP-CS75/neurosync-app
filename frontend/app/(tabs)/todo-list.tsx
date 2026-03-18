@@ -58,7 +58,7 @@ const todayDateKey = () => new Date().toISOString().slice(0, 10);
 
 export default function TodoListScreen() {
   const { theme } = useAppTheme();
-  const { tasks, isLoading, removeTask } = useTasks();
+  const { tasks, isLoading, removeTask, toggleSubtaskDone } = useTasks();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -277,20 +277,35 @@ export default function TodoListScreen() {
                   {task.title}
                 </Text>
 
-                {/* 🔽 Subtasks */}
+                {/* Subtasks */}
                 {task.subtasks && task.subtasks.length > 0 && (
                   <View style={styles.subtasksContainer}>
-                    {task.subtasks.map((sub) => (
-                      <View key={sub.id} style={styles.subtaskRow}>
+                    {task.subtasks.map((sub, index) => (
+                      <TouchableOpacity
+                        key={sub.id}
+                        style={styles.subtaskRow}
+                        activeOpacity={0.7}
+                        onPress={() => toggleSubtaskDone(task.id, sub.id)}
+                      >
+                        <Ionicons
+                          name={sub.isDone ? "checkbox" : "square-outline"}
+                          size={18}
+                          color={sub.isDone ? theme.colors.primary : theme.colors.textMuted}
+                        />
                         <Text
                           style={[
                             styles.subtaskText,
-                            { color: theme.colors.textMuted },
+                            {
+                              color: sub.isDone
+                                ? theme.colors.textMuted
+                                : theme.colors.text,
+                              textDecorationLine: sub.isDone ? "line-through" : "none",
+                            },
                           ]}
                         >
-                          • {sub.text}
+                          {sub.text}
                         </Text>
-                      </View>
+                      </TouchableOpacity>
                     ))}
                   </View>
                 )}

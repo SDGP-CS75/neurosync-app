@@ -32,6 +32,7 @@ interface SubTask {
   text: string;
   isAdding: boolean;
   isGenarated: boolean;
+  isDone: boolean;
 }
 
 const PLACEHOLDER_MAIN =
@@ -116,7 +117,7 @@ export default function AddTaskScreen() {
   const addSubTask = (text: string) => {
     setSubTasks((prev) => [
       ...prev,
-      { id: String(Date.now()), text, isAdding: true, isGenarated: false },
+      { id: String(Date.now()), text, isAdding: true, isGenarated: false, isDone: false },
     ]);
   };
 
@@ -153,6 +154,7 @@ export default function AddTaskScreen() {
             text,
             isAdding: true,
             isGenarated: true,
+            isDone: false,
           }))
         );
       }
