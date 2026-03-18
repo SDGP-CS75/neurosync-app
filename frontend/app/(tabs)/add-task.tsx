@@ -30,7 +30,9 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent,} from 'expo-spe
 interface SubTask {
   id: string;
   text: string;
-  done: boolean;
+  isAdding: boolean;
+  isGenarated: boolean;
+  isDone: boolean;
 }
 
 const PLACEHOLDER_MAIN =
@@ -108,14 +110,14 @@ export default function AddTaskScreen() {
 
   const toggleSubTask = (id: string) => {
     setSubTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+      prev.map((t) => (t.id === id ? { ...t, isAdding: !t.isAdding } : t))
     );
   };
 
   const addSubTask = (text: string) => {
     setSubTasks((prev) => [
       ...prev,
-      { id: String(Date.now()), text, done: false },
+      { id: String(Date.now()), text, isAdding: true, isGenarated: false, isDone: false },
     ]);
   };
 
@@ -150,7 +152,9 @@ export default function AddTaskScreen() {
           steps.map((text, i) => ({
             id: String(Date.now() + i),
             text,
-            done: false,
+            isAdding: true,
+            isGenarated: true,
+            isDone: false,
           }))
         );
       }
@@ -184,18 +188,19 @@ export default function AddTaskScreen() {
   };
 
   const handleSave = () => {
-    const title = mainTask.trim();
+    const title = mainTask.trim(); //need to change
     if (!title) return;
     const today = new Date();
     const dateKey = today.toISOString().slice(0, 10); // YYYY-MM-DD
     addTask({
-      category: location.trim() || "Personal",
+      category: location.trim() || "Personal", //need to change
       title,
       time: when.trim() || "No time",
       status: "todo",
       icon: "📋",
       iconBg: "#E8E4FF",
       dateKey,
+      subtasks: subTasks,
     });
     router.back();
   };
@@ -472,26 +477,27 @@ export default function AddTaskScreen() {
                   styles.checkbox,
                   {
                     borderColor: theme.colors.textMuted,
-                    backgroundColor: st.done ? theme.colors.primary : "transparent",
+                    backgroundColor: st.isAdding ? theme.colors.primary : "transparent",
                   },
                 ]}
               >
-                {st.done && (
+                {st.isAdding && (
                   <Ionicons name="checkmark" size={14} color="#FFF" />
                 )}
               </View>
+
               <Text
                 style={[
                   styles.subTaskText,
                   {
-                    color: theme.colors.text,
-                    textDecorationLine: st.done ? "line-through" : "none",
+                    color: theme.colors.text
                   },
                 ]}
                 numberOfLines={1}
               >
                 {st.text}
               </Text>
+              
             </TouchableOpacity>
           ))}
           <TouchableOpacity

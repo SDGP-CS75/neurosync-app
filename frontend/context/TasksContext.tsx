@@ -12,21 +12,30 @@ const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
 
 export type TaskStatus = "done" | "in-progress" | "todo";
 
+interface SubTask {
+  id: string;
+  text: string;
+  isAdding: boolean;
+  isGenarated: boolean;
+  isDone: boolean;
+}
 export interface Task {
   id: string;
   category: string;
   title: string;
-  time: string;
+  time?: string;
   status: TaskStatus;
   icon: string;
   iconBg: string;
   dateKey: string; // YYYY-MM-DD for filtering by day
+  subtasks?: SubTask[];
 }
 
 type TasksContextType = {
   tasks: Task[];
   addTask: (task: Omit<Task, "id">) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
+  toggleSubtaskDone: (taskId: string, subtaskId: string) => void;
   removeTask: (id: string) => void;
   isLoading: boolean;
   userId: string | null;
@@ -101,10 +110,27 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   const removeTask = useCallback((id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }, []);
+  
+  const toggleSubtaskDone = useCallback(
+    (taskId: string, subtaskId: string) => {
+      setTasks((prev) =>
+        prev.map((task) => {
+          if (task.id === taskId && task.subtasks) {
+            const updatedSubtasks = task.subtasks.map((sub) =>
+              sub.id === subtaskId ? { ...sub, isDone: !sub.isDone } : sub
+            );
+            return { ...task, subtasks: updatedSubtasks };
+          }
+          return task;
+        })
+      );
+    },
+    []
+  );
 
   return (
     <TasksContext.Provider
-      value={{ tasks, addTask, updateTask, removeTask, isLoading, userId }}
+      value={{ tasks, addTask, updateTask, removeTask, toggleSubtaskDone, isLoading, userId }}
     >
       {children}
     </TasksContext.Provider>
