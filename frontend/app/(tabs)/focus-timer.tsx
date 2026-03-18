@@ -1,21 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState } from "react";
 import {
   Text,
   View,
   StyleSheet,
   TouchableOpacity,
-  Animated,
-  Vibration,
   Dimensions,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
-const CIRCLE_SIZE = Math.min(SCREEN_WIDTH * 0.7, 280);
 
 // Timer presets in minutes
 const FOCUS_PRESETS = [15, 25, 30, 45, 60];
@@ -25,279 +24,221 @@ type TimerMode = "focus" | "break";
 
 export default function FocusTimer() {
   const { theme } = useAppTheme();
+  const router = useRouter();
 
-  // Timer state
+  // Setup state
   const [mode, setMode] = useState<TimerMode>("focus");
-  const [focusDuration, setFocusDuration] = useState(25); // minutes
-  const [breakDuration, setBreakDuration] = useState(5); // minutes
-  const [timeLeft, setTimeLeft] = useState(25 * 60); // seconds
-  const [isRunning, setIsRunning] = useState(false);
-  const [sessionsCompleted, setSessionsCompleted] = useState(0);
+  const [focusDuration, setFocusDuration] = useState(25);
+  const [breakDuration, setBreakDuration] = useState(5);
+  const [customFocusInput, setCustomFocusInput] = useState("");
+  const [customBreakInput, setCustomBreakInput] = useState("");
 
-  // Animation
-  const progressAnim = useRef(new Animated.Value(1)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  // Get total duration based on mode
-  const getTotalDuration = useCallback(() => {
-    return (mode === "focus" ? focusDuration : breakDuration) * 60;
-  }, [mode, focusDuration, breakDuration]);
-
-  // Format time as MM:SS
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  // Calculate progress (0 to 1)
-  const getProgress = useCallback(() => {
-    const total = getTotalDuration();
-    return timeLeft / total;
-  }, [timeLeft, getTotalDuration]);
-
-  // Update progress animation
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: getProgress(),
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [timeLeft, progressAnim, getProgress]);
-
-  // Pulse animation when running
-  useEffect(() => {
-    if (isRunning) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
-      pulseAnim.setValue(1);
-    }
-  }, [isRunning, pulseAnim]);
-
-  // Timer countdown logic
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
-
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
-    } else if (timeLeft === 0) {
-      // Timer completed
-      Vibration.vibrate([0, 500, 200, 500]);
-      setIsRunning(false);
-
-      if (mode === "focus") {
-        setSessionsCompleted((prev) => prev + 1);
-        // Switch to break mode
-        setMode("break");
-        setTimeLeft(breakDuration * 60);
-      } else {
-        // Switch back to focus mode
-        setMode("focus");
-        setTimeLeft(focusDuration * 60);
-      }
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isRunning, timeLeft, mode, focusDuration, breakDuration]);
-
-  // Control functions
-  const handleStartPause = () => {
-    setIsRunning((prev) => !prev);
-  };
-
-  const handleReset = () => {
-    setIsRunning(false);
-    setTimeLeft(getTotalDuration());
-  };
-
-  const handleSkip = () => {
-    setIsRunning(false);
-    if (mode === "focus") {
-      setMode("break");
-      setTimeLeft(breakDuration * 60);
-    } else {
-      setMode("focus");
-      setTimeLeft(focusDuration * 60);
-    }
+  const handleStartTimer = () => {
+    router.push({
+      pathname: "/focus-timer-counting",
+      params: {
+        mode,
+        focusDuration: focusDuration.toString(),
+        breakDuration: breakDuration.toString(),
+      },
+    });
   };
 
   const handleDurationChange = (duration: number) => {
     if (mode === "focus") {
       setFocusDuration(duration);
-      if (!isRunning) {
-        setTimeLeft(duration * 60);
-      }
+      setCustomFocusInput("");
     } else {
       setBreakDuration(duration);
-      if (!isRunning) {
-        setTimeLeft(duration * 60);
+      setCustomBreakInput("");
+    }
+  };
+
+  const handleCustomDurationChange = (text: string) => {
+    // Only allow numbers
+    const numericValue = text.replace(/[^0-9]/g, "");
+    
+    if (mode === "focus") {
+      setCustomFocusInput(numericValue);
+      if (numericValue) {
+        const value = Math.min(Math.max(parseInt(numericValue) || 1, 1), 180);
+        setFocusDuration(value);
+      }
+    } else {
+      setCustomBreakInput(numericValue);
+      if (numericValue) {
+        const value = Math.min(Math.max(parseInt(numericValue) || 1, 1), 60);
+        setBreakDuration(value);
       }
     }
   };
 
-  // Progress circle interpolation
-  const progressInterpolate = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  });
+  const isCustomValue = () => {
+    const currentDuration = mode === "focus" ? focusDuration : breakDuration;
+    const presets = mode === "focus" ? FOCUS_PRESETS : BREAK_PRESETS;
+    return !presets.includes(currentDuration);
+  };
 
   const styles = createStyles(theme, mode);
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
         <View style={styles.header}>
-        <Text style={styles.title}>Focus Timer</Text>
-        <View style={styles.sessionBadge}>
-          <Ionicons name="flame" size={16} color={theme.colors.primary} />
-          <Text style={styles.sessionText}>{sessionsCompleted} sessions</Text>
-        </View>
-      </View>
-
-      {/* Mode Toggle */}
-      <View style={styles.modeContainer}>
-        <TouchableOpacity
-          style={[styles.modeButton, mode === "focus" && styles.modeButtonActive]}
-          onPress={() => {
-            if (!isRunning) {
-              setMode("focus");
-              setTimeLeft(focusDuration * 60);
-            }
-          }}
-          disabled={isRunning}
-        >
-          <Ionicons
-            name="bulb"
-            size={20}
-            color={mode === "focus" ? "#fff" : theme.colors.onSurface}
-          />
-          <Text style={[styles.modeText, mode === "focus" && styles.modeTextActive]}>
-            Focus
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.modeButton, mode === "break" && styles.modeButtonActive]}
-          onPress={() => {
-            if (!isRunning) {
-              setMode("break");
-              setTimeLeft(breakDuration * 60);
-            }
-          }}
-          disabled={isRunning}
-        >
-          <Ionicons
-            name="cafe"
-            size={20}
-            color={mode === "break" ? "#fff" : theme.colors.onSurface}
-          />
-          <Text style={[styles.modeText, mode === "break" && styles.modeTextActive]}>
-            Break
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Timer Display */}
-      <View style={styles.timerContainer}>
-        <Animated.View
-          style={[
-            styles.timerCircle,
-            { transform: [{ scale: pulseAnim }] },
-          ]}
-        >
-          {/* Progress Ring */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBackground} />
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  transform: [{ rotate: progressInterpolate }],
-                },
-              ]}
-            />
-            <View style={styles.progressCover} />
+          <Text style={styles.title}>Focus Timer</Text>
+          <View style={styles.infoBadge}>
+            <Ionicons name="information-circle-outline" size={20} color={theme.colors.onSurfaceVariant} />
           </View>
+        </View>
 
-          {/* Timer Content */}
-          <View style={styles.timerContent}>
-            <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-            <Text style={styles.timerLabel}>
-              {mode === "focus" ? "Stay focused!" : "Take a break"}
+        {/* Description */}
+        <Text style={styles.description}>
+          Set up your focus and break durations, then start your session.
+        </Text>
+
+        {/* Mode Toggle */}
+        <View style={styles.modeContainer}>
+          <TouchableOpacity
+            style={[styles.modeButton, mode === "focus" && styles.modeButtonActive]}
+            onPress={() => setMode("focus")}
+          >
+            <Ionicons
+              name="bulb"
+              size={24}
+              color={mode === "focus" ? "#fff" : theme.colors.onSurface}
+            />
+            <Text style={[styles.modeText, mode === "focus" && styles.modeTextActive]}>
+              Focus
             </Text>
-            
-            {/* Control Buttons inside circle */}
-            <View style={styles.controlsContainer}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleReset}>
-                <Ionicons name="refresh" size={20} color={theme.colors.onSurface} />
-              </TouchableOpacity>
+            <Text style={[styles.modeDuration, mode === "focus" && styles.modeDurationActive]}>
+              {focusDuration} min
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.modeButton, mode === "break" && styles.modeButtonActive]}
+            onPress={() => setMode("break")}
+          >
+            <Ionicons
+              name="cafe"
+              size={24}
+              color={mode === "break" ? "#fff" : theme.colors.onSurface}
+            />
+            <Text style={[styles.modeText, mode === "break" && styles.modeTextActive]}>
+              Break
+            </Text>
+            <Text style={[styles.modeDuration, mode === "break" && styles.modeDurationActive]}>
+              {breakDuration} min
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-              <TouchableOpacity style={styles.primaryButton} onPress={handleStartPause}>
-                <Ionicons
-                  name={isRunning ? "pause" : "play"}
-                  size={24}
-                  color="#fff"
-                />
+        {/* Duration Selection */}
+        <View style={styles.durationSection}>
+          <Text style={styles.sectionTitle}>
+            {mode === "focus" ? "Focus Duration" : "Break Duration"}
+          </Text>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.presetsScrollContent}
+          >
+            {(mode === "focus" ? FOCUS_PRESETS : BREAK_PRESETS).map((duration) => (
+              <TouchableOpacity
+                key={duration}
+                style={[
+                  styles.presetButton,
+                  (mode === "focus" ? focusDuration : breakDuration) === duration &&
+                    !isCustomValue() &&
+                    styles.presetButtonActive,
+                ]}
+                onPress={() => handleDurationChange(duration)}
+              >
+                <Text
+                  style={[
+                    styles.presetText,
+                    (mode === "focus" ? focusDuration : breakDuration) === duration &&
+                      !isCustomValue() &&
+                      styles.presetTextActive,
+                  ]}
+                >
+                  {duration}
+                </Text>
+                <Text
+                  style={[
+                    styles.presetUnit,
+                    (mode === "focus" ? focusDuration : breakDuration) === duration &&
+                      !isCustomValue() &&
+                      styles.presetTextActive,
+                  ]}
+                >
+                  min
+                </Text>
               </TouchableOpacity>
-
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleSkip}>
-                <Ionicons name="play-skip-forward" size={20} color={theme.colors.onSurface} />
-              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          
+          {/* Custom Duration Input */}
+          <View style={styles.customInputContainer}>
+            <Text style={styles.customInputLabel}>Or set custom time:</Text>
+            <View style={[styles.customInputWrapper, isCustomValue() && styles.customInputWrapperActive]}>
+              <TextInput
+                style={styles.customInput}
+                placeholder={mode === "focus" ? "1-180" : "1-60"}
+                placeholderTextColor={theme.colors.onSurfaceVariant}
+                keyboardType="number-pad"
+                maxLength={3}
+                value={mode === "focus" ? customFocusInput : customBreakInput}
+                onChangeText={handleCustomDurationChange}
+              />
+              <Text style={styles.customInputUnit}>min</Text>
             </View>
           </View>
-        </Animated.View>
-      </View>
-
-      {/* Duration Presets */}
-      <View style={styles.presetsContainer}>
-        <Text style={styles.presetsLabel}>
-          {mode === "focus" ? "Focus Duration" : "Break Duration"}
-        </Text>
-        <View style={styles.presetsList}>
-          {(mode === "focus" ? FOCUS_PRESETS : BREAK_PRESETS).map((duration) => (
-            <TouchableOpacity
-              key={duration}
-              style={[
-                styles.presetButton,
-                (mode === "focus" ? focusDuration : breakDuration) === duration &&
-                  styles.presetButtonActive,
-              ]}
-              onPress={() => handleDurationChange(duration)}
-              disabled={isRunning}
-            >
-              <Text
-                style={[
-                  styles.presetText,
-                  (mode === "focus" ? focusDuration : breakDuration) === duration &&
-                    styles.presetTextActive,
-                ]}
-              >
-                {duration}m
-              </Text>
-            </TouchableOpacity>
-          ))}
         </View>
-      </View>
+
+        {/* Session Preview */}
+        <View style={styles.previewSection}>
+          <Text style={styles.sectionTitle}>Session Preview</Text>
+          <View style={styles.previewCard}>
+            <View style={styles.previewRow}>
+              <View style={styles.previewItem}>
+                <Ionicons name="bulb" size={20} color={theme.colors.primary} />
+                <Text style={styles.previewLabel}>Focus</Text>
+                <Text style={styles.previewValue}>{focusDuration} min</Text>
+              </View>
+              <View style={styles.previewDivider} />
+              <View style={styles.previewItem}>
+                <Ionicons name="cafe" size={20} color={theme.colors.secondary} />
+                <Text style={styles.previewLabel}>Break</Text>
+                <Text style={styles.previewValue}>{breakDuration} min</Text>
+              </View>
+              <View style={styles.previewDivider} />
+              <View style={styles.previewItem}>
+                <Ionicons name="time" size={20} color={theme.colors.onSurfaceVariant} />
+                <Text style={styles.previewLabel}>Total</Text>
+                <Text style={styles.previewValue}>{focusDuration + breakDuration} min</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Start Button */}
+        <TouchableOpacity style={styles.startButton} onPress={handleStartTimer}>
+          <Ionicons name="play" size={24} color="#fff" />
+          <Text style={styles.startButtonText}>Start Focus Session</Text>
+        </TouchableOpacity>
+
+        {/* Tips */}
+        <View style={styles.tipsSection}>
+          <Text style={styles.tipsTitle}>💡 Tips for better focus</Text>
+          <Text style={styles.tipText}>• Put your phone on Do Not Disturb</Text>
+          <Text style={styles.tipText}>• Close unnecessary tabs and apps</Text>
+          <Text style={styles.tipText}>• Have water nearby to stay hydrated</Text>
+        </View>
       </ScrollView>
 
       <Nav />
@@ -313,6 +254,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     scrollContent: {
       flexGrow: 1,
+      paddingBottom: 100,
     },
     header: {
       flexDirection: "row",
@@ -327,38 +269,35 @@ const createStyles = (theme: any, mode: TimerMode) =>
       fontWeight: "bold",
       color: theme.colors.onBackground,
     },
-    sessionBadge: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: theme.colors.surface,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
+    infoBadge: {
+      width: 40,
+      height: 40,
       borderRadius: 20,
-      gap: 4,
+      backgroundColor: theme.colors.surface,
+      justifyContent: "center",
+      alignItems: "center",
     },
-    sessionText: {
+    description: {
       fontSize: 14,
-      color: theme.colors.onSurface,
-      fontWeight: "500",
+      color: theme.colors.onSurfaceVariant,
+      paddingHorizontal: 24,
+      marginBottom: 24,
     },
     modeContainer: {
       flexDirection: "row",
-      justifyContent: "center",
-      gap: 12,
-      marginTop: 16,
       paddingHorizontal: 24,
+      gap: 12,
     },
     modeButton: {
-      flexDirection: "row",
+      flex: 1,
       alignItems: "center",
-      gap: 8,
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      borderRadius: 25,
+      padding: 20,
+      borderRadius: 16,
       backgroundColor: theme.colors.surface,
+      gap: 8,
     },
     modeButtonActive: {
-      backgroundColor: theme.colors.primary,
+      backgroundColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
     },
     modeText: {
       fontSize: 16,
@@ -368,135 +307,157 @@ const createStyles = (theme: any, mode: TimerMode) =>
     modeTextActive: {
       color: "#fff",
     },
-    timerContainer: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      marginTop: -100,
-      minHeight: 320,
+    modeDuration: {
+      fontSize: 12,
+      color: theme.colors.onSurfaceVariant,
     },
-    timerCircle: {
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      backgroundColor: theme.colors.surface,
-      justifyContent: "center",
-      alignItems: "center",
-      shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 20,
-      elevation: 10,
+    modeDurationActive: {
+      color: "rgba(255,255,255,0.8)",
     },
-    progressContainer: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      overflow: "hidden",
+    durationSection: {
+      marginTop: 32,
     },
-    progressBackground: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      borderWidth: 8,
-      borderColor: theme.colors.background,
-    },
-    progressFill: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      borderWidth: 8,
-      borderColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
-      borderTopColor: "transparent",
-      borderRightColor: "transparent",
-    },
-    progressCover: {
-      position: "absolute",
-      width: CIRCLE_SIZE - 16,
-      height: CIRCLE_SIZE - 16,
-      borderRadius: (CIRCLE_SIZE - 16) / 2,
-      backgroundColor: theme.colors.surface,
-      top: 8,
-      left: 8,
-    },
-    timerContent: {
-      alignItems: "center",
-    },
-    timerText: {
-      fontSize: 56,
-      fontWeight: "bold",
-      color: theme.colors.onSurface,
-      fontVariant: ["tabular-nums"],
-    },
-    timerLabel: {
+    sectionTitle: {
       fontSize: 16,
-      color: theme.colors.onSurfaceVariant,
-      marginTop: 4,
-    },
-    presetsContainer: {
+      fontWeight: "600",
+      color: theme.colors.onBackground,
+      marginBottom: 16,
       paddingHorizontal: 24,
-      marginTop: -40,
-      marginBottom: 100,
     },
-    presetsLabel: {
-      fontSize: 14,
-      color: theme.colors.onSurfaceVariant,
-      marginBottom: 20,
-      textAlign: "center",
-    },
-    presetsList: {
-      flexDirection: "row",
-      justifyContent: "center",
+    presetsScrollContent: {
+      paddingHorizontal: 24,
       gap: 10,
     },
     presetButton: {
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 20,
+      paddingHorizontal: 18,
+      paddingVertical: 14,
+      borderRadius: 24,
       backgroundColor: theme.colors.surface,
-      minWidth: 50,
       alignItems: "center",
+      minWidth: 65,
     },
     presetButtonActive: {
-      backgroundColor: theme.colors.primary,
+      backgroundColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
     },
     presetText: {
-      fontSize: 14,
-      fontWeight: "600",
+      fontSize: 18,
+      fontWeight: "bold",
       color: theme.colors.onSurface,
+    },
+    presetUnit: {
+      fontSize: 12,
+      color: theme.colors.onSurfaceVariant,
     },
     presetTextActive: {
       color: "#fff",
     },
-    controlsContainer: {
+    customInputContainer: {
       flexDirection: "row",
-      justifyContent: "center",
       alignItems: "center",
-      gap: 16,
-      marginTop: 12,
+      justifyContent: "space-between",
+      marginTop: 16,
+      paddingHorizontal: 24,
     },
-    primaryButton: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
-      backgroundColor: theme.colors.primary,
-      justifyContent: "center",
+    customInputLabel: {
+      fontSize: 14,
+      color: theme.colors.onSurfaceVariant,
+    },
+    customInputWrapper: {
+      flexDirection: "row",
       alignItems: "center",
-      shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
-      elevation: 4,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 24,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      gap: 6,
+      borderWidth: 2,
+      borderColor: "transparent",
     },
-    secondaryButton: {
-      width: 40,
+    customInputWrapperActive: {
+      borderColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
+    },
+    customInput: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: theme.colors.onSurface,
+      minWidth: 50,
+      textAlign: "center",
+    },
+    customInputUnit: {
+      fontSize: 14,
+      color: theme.colors.onSurfaceVariant,
+    },
+    previewSection: {
+      paddingHorizontal: 24,
+      marginTop: 32,
+    },
+    previewCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 16,
+      padding: 20,
+    },
+    previewRow: {
+      flexDirection: "row",
+      justifyContent: "space-around",
+      alignItems: "center",
+    },
+    previewItem: {
+      alignItems: "center",
+      gap: 6,
+    },
+    previewLabel: {
+      fontSize: 12,
+      color: theme.colors.onSurfaceVariant,
+    },
+    previewValue: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: theme.colors.onSurface,
+    },
+    previewDivider: {
+      width: 1,
       height: 40,
-      borderRadius: 20,
       backgroundColor: theme.colors.background,
-      justifyContent: "center",
+    },
+    startButton: {
+      flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+      backgroundColor: theme.colors.primary,
+      marginHorizontal: 24,
+      marginTop: 32,
+      paddingVertical: 18,
+      borderRadius: 16,
+      shadowColor: theme.colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    startButtonText: {
+      fontSize: 18,
+      fontWeight: "bold",
+      color: "#fff",
+    },
+    tipsSection: {
+      paddingHorizontal: 24,
+      marginTop: 32,
+      backgroundColor: theme.colors.surface,
+      marginHorizontal: 24,
+      borderRadius: 16,
+      padding: 20,
+    },
+    tipsTitle: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: theme.colors.onSurface,
+      marginBottom: 12,
+    },
+    tipText: {
+      fontSize: 13,
+      color: theme.colors.onSurfaceVariant,
+      marginBottom: 6,
+      lineHeight: 20,
     },
   });
