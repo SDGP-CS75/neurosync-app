@@ -3,45 +3,60 @@
  * Storage key: @neurosync_tasks_${userId}
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../services/firebase";
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export type TaskStatus = "done" | "in-progress" | "todo";
 
-interface SubTask {
-  id: string;
-  text: string;
-  isAdding: boolean;
-  isGenarated: boolean;
-  isDone: boolean;
+export interface SubTask {
+  id:          string;
+  text:        string;
+  isAdding:    boolean;  // selected/checked in the add-task form
+  isGenarated: boolean;  // true = created by AI breakdown
+  isDone:      boolean;  // true = marked complete in the task list
 }
+
 export interface Task {
-  id: string;
-  category: string;
-  title: string;
-  time?: string;
-  status: TaskStatus;
-  icon: string;
-  iconBg: string;
-  dateKey: string; // YYYY-MM-DD for filtering by day
+  id:       string;
+  category: string;   // Work | Personal | Shopping | Health | Finance | Creative | Other
+  title:    string;
+  time?:    string;
+  status:   TaskStatus;
+  icon:     string;   // emoji from aiController CATEGORY_META
+  iconBg:   string;   // hex colour from aiController CATEGORY_META
+  dateKey:  string;   // YYYY-MM-DD — used to filter tasks by day
   subtasks?: SubTask[];
 }
 
 type TasksContextType = {
-  tasks: Task[];
-  addTask: (task: Omit<Task, "id">) => void;
-  updateTask: (id: string, updates: Partial<Task>) => void;
-  toggleSubtaskDone: (taskId: string, subtaskId: string) => void;
-  removeTask: (id: string) => void;
-  isLoading: boolean;
-  userId: string | null;
+  tasks:            Task[];
+  addTask:          (task: Omit<Task, "id">) => void;
+  updateTask:       (id: string, updates: Partial<Task>) => void;
+  removeTask:       (id: string) => void;
+  toggleSubtaskDone:(taskId: string, subtaskId: string) => void;
+  isLoading:        boolean;
+  userId:           string | null;
 };
 
+// ─── Context ──────────────────────────────────────────────────────────────────
+
 const TasksContext = createContext<TasksContextType | null>(null);
+
+// ─── Storage helpers ──────────────────────────────────────────────────────────
 
 async function loadTasksForUser(userId: string): Promise<Task[]> {
   try {
@@ -54,20 +69,22 @@ async function loadTasksForUser(userId: string): Promise<Task[]> {
   }
 }
 
-async function saveTasksForUser(userId: string, tasks: Task[]) {
+async function saveTasksForUser(userId: string, tasks: Task[]): Promise<void> {
   try {
     await AsyncStorage.setItem(STORAGE_KEY_PREFIX + userId, JSON.stringify(tasks));
   } catch (e) {
-    console.warn("Failed to persist tasks", e);
+    console.warn("[TasksContext] Failed to persist tasks:", e);
   }
 }
 
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
 export function TasksProvider({ children }: { children: React.ReactNode }) {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [userId,    setUserId]    = useState<string | null>(null);
+  const [tasks,     setTasks]     = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Subscribe to auth: when user changes, load that user's tasks
+  // ── Auth: track current user
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUserId(user?.uid ?? null);
@@ -75,7 +92,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // When userId changes, load tasks for that user (or clear if logged out)
+  // ── Load tasks when user changes (or clear on logout)
   useEffect(() => {
     if (userId === null) {
       setTasks([]);
@@ -89,53 +106,64 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     });
   }, [userId]);
 
-  // Persist tasks when they change (only when a user is signed in)
+  // ── Persist tasks whenever they change (skip during initial load)
   useEffect(() => {
     if (userId && !isLoading) {
       saveTasksForUser(userId, tasks);
     }
   }, [userId, tasks, isLoading]);
 
+  // ── addTask
   const addTask = useCallback((task: Omit<Task, "id">) => {
     const id = String(Date.now());
-    setTasks((prev) => [...prev, { ...task, id }]);
+    setTasks((prev) => [{ ...task, id }, ...prev]); // newest first
   }, []);
 
+  // ── updateTask
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, ...updates } : t))
     );
   }, []);
 
+  // ── removeTask
   const removeTask = useCallback((id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
   }, []);
-  
-  const toggleSubtaskDone = useCallback(
-    (taskId: string, subtaskId: string) => {
-      setTasks((prev) =>
-        prev.map((task) => {
-          if (task.id === taskId && task.subtasks) {
-            const updatedSubtasks = task.subtasks.map((sub) =>
-              sub.id === subtaskId ? { ...sub, isDone: !sub.isDone } : sub
-            );
-            return { ...task, subtasks: updatedSubtasks };
-          }
-          return task;
-        })
-      );
-    },
-    []
-  );
+
+  // ── toggleSubtaskDone — flips isDone on a specific subtask
+  const toggleSubtaskDone = useCallback((taskId: string, subtaskId: string) => {
+    setTasks((prev) =>
+      prev.map((task) => {
+        if (task.id !== taskId || !task.subtasks) return task;
+        return {
+          ...task,
+          subtasks: task.subtasks.map((sub) =>
+            sub.id === subtaskId ? { ...sub, isDone: !sub.isDone } : sub
+          ),
+        };
+      })
+    );
+  }, []);
 
   return (
     <TasksContext.Provider
-      value={{ tasks, addTask, updateTask, removeTask, toggleSubtaskDone, isLoading, userId }}
+      value={{
+        tasks,
+        addTask,
+        updateTask,
+        removeTask,
+        toggleSubtaskDone,
+        isLoading,
+        userId,
+      }}
     >
       {children}
     </TasksContext.Provider>
   );
 }
+
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 
 export function useTasks(): TasksContextType {
   const ctx = useContext(TasksContext);

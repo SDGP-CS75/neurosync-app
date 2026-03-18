@@ -17,8 +17,8 @@
 
 const GROQ_URL        = 'https://api.groq.com/openai/v1/chat/completions';
 const MAX_TASK_LENGTH = 500;
-const MIN_TASK_LENGTH = 5;
-const REQUEST_TIMEOUT = 12_000;  // 12 s
+const MIN_TASK_LENGTH = 3;   // lowered: "run", "gym", "eat" are valid single-word tasks
+const REQUEST_TIMEOUT = 12_000;
 const MAX_RETRIES     = 2;
 const RETRY_DELAY_MS  = 800;
 
@@ -39,50 +39,92 @@ const CATEGORY_META = {
   Other:    { emoji: '📋', iconBg: '#E8E4FF' },
 };
 
-// Single-word inputs that carry no task intent on their own
+// ─────────────────────────────────────────────────────────────────────────────
+// VALIDATION WORD LISTS
+// Rule: be CONSERVATIVE — only block what is clearly not a task.
+// When in doubt, let the AI handle it rather than over-reject.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Only reject a single word if it is BOTH:
+ *  (a) clearly not a task verb or noun on its own, AND
+ *  (b) has no conceivable task interpretation
+ *
+ * DO NOT add words like "run", "go", "get", "try", "stop", "wait", "come",
+ * "look", "see" — these are all legitimate single-word tasks after filler is stripped.
+ */
 const VAGUE_SINGLE_WORDS = new Set([
-  'lol','lmao','ok','okay','yes','no','hi','hey','hello','bye','goodbye',
-  'test','fire','go','do','yay','wow','hmm','ugh','meh','nah','nope',
-  'haha','hehe','bruh','omg','idk','nvm','sure','cool','nice','run',
-  'great','fine','done','stop','wait','try','see','get','come','look',
-  'what','why','how','who','when','where','which','that','this','just',
+  // Pure reactions / emotions with no task meaning
+  'lol','lmao','lmfao','haha','hehe','hmmm','hmm','ughhh','ugh',
+  'yay','wow','meh','nah','nope','bruh','omg','omfg',
+  'idk','nvm','smh','imo','fyi','tbh','wtf',
+  // Greetings with no task meaning
+  'hi','hey','hello','bye','goodbye','sup','yo',
+  // Pure affirmations / negations with no task meaning
+  'ok','okay','yes','no','yep','yeah','nah','sure',
+  // Testing / throwaway
+  'test','testing','asdf','qwerty',
 ]);
 
-// Profanity / offensive words — reject immediately, never send to Groq
+/**
+ * Profanity / hate speech — reject immediately.
+ *
+ * Keep this TIGHT — do NOT add common words that happen to have a rude
+ * secondary meaning. Only add words whose PRIMARY use is as an offensive slur
+ * or whose only normal use is as profanity.
+ *
+ * Removed from previous version: "bloody", "hell", "crap", "damn", "ass"
+ * (too many false positives — "blood pressure check", "hell's kitchen", etc.)
+ */
 const OFFENSIVE_WORDS = new Set([
-  'fuck','shit','bitch','asshole','bastard','cunt','dick','cock',
-  'pussy','piss','crap','ass','fuk','fck','stfu','gtfo',
-  'motherfucker','fucker','bullshit','jackass','dumbass','idiot',
-  'stupid','moron','retard','slut','whore','nigger','faggot','prick',
-  'wanker','twat','arse','bollocks','tosser','bloody','hell',
+  'fuck','shit','bitch','cunt','cock','pussy',
+  'fuk','fck','stfu','gtfo',
+  'motherfucker','fucker','bullshit','jackass','dumbass',
+  'retard','slut','whore','nigger','nigga','faggot',
+  'prick','wanker','twat',
 ]);
 
-// Words that have zero task meaning — used to detect "all filler" inputs
-const NON_TASK_FILLER = new Set([
-  'i','you','me','my','we','us','he','she','it','they','them','your',
-  'a','an','the','is','are','was','were','be','been','am',
-  'to','of','in','on','at','by','for','up','or','and','but','so','if',
-  'do','did','does','can','will','shall','may','might','could','would','should',
+/**
+ * Words that are ONLY filler/grammar with ZERO standalone task meaning.
+ * Used to detect inputs that are 100% filler with nothing meaningful at all.
+ *
+ * IMPORTANT: Only add closed-class words (articles, prepositions, auxiliaries,
+ * pure pronouns). Do NOT add verbs like "go", "do", "run", "get" — they are
+ * meaningful task verbs on their own.
+ */
+const PURE_FILLER_WORDS = new Set([
+  // Pronouns
+  'i','you','me','my','we','us','he','she','it','they','them','your','our','their',
+  // Articles
+  'a','an','the',
+  // Pure linking verbs (not action verbs)
+  'is','are','was','were','be','been','am',
+  // Prepositions
+  'to','of','in','on','at','by','for','up','or','and','but','so','if','as',
+  // Pure modal/auxiliary verbs — only when they appear alone with no content word
+  'can','will','shall','may','might','could','would','should','must',
+  // Conjunctions
+  'that','which','who','whom','whose','when','where','while','although','because',
 ]);
 
 // ─── Input cleaner ────────────────────────────────────────────────────────────
 
 /**
- * Normalise raw user input before validation and AI call:
- *  • Collapse consecutive duplicate word sequences  ("have to have to" → "have to")
- *  • Strip common leading filler phrases            ("i need to buy milk" → "buy milk")
- *  • Collapse extra whitespace / newlines
+ * Normalise raw user input BEFORE validation and AI call.
+ * Strips noise without removing meaningful content.
  */
 function cleanTaskInput(raw) {
   let t = raw.trim();
 
-  // Collapse repeated word sequences up to 3 words long (run twice for nested repeats)
+  // Collapse repeated word sequences up to 3 words long
+  // "have to have to go" → "have to go"
   const repeatRx = /\b(\w+(?:\s+\w+){0,2})\s+\1\b/gi;
   t = t.replace(repeatRx, '$1');
-  t = t.replace(repeatRx, '$1');
+  t = t.replace(repeatRx, '$1'); // second pass for nested repeats
 
-  // Strip leading filler — run twice for double-stacked phrases like "please help me to"
-  const fillerRx = /^(i need to|i have to|i want to|i must|i should|can you please|can you|please help me to|please help me|please|help me to|help me|i am going to|i am gonna|gonna|gotta|i'd like to|i'd love to|i would like to)\s+/i;
+  // Strip leading filler phrases — run twice for stacked phrases
+  // "please help me to buy milk" → "buy milk"
+  const fillerRx = /^(i need to|i have to|i want to|i must|i should|can you please|can you|please help me to|please help me|please|help me to|help me|i am going to|i am gonna|gonna|gotta|i'd like to|i'd love to|i would like to|remind me to|don't forget to)\s+/i;
   t = t.replace(fillerRx, '');
   t = t.replace(fillerRx, '');
 
@@ -98,16 +140,20 @@ function cleanTaskInput(raw) {
  * Returns a user-friendly error string if the input should be rejected.
  * Returns null if the input is a valid task candidate.
  *
- * Check order (cheapest / most common first):
- *  1.  Too short
- *  2.  No letters at all (numbers / symbols / emoji only)
- *  3.  No real word (no 3-letter sequence)
- *  4.  Pure repeated characters  ("aaaa", "hhhh", "zzzzzz")
- *  5.  Offensive / profanity word
- *  6.  Gibberish — majority of multi-char words have zero vowels  ("sdgrgeg")
- *  7.  Single vague / reaction word  ("lol", "fire", "ok")
- *  8.  Only filler words / pronouns — no noun or verb with meaning
- *  9.  Keyboard mash pattern — alternating or sequential consonant runs
+ * PHILOSOPHY: Be permissive. Only reject what is CLEARLY not a task.
+ * False negatives (letting spam through) are far less harmful than
+ * false positives (blocking real tasks). The AI will handle ambiguous input fine.
+ *
+ * Check order:
+ *  1. Too short (< 3 chars)
+ *  2. No letters at all (pure numbers / symbols / emoji)
+ *  3. No real word (no 3+ letter sequence)
+ *  4. Pure repeated single character  ("aaaa", "!!!!")
+ *  5. Offensive / hate speech word detected
+ *  6. Gibberish — words with 5+ consonants and zero vowels (incl. y)
+ *  7. Keyboard row mash (only for long tokens, very strict threshold)
+ *  8. Single word that is in the vague-only list
+ *  9. Every single word is a pure filler/grammar word (very rare edge case)
  */
 function validateTaskMeaning(input) {
   const t     = input.trim();
@@ -119,79 +165,89 @@ function validateTaskMeaning(input) {
     return 'Please describe your task in a few words.';
   }
 
-  // ── 2. No letters at all
+  // ── 2. No letters at all (emoji-only, numbers, symbols)
   if (!/[a-zA-Z]/.test(t)) {
     return "That doesn't look like a task. Please describe what you need to do.";
   }
 
-  // ── 3. No real word (at least one sequence of 3+ letters)
+  // ── 3. No real word — need at least one run of 3+ letters
   if (!/[a-zA-Z]{3,}/.test(t)) {
     return "That doesn't look like a task. Please describe what you need to do.";
   }
 
-  // ── 4. Pure repeated characters  ("aaaa", "zzzzz", "haha" is fine — different chars)
+  // ── 4. Pure repeated single character (strip spaces first)
+  //       "aaaa", "!!!!", "zzzzzz" — but NOT "haha" (two different chars)
   const noSpaces = lower.replace(/\s/g, '');
-  if (/^(.)\1{3,}$/.test(noSpaces)) {
+  if (noSpaces.length >= 4 && /^(.)\1+$/.test(noSpaces)) {
     return 'Your input looks like random text. Please describe a real task.';
   }
 
-  // ── 5. Offensive / profanity
+  // ── 5. Offensive / hate speech
   const hasOffensive = words.some(w => OFFENSIVE_WORDS.has(w.replace(/[^a-z]/g, '')));
   if (hasOffensive) {
     return "That doesn't look like a task. Please enter something you actually need to do.";
   }
 
-  // ── 6. Gibberish — words with 4+ chars and zero vowels  ("sdgrgeg", "xkqzpf")
-  const letterWords     = words.map(w => w.replace(/[^a-z]/g, '')).filter(w => w.length >= 4);
-  const gibberishWords  = letterWords.filter(w => !/[aeiou]/.test(w));
-  if (letterWords.length > 0 && gibberishWords.length >= Math.ceil(letterWords.length * 0.5)) {
+  // ── 6. Gibberish detection
+  //       A word is gibberish if it has 5+ letters AND zero vowels including 'y'.
+  //       Raised from 4 to 5 chars, and added 'y' as vowel to fix false positives:
+  //       "gym", "dry", "fly", "myth", "sync", "try", "cry" all pass now.
+  const letterWords    = words.map(w => w.replace(/[^a-z]/g, '')).filter(w => w.length >= 5);
+  const gibberishWords = letterWords.filter(w => !/[aeiouy]/.test(w));
+  // Only reject if MORE THAN HALF the multi-char words are gibberish
+  // AND there are at least 1 such word (avoids divide-by-zero edge cases)
+  if (letterWords.length >= 1 && gibberishWords.length > letterWords.length / 2) {
     return 'Your input looks like random text. Please describe a real task.';
   }
 
-  // ── 7. Single vague / reaction word
-  if (words.length === 1 && VAGUE_SINGLE_WORDS.has(words[0].replace(/[^a-z]/g, ''))) {
-    return "That's too vague. Try something like \"Buy groceries tomorrow at 5pm\".";
-  }
-
-  // ── 8. Every word is a filler / pronoun — nothing meaningful
-  const meaningfulWords = words.filter(w => !NON_TASK_FILLER.has(w.replace(/[^a-z]/g, '')));
-  if (meaningfulWords.length === 0) {
-    return "Please describe a real task — something you actually need to get done.";
-  }
-
-  // ── 9. Keyboard mash — long token that looks like alternating random consonants
-  //       e.g. "asdfghjkl", "qwertyuiop", "zxcvbnm"
+  // ── 7. Keyboard mash — extremely strict to avoid false positives
+  //       Only triggers on tokens that are 8+ chars with 85%+ from one row.
+  //       Previous 70% threshold was causing "write", "route", "type" etc. to fail.
   const KEYBOARD_ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
   const hasMash = words.some(w => {
     const clean = w.replace(/[^a-z]/g, '');
-    if (clean.length < 6) return false;
-    // Check if 70%+ of the characters are from one keyboard row
+    if (clean.length < 8) return false; // only flag very long suspicious tokens
     return KEYBOARD_ROWS.some(row => {
       const inRow = [...clean].filter(c => row.includes(c)).length;
-      return inRow / clean.length >= 0.7;
+      return inRow / clean.length >= 0.85; // raised from 0.70 to 0.85
     });
   });
   if (hasMash) {
     return 'Your input looks like random text. Please describe a real task.';
   }
 
-  return null; // ✅ input passes all checks
+  // ── 8. Single vague/reaction word (only after filler has been stripped by cleanTaskInput)
+  //       Note: single action words like "run", "gym", "eat", "sleep" are NOT in
+  //       VAGUE_SINGLE_WORDS and correctly pass through to the AI.
+  if (words.length === 1 && VAGUE_SINGLE_WORDS.has(words[0].replace(/[^a-z]/g, ''))) {
+    return "That's too vague. Try something like \"Buy groceries tomorrow at 5pm\".";
+  }
+
+  // ── 9. 100% pure filler — every word is a grammar/filler word with no content
+  //       This is very rare after cleanTaskInput strips leading filler.
+  //       Only fires for inputs like "is it the" / "a to the of" etc.
+  const meaningfulWords = words.filter(w => {
+    const clean = w.replace(/[^a-z]/g, '');
+    return clean.length >= 2 && !PURE_FILLER_WORDS.has(clean);
+  });
+  if (words.length >= 2 && meaningfulWords.length === 0) {
+    return "Please describe a real task — something you actually need to get done.";
+  }
+
+  return null; // ✅ passes all checks — send to AI
 }
 
 // ─── Date helpers (server-side — LLM never computes dates) ───────────────────
 
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTHS       = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const WEEKDAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
-/** Format a Date object as "D Mon YYYY" */
+/** Format a Date as "D Mon YYYY" */
 function fmtDate(d) {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-/**
- * Return the next strict-future occurrence of a given weekday (0=Sun … 6=Sat).
- * If today IS that weekday, still returns next week's occurrence.
- */
+/** Next strict-future occurrence of a weekday (0=Sun … 6=Sat). */
 function nextWeekday(now, targetDow) {
   const d    = new Date(now);
   const diff = ((targetDow - d.getDay()) + 7) % 7 || 7;
@@ -199,22 +255,13 @@ function nextWeekday(now, targetDow) {
   return d;
 }
 
-/**
- * Build a pre-computed date lookup table injected into the prompt.
- * The LLM looks up dates from this table — no arithmetic ever needed.
- */
+/** Build a date lookup table injected into the prompt. */
 function buildDateContext() {
-  const now = new Date();
-
-  const tomorrow = new Date(now);
-  tomorrow.setDate(now.getDate() + 1);
-
+  const now         = new Date();
+  const tomorrow    = new Date(now); tomorrow.setDate(now.getDate() + 1);
   const nextWeekend = nextWeekday(now, 6); // next Saturday
-
-  const nextWeek = new Date(now);
-  nextWeek.setDate(now.getDate() + 7);
-
-  const endOfWeek = nextWeekday(now, 5); // next Friday as "end of week"
+  const nextWeek    = new Date(now);       nextWeek.setDate(now.getDate() + 7);
+  const endOfWeek   = nextWeekday(now, 5); // next Friday
 
   const lines = [
     `Today         : ${fmtDate(now)}`,
@@ -236,52 +283,31 @@ const LOWERCASE_TITLE_WORDS = new Set([
   'a','an','the','and','but','or','for','of','in','on','at','to','by','up','as','vs',
 ]);
 
-/** Apply smart Title Case (small words stay lowercase unless they are first). */
 function toTitleCase(str) {
   return str
     .toLowerCase()
     .split(' ')
-    .map((word, i) => {
-      if (i === 0 || !LOWERCASE_TITLE_WORDS.has(word)) {
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      }
-      return word;
-    })
+    .map((word, i) => (i === 0 || !LOWERCASE_TITLE_WORDS.has(word))
+      ? word.charAt(0).toUpperCase() + word.slice(1)
+      : word
+    )
     .join(' ');
 }
 
-/**
- * Sanitise the AI-generated title:
- *  • Apply Title Case
- *  • Strip trailing punctuation
- *  • Hard cap at 6 words (prompt asks for 3-5; this is a safety net)
- *  • Return null if result is empty or too short to be useful
- */
 function sanitiseTitle(raw) {
   if (!raw || typeof raw !== 'string') return null;
-  let t = raw.trim();
-  t = t.replace(/[.!?,;:]+$/, '');         // strip trailing punctuation
+  let t = raw.trim().replace(/[.!?,;:]+$/, '');
   t = toTitleCase(t);
   const words = t.split(/\s+/).filter(Boolean);
   if (words.length > 6) t = words.slice(0, 6).join(' ');
-  t = t.trim();
-  return t.length >= 2 ? t : null;
+  return t.trim().length >= 2 ? t.trim() : null;
 }
 
-/**
- * Sanitise a single AI-generated step:
- *  • Strip list markers ("1.", "-", "•", "*")
- *  • Ensure the step starts with a capital letter
- *  • Hard cap at 15 words (prompt asks for 8; generous safety net)
- *  • Return null if result is empty
- */
 function sanitiseStep(raw) {
   if (!raw || typeof raw !== 'string') return null;
-  let s = raw.trim();
-  s = s.replace(/^[\d\-*•.)\s]+/, '');              // strip list markers
-  s = s.replace(/\s{2,}/g, ' ').trim();             // normalise spaces
+  let s = raw.trim().replace(/^[\d\-*•.)\s]+/, '').replace(/\s{2,}/g, ' ').trim();
   if (!s) return null;
-  s = s.charAt(0).toUpperCase() + s.slice(1);       // capitalise first letter
+  s = s.charAt(0).toUpperCase() + s.slice(1);
   const words = s.split(/\s+/);
   if (words.length > 15) s = words.slice(0, 15).join(' ');
   return s.trim() || null;
@@ -322,38 +348,39 @@ If the task HAS a date or time → include "when":
 TITLE rules
 ════════════════════════════════
 • 3 to 5 words only — no more
-• Must start with an action verb: Create, Fix, Buy, Write, Plan, Call, Review, Build, Send, Prepare, Book, Complete, Schedule, Finish, Make, Draft, Submit, Organize, Set Up
+• Must start with an action verb: Create, Fix, Buy, Write, Plan, Call, Review, Build, Send, Prepare, Book, Complete, Schedule, Finish, Make, Draft, Submit, Organize, Set Up, Go, Run, Eat, Visit
 • Title Case — capitalise every important word
 • No punctuation at the end
-• Remove ALL filler: "I need to", "I want to", "I have to", "I must", "please", "help me", "can you", "I should", "I'd like to"
+• Remove ALL filler: "I need to", "I want to", "I have to", "I must", "please", "help me", "can you", "I should", "I'd like to", "remind me to"
 • If words are repeated in the task (e.g. "have to have to"), ignore the repetition
 
 Good title examples:
   "I need to create a report about AI"  →  "Create AI Report"
   "buy some milk at the store tomorrow" →  "Buy Milk at Store"
   "fix the login bug in my app"         →  "Fix Login Bug"
-  "write a birthday song for mom"       →  "Write Birthday Song for Mom"
+  "write a birthday song for mom"       →  "Write Birthday Song"
   "go to the gym at 6am"               →  "Go to the Gym"
+  "run"                                →  "Go for a Run"
+  "eat"                                →  "Plan a Meal"
 
 ════════════════════════════════
 STEPS — read every rule carefully
 ════════════════════════════════
 • Return EXACTLY 3 to 6 steps — never fewer than 3, never more than 6
 • Each step = ONE sentence, MAX 8 words
-• Start every step with an action verb: Open, Search, Write, Call, Download, Pick, Send, Save, Go, Buy, Check, Read, Fill, Book, Pay, Review, Draft, Set, Find, Visit, Add, Upload, Print, Sign, Confirm, Cancel, Install, Delete, Update, Prepare
+• Start every step with an action verb: Open, Search, Write, Call, Download, Pick, Send, Save, Go, Buy, Check, Read, Fill, Book, Pay, Review, Draft, Set, Find, Visit, Add, Upload, Print, Sign, Confirm, Install, Prepare, Eat, Run, Walk
 • Plain simple English — imagine explaining to someone who has NEVER done this before
 • Logical order: preparation → main action → review → completion
 • ZERO duplicate steps
-• NO vague filler steps: "Start the task", "Think about it", "You're done", "Get ready", "Begin working", "Get started"
+• NO vague filler steps: "Start the task", "Think about it", "You're done", "Get ready", "Begin working"
 • NO compound steps — never join two actions with "and then", "also", "then", "while"
-• Adapt step count to task complexity — simple tasks need only 3, complex tasks can use up to 6
+• Adapt step count to complexity — simple tasks need only 3, complex tasks can use up to 6
 
-BAD steps (too long, vague, or compound):
-  ✗ "Research various AI tools and platforms that can help you generate content efficiently"
-  ✗ "Think about what you need and then decide the best approach before you start"
-  ✗ "Go to the store and also pick up the items and then pay at the counter"
+BAD steps:
+  ✗ "Research various AI tools and platforms that can help generate content efficiently"
+  ✗ "Think about what you need and decide the best approach before starting"
 
-GOOD steps (short, clear, exactly one action):
+GOOD steps:
   ✓ "Search for AI report writing tools"
   ✓ "Outline the main sections of the report"
   ✓ "Write one section at a time"
@@ -399,22 +426,16 @@ Category tiebreaker examples:
 
 // ─── Response parser ──────────────────────────────────────────────────────────
 
-/**
- * Parse and strictly validate the AI's JSON response.
- * Applies post-parse sanitisation so the frontend always gets clean, safe data.
- */
 function parseResponse(text) {
   const empty = { title: null, steps: [], category: 'Other', when: null };
   if (!text || typeof text !== 'string') return empty;
 
-  // Strip markdown code fences if the model ignored the instruction
   const stripped = text.trim().replace(/^```(?:json)?\s*|```\s*$/gm, '').trim();
 
   let parsed;
   try {
     parsed = JSON.parse(stripped);
   } catch {
-    // Last-resort fallback: treat non-empty lines as steps
     console.warn('[aiController] JSON parse failed. Raw snippet:', stripped.slice(0, 200));
     const lines = stripped
       .split('\n')
@@ -426,7 +447,7 @@ function parseResponse(text) {
   // ── title
   const title = sanitiseTitle(typeof parsed.title === 'string' ? parsed.title : '');
 
-  // ── steps — sanitise → filter → deduplicate (case-insensitive) → cap at 6
+  // ── steps
   let steps = [];
   if (Array.isArray(parsed.steps)) {
     steps = parsed.steps
@@ -442,14 +463,12 @@ function parseResponse(text) {
   });
   steps = steps.slice(0, 6);
 
-  // ── category — must exactly match one of our known values
+  // ── category
   const validCategories = Object.keys(CATEGORY_META);
   const rawCat   = typeof parsed.category === 'string' ? parsed.category.trim() : '';
   const category = validCategories.includes(rawCat) ? rawCat : 'Other';
 
   // ── when — strict format: "D Mon YYYY, h.mm am/pm"
-  //    Accept:  "19 Mar 2026, 6.00 pm"  |  "5 Jan 2026, 11.30 am"
-  //    Reject:  anything else — silently drop to avoid frontend issues
   let when = null;
   if (typeof parsed.when === 'string' && parsed.when.trim()) {
     const whenStr = parsed.when.trim();
@@ -464,7 +483,7 @@ function parseResponse(text) {
   return { title, steps, category, when };
 }
 
-// ─── Fetch with abort timeout ─────────────────────────────────────────────────
+// ─── Fetch with timeout ───────────────────────────────────────────────────────
 
 function fetchWithTimeout(url, options, timeoutMs) {
   const controller = new AbortController();
@@ -505,32 +524,25 @@ async function callGroqWithRetry(payload, apiKey, retries = MAX_RETRIES) {
         const raw    = data?.error?.message || data?.error || 'Groq API error';
         const rawStr = typeof raw === 'string' ? raw : JSON.stringify(raw);
 
-        // Quota / rate-limit — won't recover on retry, throw immediately
         if (/quota|exceeded|rate.?limit/i.test(rawStr)) {
           throw { isQuota: true, message: 'AI quota exceeded. Try again later.' };
         }
-
-        // 5xx server errors are worth retrying
         if (response.status >= 500 && attempt < retries) {
           lastError = new Error(rawStr);
           continue;
         }
-
         throw new Error(rawStr);
       }
 
       return data;
 
     } catch (err) {
-      if (err?.isQuota) throw err;  // propagate quota errors immediately
-
+      if (err?.isQuota) throw err;
       if (err.name === 'AbortError') {
         lastError = new Error('Request timed out. Please try again.');
-        continue;  // timeouts are worth retrying
+        continue;
       }
-
       lastError = err;
-      // Non-network errors (e.g. unexpected JSON) — no point retrying
       if (!err.message?.toLowerCase().includes('fetch') && attempt === 0) break;
     }
   }
@@ -567,14 +579,15 @@ export async function breakTaskIntoSteps(req, res) {
   // ── 4. Normalise: collapse repeated words, strip leading filler phrases
   taskStr = cleanTaskInput(taskStr);
 
-  // ── 5. Guard: reject spam / offensive / gibberish / meaningless input
-  //       This runs BEFORE any Groq API call — saves quota and gives instant feedback
+  // ── 5. Guard: reject only clear spam / offensive / gibberish
+  //       Log what we rejected so you can tune the checks during development
   const meaningError = validateTaskMeaning(taskStr);
   if (meaningError) {
+    console.log(`[aiController] 422 rejected: "${taskStr}" → ${meaningError}`);
     return res.status(422).json({ error: meaningError });
   }
 
-  // ── 6. Resolve model (whitelist prevents misconfigured GROQ_MODEL env var)
+  // ── 6. Resolve model
   const requestedModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
   const model = ALLOWED_MODELS.includes(requestedModel)
     ? requestedModel
@@ -583,11 +596,11 @@ export async function breakTaskIntoSteps(req, res) {
   const payload = {
     model,
     messages:    [{ role: 'user', content: buildPrompt(taskStr) }],
-    temperature: 0.3,   // low = consistent, deterministic, no hallucination
-    max_tokens:  700,   // enough for title + 6 steps + category + when + buffer
+    temperature: 0.3,
+    max_tokens:  700,
   };
 
-  // ── 7. Call Groq with retry + exponential backoff
+  // ── 7. Call Groq with retry + backoff
   const startTime = Date.now();
   let data;
   try {
@@ -602,7 +615,7 @@ export async function breakTaskIntoSteps(req, res) {
     });
   }
 
-  // ── 8. Log latency + token usage for observability / cost tracking
+  // ── 8. Log latency + token usage
   const usage   = data?.usage || {};
   const latency = Date.now() - startTime;
   console.log(
@@ -616,7 +629,6 @@ export async function breakTaskIntoSteps(req, res) {
   const rawText = data?.choices?.[0]?.message?.content || '';
   const { title, steps, category, when } = parseResponse(rawText);
 
-  // Hard fail if no usable steps returned — better to show an error than empty UI
   if (steps.length < 1) {
     console.warn('[aiController] 0 valid steps parsed. Raw:', rawText.slice(0, 300));
     return res.status(500).json({
@@ -624,13 +636,12 @@ export async function breakTaskIntoSteps(req, res) {
     });
   }
 
-  // ── 10. Derive emoji + iconBg from detected category
+  // ── 10. Map category → emoji + iconBg
   const { emoji, iconBg } = CATEGORY_META[category] ?? CATEGORY_META['Other'];
 
   // ── 11. Return response
-  //        "when" is only included if it was present AND passed strict format validation
   return res.json({
-    title:    title ?? taskStr,   // last-resort fallback: cleaned user input
+    title:    title ?? taskStr,
     steps,
     category,
     emoji,
