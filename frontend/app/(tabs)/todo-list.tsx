@@ -277,6 +277,24 @@ export default function TodoListScreen() {
                   {task.title}
                 </Text>
 
+                {/* 🔽 Subtasks */}
+                {task.subtasks && task.subtasks.length > 0 && (
+                  <View style={styles.subtasksContainer}>
+                    {task.subtasks.map((sub) => (
+                      <View key={sub.id} style={styles.subtaskRow}>
+                        <Text
+                          style={[
+                            styles.subtaskText,
+                            { color: theme.colors.textMuted },
+                          ]}
+                        >
+                          • {sub.text}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+
                 <View style={styles.taskFooter}>
                   <View style={styles.timeRow}>
                     <Ionicons name="time-outline" size={16} color={theme.colors.primary} />
@@ -439,6 +457,19 @@ const styles = StyleSheet.create({
     fontSize:     18,
     fontWeight:   "700",
     marginBottom: 12,
+  },
+  subtasksContainer: {
+    marginTop: 8,
+    gap: 4,
+  },
+
+  subtaskRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  subtaskText: {
+    fontSize: 13,
   },
   taskFooter: {
     flexDirection:  "row",

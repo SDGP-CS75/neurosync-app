@@ -12,15 +12,22 @@ const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
 
 export type TaskStatus = "done" | "in-progress" | "todo";
 
+interface SubTask {
+  id: string;
+  text: string;
+  isAdding: boolean;
+  isGenarated: boolean;
+}
 export interface Task {
   id: string;
   category: string;
   title: string;
-  time: string;
+  time?: string;
   status: TaskStatus;
   icon: string;
   iconBg: string;
   dateKey: string; // YYYY-MM-DD for filtering by day
+  subtasks?: SubTask[];
 }
 
 type TasksContextType = {

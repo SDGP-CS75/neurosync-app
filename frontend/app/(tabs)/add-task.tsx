@@ -186,18 +186,19 @@ export default function AddTaskScreen() {
   };
 
   const handleSave = () => {
-    const title = mainTask.trim();
+    const title = mainTask.trim(); //need to change
     if (!title) return;
     const today = new Date();
     const dateKey = today.toISOString().slice(0, 10); // YYYY-MM-DD
     addTask({
-      category: location.trim() || "Personal",
+      category: location.trim() || "Personal", //need to change
       title,
       time: when.trim() || "No time",
       status: "todo",
       icon: "📋",
       iconBg: "#E8E4FF",
       dateKey,
+      subtasks: subTasks,
     });
     router.back();
   };
