@@ -30,7 +30,8 @@ import { ExpoSpeechRecognitionModule, useSpeechRecognitionEvent,} from 'expo-spe
 interface SubTask {
   id: string;
   text: string;
-  done: boolean;
+  isAdding: boolean;
+  isGenarated: boolean;
 }
 
 const PLACEHOLDER_MAIN =
@@ -108,14 +109,14 @@ export default function AddTaskScreen() {
 
   const toggleSubTask = (id: string) => {
     setSubTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+      prev.map((t) => (t.id === id ? { ...t, isAdding: !t.isAdding } : t))
     );
   };
 
   const addSubTask = (text: string) => {
     setSubTasks((prev) => [
       ...prev,
-      { id: String(Date.now()), text, done: false },
+      { id: String(Date.now()), text, isAdding: true, isGenarated: false },
     ]);
   };
 
@@ -150,7 +151,8 @@ export default function AddTaskScreen() {
           steps.map((text, i) => ({
             id: String(Date.now() + i),
             text,
-            done: false,
+            isAdding: true,
+            isGenarated: true,
           }))
         );
       }
@@ -472,26 +474,27 @@ export default function AddTaskScreen() {
                   styles.checkbox,
                   {
                     borderColor: theme.colors.textMuted,
-                    backgroundColor: st.done ? theme.colors.primary : "transparent",
+                    backgroundColor: st.isAdding ? theme.colors.primary : "transparent",
                   },
                 ]}
               >
-                {st.done && (
+                {st.isAdding && (
                   <Ionicons name="checkmark" size={14} color="#FFF" />
                 )}
               </View>
+
               <Text
                 style={[
                   styles.subTaskText,
                   {
-                    color: theme.colors.text,
-                    textDecorationLine: st.done ? "line-through" : "none",
+                    color: theme.colors.text
                   },
                 ]}
                 numberOfLines={1}
               >
                 {st.text}
               </Text>
+              
             </TouchableOpacity>
           ))}
           <TouchableOpacity
