@@ -4,13 +4,14 @@
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "typeRoots": ["./types", "./node_modules/@types"]
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
-    "**/*.d.ts",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "types/**/*"
   ]
 }
