@@ -120,9 +120,9 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    key:     "profile",
-    path:    "/(tabs)/settings",
-    segment: "settings",
+    key:     "settings",
+    path:    "/(tabs)/mood-tracking",
+    segment: "mood-tracking",
     renderIcon: (size, color) => (
       <MaterialCommunityIcons name="account" size={size} color={color} />
     ),

@@ -16,9 +16,7 @@ export default function TabsLayout() {
 
       {/* 3. Keeping your original home screen just in case you need it later */}
       <Stack.Screen name="home" />
-      
-      {/* 4. Registering Settings since it's also part of your assignment */}
-      <Stack.Screen name="settings" />
+      <Stack.Screen name="mood-tracking" />
     </Stack>
   );
 }
