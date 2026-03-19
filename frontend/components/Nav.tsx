@@ -85,7 +85,7 @@ function buildBarPath(w: number, h: number, notchR: number): string {
 //   app/(tabs)/profile.tsx       → segment: "profile"
 // ─────────────────────────────────────────────────────────────────
 
-type RouteKey = "home" | "calendar" | "focus" | "settings";
+type RouteKey = "home" | "calendar" | "focus" | "profile";
 
 interface NavItem {
   key:        RouteKey;
@@ -120,11 +120,11 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    key:     "settings",
+    key:     "profile",
     path:    "/(tabs)/settings",
     segment: "settings",
     renderIcon: (size, color) => (
-      <MaterialCommunityIcons name="account-multiple" size={size} color={color} />
+      <MaterialCommunityIcons name="account" size={size} color={color} />
     ),
   },
 ];
