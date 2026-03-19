@@ -5,25 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import Nav from '../../components/Nav';
-import { useUser } from '../../context/UserContext'; 
-
-const THEMES = [
-  { id: 'violet', color: '#7C3AED', label: 'Violet' },
-  { id: 'blue', color: '#3B82F6', label: 'Blue' },
-  { id: 'green', color: '#10B981', label: 'Green' },
-  { id: 'pink', color: '#EC4899', label: 'Pink' },
-  { id: 'orange', color: '#F59E0B', label: 'Orange' },
-  { id: 'gray', color: '#6B7280', label: 'Gray' },
-  { id: 'teal', color: '#14B8A6', label: 'Teal' },
-];
+import { useUser } from '../../context/UserContext';
+import { useAppTheme } from '../../context/ThemeContext';
+import ThemePicker from '../../components/ThemePicker';
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { profile, updateProfile, setProfileImage } = useUser();
-  
-  // Theme State
-  const [activeTheme, setActiveTheme] = useState('violet');
-  const activeColor = THEMES.find(t => t.id === activeTheme)?.color || '#7C3AED';
+  const { palette } = useAppTheme();
+  const activeColor = palette.primary;
 
   // Preference States
   const [dailyReminders, setDailyReminders] = useState(true);
@@ -77,7 +67,7 @@ export default function SettingsScreen() {
             <View>
               {/* Image source now uses the context! */}
               <Image
-                source={{ uri: profile.profileImage }}
+                source={{ uri: profile.profileImage || 'https://via.placeholder.com/100' }}
                 style={[styles.profileImage, { borderColor: activeColor }]} 
               />
               {/* The button now triggers the pickImage function */}
@@ -143,24 +133,7 @@ export default function SettingsScreen() {
         {/* --- THEME PICKER SECTION --- */}
         <Text style={[styles.sectionSubtitle, { color: activeColor, marginTop: 10 }]}>APP COLOUR THEME</Text>
         <View style={styles.card}>
-          <View style={styles.themeRow}>
-            {THEMES.map((theme) => (
-              <TouchableOpacity
-                key={theme.id}
-                onPress={() => setActiveTheme(theme.id)}
-                style={[
-                  styles.themeCircle,
-                  { backgroundColor: theme.color },
-                  activeTheme === theme.id && { borderWidth: 4, borderColor: theme.color + '40' }
-                ]}
-              >
-                {activeTheme === theme.id && <Ionicons name="checkmark" size={20} color="white" />}
-              </TouchableOpacity>
-            ))}
-          </View>
-          <Text style={[styles.themeLabel, { color: activeColor }]}>
-            {THEMES.find(t => t.id === activeTheme)?.label}
-          </Text>
+          <ThemePicker />
         </View>
 
         {/* --- PREFERENCES SECTION --- */}
@@ -241,9 +214,6 @@ const styles = StyleSheet.create({
   inputLabel: { width: 80, color: '#9CA3AF', fontWeight: '600', fontSize: 14 },
   inputField: { flex: 1, color: '#374151', fontWeight: '500', fontSize: 16, padding: 0 },
   textArea: { backgroundColor: '#F9FAFB', width: '100%', borderRadius: 12, padding: 12, minHeight: 80, borderWidth: 1, borderColor: '#F3F4F6', marginTop: 8 },
-  themeRow: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', marginBottom: 8 },
-  themeCircle: { width: 44, height: 44, borderRadius: 22, margin: 6, alignItems: 'center', justifyContent: 'center' },
-  themeLabel: { fontWeight: 'bold', textAlign: 'center', marginTop: 8 },
   settingRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   settingLeft: { flexDirection: 'row', alignItems: 'center' },
   iconWrapper: { width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
