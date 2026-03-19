@@ -80,12 +80,12 @@ function buildBarPath(w: number, h: number, notchR: number): string {
 //
 // `segment` must EXACTLY match the file name inside (tabs)/:
 //   app/(tabs)/home.tsx          → segment: "home"
-//   app/(tabs)/daily-routine.tsx → segment: "daily-routine"
+//   app/(tabs)/todo-list.tsx     → segment: "todo-list"
 //   app/(tabs)/focus-timer.tsx   → segment: "focus-timer"
-//   app/(tabs)/profile.tsx       → segment: "profile"
+//   app/(tabs)/mood-tracking.tsx → segment: "mood-tracking"
 // ─────────────────────────────────────────────────────────────────
 
-type RouteKey = "home" | "calendar" | "focus" | "profile";
+type RouteKey = "home" | "calendar" | "focus" | "mood";
 
 interface NavItem {
   key:        RouteKey;
@@ -120,7 +120,7 @@ const NAV_ITEMS: NavItem[] = [
     ),
   },
   {
-    key:     "profile",
+    key:     "mood",
     path:    "/(tabs)/mood-tracking",
     segment: "mood-tracking",
     renderIcon: (size, color) => (

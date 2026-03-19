@@ -11,8 +11,7 @@ export default function TabsLayout() {
       {/* 1. This sets your Dashboard as the main starting screen */}
       <Stack.Screen name="index" /> 
       
-      {/* 2. This registers your specific Profile screen */}
-      <Stack.Screen name="profile" />
+
 
       {/* 3. Keeping your original home screen just in case you need it later */}
       <Stack.Screen name="home" />

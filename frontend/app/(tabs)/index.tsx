@@ -24,7 +24,7 @@ export default function DashboardScreen() {
         <View className="flex-row justify-between items-center mb-6">
           <TouchableOpacity 
             className="flex-row items-center"
-            onPress={() => router.push('/profile')}
+            onPress={() => router.push('/settings')}
             activeOpacity={0.7}
           >
             {/* Profile image from user context */}

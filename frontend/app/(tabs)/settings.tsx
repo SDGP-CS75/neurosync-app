@@ -8,10 +8,11 @@ import Nav from '../../components/Nav';
 import { useUser } from '../../context/UserContext';
 import { useAppTheme } from '../../context/ThemeContext';
 import ThemePicker from '../../components/ThemePicker';
+import { logoutUser } from '../../services/auth';
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { profile, updateProfile, setProfileImage } = useUser();
+  const { profile, updateProfile, setProfileImage, resetProfile } = useUser();
   const { palette } = useAppTheme();
   const activeColor = palette.primary;
 
@@ -40,6 +41,30 @@ export default function SettingsScreen() {
       "Settings Saved",
       "Your profile and app preferences have been updated successfully.",
       [{ text: "Awesome!", style: "default" }]
+    );
+  };
+
+  // Handle Logout
+  const handleLogout = async () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logoutUser();
+              resetProfile();
+              router.replace('/(auth)/welcome');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to log out. Please try again.');
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -187,6 +212,23 @@ export default function SettingsScreen() {
               thumbColor={strictFocus ? "#EF4444" : "#f4f3f4"}
             />
           </View>
+        </View>
+
+        {/* --- ACCOUNT SECTION --- */}
+        <Text style={[styles.sectionSubtitle, { color: activeColor, marginTop: 10 }]}>ACCOUNT</Text>
+        <View style={styles.card}>
+          <TouchableOpacity 
+            style={[styles.settingRow, { borderBottomWidth: 0 }]}
+            onPress={handleLogout}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconWrapper, { backgroundColor: '#FEE2E2' }]}>
+                <Ionicons name="log-out-outline" size={16} color="#EF4444" />
+              </View>
+              <Text style={[styles.settingText, { color: '#EF4444' }]}>Log Out</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+          </TouchableOpacity>
         </View>
 
       </ScrollView>
