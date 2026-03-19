@@ -43,8 +43,8 @@ export default function MoodAnalysis() {
 
   const selectedDay = days[selectedDayIndex] || (days.length ? days[0] : null);
 
-  // recent entries (latest first). We'll show up to 7 for the chart
-  const recent = entries.slice(0, 7);
+  // control showing only last 3 entries by default
+  const [showAllEntries, setShowAllEntries] = useState(false);
 
   // helpers
   const moods = [
@@ -54,6 +54,19 @@ export default function MoodAnalysis() {
     { emoji: '😊', label: 'Good' },
     { emoji: '😍', label: 'Amazing' },
   ];
+
+  // compute mood counts for the selected day (or empty) - placed after moods are declared
+  const moodCounts = useMemo(() => {
+    const counts = Array(moods.length).fill(0);
+    const items = selectedDay?.items || [];
+    items.forEach((it: any) => {
+      const idx = Number(it.mood) || 0;
+      if (idx >= 0 && idx < counts.length) counts[idx]++;
+    });
+    return counts;
+  }, [selectedDay, moods.length]);
+
+  const maxCount = Math.max(1, ...moodCounts);
 
   const averageEnergy = entries.length ? Math.round(entries.reduce((s, e) => s + Number(e.energyLevel), 0) / entries.length) : 0;
   const averageMoodIndex = entries.length ? Math.round(entries.reduce((s, e) => s + Number(e.mood), 0) / entries.length) : 3;
@@ -165,37 +178,7 @@ export default function MoodAnalysis() {
           </View>
         </View>
 
-        {/* Mood chart (custom vertical bars with emoji markers) */}
-        <View style={[styles.chartWrap, { backgroundColor: colors.surface }]}> 
-          <Text style={[styles.cardTitle, { color: colors.onBackground }]}>Mood chart</Text>
-
-          <View style={[styles.chartBg]}> 
-            <View style={styles.chartInner}>
-              {recent.length === 0 ? (
-                <Text style={{ color: colors.textMuted }}>No data yet — add moods to see the chart.</Text>
-              ) : (
-                <View style={styles.chartRow}>
-                  {recent.slice().reverse().map((e, i) => {
-                    const energy = Number(e.energyLevel) || 0; // 0-10
-                    const barHeight = Math.max(8, (energy / 10) * 140);
-                    const timeLabel = new Date(e.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-                    const moodEmoji = getMoodEmoji(Number(e.mood));
-
-                    return (
-                      <View key={i} style={styles.chartColumn}>
-                        <View style={[styles.bar, { height: barHeight, backgroundColor: colors.primary + '55' }]} />
-                        <View style={styles.emojiMarker}><Text style={{ fontSize: 18 }}>{moodEmoji}</Text></View>
-                        <Text style={[styles.chartLabel, { color: colors.textMuted }]}>{timeLabel}</Text>
-                      </View>
-                    );
-                  })}
-                </View>
-              )}
-            </View>
-          </View>
-        </View>
-
-        {/* Date selector - show per-day pills */}
+        {/* Date selector - show per-day pills (moved above chart) */}
         {days.length > 0 && (
           <View style={{ marginTop: 14 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.datePillsRow}>
@@ -203,7 +186,7 @@ export default function MoodAnalysis() {
                 const label = d.dateObj.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
                 const selected = i === selectedDayIndex;
                 return (
-                  <TouchableOpacity key={d.dateKey} onPress={() => setSelectedDayIndex(i)} style={[styles.datePill, selected && { backgroundColor: colors.primary }]}> 
+                  <TouchableOpacity key={d.dateKey} onPress={() => { setSelectedDayIndex(i); setShowAllEntries(false); }} style={[styles.datePill, selected && { backgroundColor: colors.primary }]}> 
                     <Text style={{ color: selected ? '#fff' : colors.onBackground, fontWeight: '700' }}>{label}</Text>
                     <Text style={{ color: selected ? '#fff' : colors.textMuted, fontSize: 12 }}>{d.items.length} check-ins</Text>
                   </TouchableOpacity>
@@ -213,6 +196,33 @@ export default function MoodAnalysis() {
           </View>
         )}
 
+        {/* Mood chart (counts per emoji for selected day) */}
+        <View style={[styles.chartWrap, { backgroundColor: colors.surface }]}> 
+          <Text style={[styles.cardTitle, { color: colors.onBackground }]}>Mood chart</Text>
+
+          <View style={[styles.chartBg]}> 
+            <View style={[styles.chartInner, { paddingVertical: 12 }] }>
+              {(!selectedDay || (selectedDay.items || []).length === 0) ? (
+                <Text style={{ color: colors.textMuted }}>No data for this day — add moods to see the chart.</Text>
+              ) : (
+                <View style={[styles.chartRow, { alignItems: 'flex-end' }]}>
+                  {moods.map((m, idx) => {
+                    const count = moodCounts[idx] || 0;
+                    const height = (count / maxCount) * 140; // scale
+                    return (
+                      <View key={idx} style={styles.chartColumn}>
+                        <View style={{ height: Math.max(6, height), width: 22, borderRadius: 12, backgroundColor: colors.primary + '66', marginBottom: 8 }} />
+                        <Text style={{ fontSize: 18 }}>{m.emoji}</Text>
+                        <Text style={[styles.chartLabel, { color: colors.textMuted }]}>{count}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+
         {/* Entries for selected day (or all recent if none) */}
         <View style={[styles.listCard, { backgroundColor: colors.surface }]}> 
           <Text style={[styles.cardTitle, { color: colors.onBackground }]}>{selectedDay ? `Check-ins — ${selectedDay.dateKey}` : 'Recent check-ins'}</Text>
@@ -221,7 +231,7 @@ export default function MoodAnalysis() {
             <Text style={{ color: colors.textMuted, marginTop: 12 }}>No entries yet.</Text>
           )}
 
-          {(selectedDay ? selectedDay.items : entries.slice(0, 20)).map((e, idx) => (
+          {(selectedDay ? (showAllEntries ? selectedDay.items : selectedDay.items.slice(0, 3)) : (entries.slice(0, 20))).map((e, idx) => (
             <View key={idx} style={[styles.entryCard, { backgroundColor: colors.background }]}> 
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View style={[styles.entryEmoji, { backgroundColor: colors.surfaceVariant }]}> 
@@ -238,6 +248,13 @@ export default function MoodAnalysis() {
               </View>
             </View>
           ))}
+
+          {/* Show more / Show less */}
+          {selectedDay && selectedDay.items.length > 3 && (
+            <TouchableOpacity onPress={() => setShowAllEntries((s) => !s)} style={[styles.showMoreBtn, { borderColor: colors.primary }]}> 
+              <Text style={{ color: colors.primary }}>{showAllEntries ? 'Show less' : `Show more (${selectedDay.items.length - 3})`}</Text>
+            </TouchableOpacity>
+          )}
 
         </View>
 
@@ -289,6 +306,8 @@ const styles = StyleSheet.create({
   entrySubtitle: { marginTop: 4 },
   datePillsRow: { paddingVertical: 8, paddingHorizontal: 4 },
   datePill: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginRight: 8, backgroundColor: '#ffffff10', alignItems: 'center', justifyContent: 'center' },
+  countBadge: { marginTop: 6, fontSize: 12, fontWeight: '700' },
+  showMoreBtn: { marginTop: 12, alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 14, borderRadius: 20, borderWidth: 1 },
   greeting: { fontSize: 20, fontWeight: '700' },
   headerAvatar: { width: 48, height: 48, borderRadius: 24 },
   avatarPlaceholder: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
