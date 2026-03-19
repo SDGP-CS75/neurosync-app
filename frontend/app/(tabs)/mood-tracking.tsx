@@ -1,13 +1,19 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
-import { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Dimensions } from "react-native";
+import { useState, useRef, useEffect } from "react";
+import { BlurView } from 'expo-blur';
 import Slider from "@react-native-community/slider";
 import { useTheme } from "react-native-paper";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Nav from "../../components/Nav";
 
 export default function MoodTracking() {
 
   const { colors } = useTheme() as any;
+  const insets = useSafeAreaInsets();
+
+  // compute bottom padding to avoid overlap with bottom navigation
+  // keep minimal extra space so nav remains fixed at the bottom like on home
+  const bottomPadding = Math.max(insets.bottom, 12) + 16;
 
   const [note, setNote] = useState("");
   const [mood, setMood] = useState(3);
@@ -60,40 +66,60 @@ export default function MoodTracking() {
   // no entrance animation
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
       <View style={{ flex: 1 }}>
         <ScrollView
-          style={{ flex: 1, backgroundColor: colors.background }}
+          style={{ flex: 1, backgroundColor: colors.surface }}
           contentContainerStyle={{
             paddingTop: 40,
-            paddingBottom: 140, // extra space so bottom navigation doesn't overlap content
-            alignItems: "center"
+            paddingBottom: bottomPadding, // use safe area to avoid nav overlap
+            alignItems: "stretch",
+            paddingHorizontal: 0,
           }}
         >
 
           <View
             style={{
-              width: "100%",
-              maxWidth: 420,
+              alignSelf: "stretch",
+              marginHorizontal: 16,
               backgroundColor: colors.surface,
               borderRadius: 20,
-              padding: 20
+              padding: 20,
+              // subtle card shadow
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 6,
             }}
           >
 
             {/* Header */}
 
-            <View style={{ alignItems: "center", marginTop: 20 }}>
+            <View style={{ alignItems: "center", marginTop: 0 }}>
 
               <Text style={{ fontSize: 16, color: colors.textMuted }}>
                 {dateString} • {timeString}
               </Text>
 
-              <Text style={{ fontSize: 60, marginTop: 10 }}>
-                {currentMood.emoji}
-              </Text>
+              <View style={{
+                width: 96,
+                height: 96,
+                borderRadius: 24,
+                backgroundColor: colors.surfaceVariant,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginTop: 12,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.06,
+                shadowRadius: 12,
+                elevation: 6,
+              }}>
+                <Text style={{ fontSize: 48 }}>{currentMood.emoji}</Text>
+              </View>
 
-              <Text style={{ fontSize: 26, fontWeight: "600", color: colors.primary }}>
+              <Text style={{ fontSize: 26, fontWeight: "600", color: colors.primary, marginTop: 12 }}>
                 {currentMood.label}
               </Text>
 
@@ -114,19 +140,25 @@ export default function MoodTracking() {
               multiline
               style={{
                 backgroundColor: colors.surfaceVariant,
-                borderRadius: 16,
+                borderRadius: 12,
                 padding: 16,
-                marginTop: 24,
-                minHeight: 80,
+                marginTop: 20,
+                minHeight: 100,
                 color: colors.onBackground,
-                textAlignVertical: "top"
+                textAlignVertical: "top",
+                // card-like inset
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.04,
+                shadowRadius: 8,
+                elevation: 3,
               }}
             />
 
 
             {/* Tags */}
 
-            <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 16 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 18 }}>
 
               {tags.map((tag, index) => {
 
@@ -142,11 +174,18 @@ export default function MoodTracking() {
                       borderRadius: 20,
                       marginRight: 8,
                       marginBottom: 8,
-                      backgroundColor: isSelected ? colors.primary : colors.primaryContainer
+                      backgroundColor: isSelected ? colors.primary : colors.surface,
+                      borderWidth: isSelected ? 0 : 1,
+                      borderColor: isSelected ? 'transparent' : colors.surfaceVariant,
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.03,
+                      shadowRadius: 8,
+                      elevation: isSelected ? 4 : 2,
                     }}
                   >
 
-                    <Text style={{ color: isSelected ? colors.onPrimary : colors.onPrimaryContainer }}>
+                    <Text style={{ color: isSelected ? colors.onPrimary : colors.onSurface }}>
                       {tag}
                     </Text>
 
@@ -157,81 +196,116 @@ export default function MoodTracking() {
             </View>
 
 
-            {/* Mood Selector */}
-
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginTop: 30
-              }}
-            >
-
+            {/* Mood Selector (all emojis visible, smaller) */}
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginTop: 18,
+              flexWrap: 'nowrap',
+            }}>
               {moods.map((m, index) => {
-
                 const isSelected = mood === index;
-
                 return (
                   <TouchableOpacity
                     key={index}
                     onPress={() => setMood(index)}
+                    activeOpacity={0.85}
                     style={{
-                      padding: 10,
-                      borderRadius: 12,
-                      backgroundColor: isSelected ? colors.primaryContainer : "transparent"
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginHorizontal: 4,
                     }}
                   >
-
-                    <Text style={{ fontSize: 30 }}>
-                      {m.emoji}
+                    <View style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 12,
+                      backgroundColor: isSelected ? colors.primary : colors.surfaceVariant,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: 0.06,
+                      shadowRadius: 8,
+                      elevation: isSelected ? 6 : 2,
+                    }}>
+                      <Text style={{ fontSize: 22, color: isSelected ? '#fff' : colors.onBackground }}>
+                        {m.emoji}
+                      </Text>
+                    </View>
+                    <Text style={{ marginTop: 6, fontSize: 11, color: isSelected ? colors.primary : colors.textMuted }}>
+                      {m.label.split(' ')[1]}
                     </Text>
-
                   </TouchableOpacity>
                 );
               })}
-
             </View>
-
+            
+            {/* Page background blur (behind content) */}
+            <BlurView
+              intensity={40}
+              tint="light"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderRadius: 20,
+                zIndex: -1,
+              }}
+            />
 
             {/* Energy Level */}
 
-            <View style={{ marginTop: 30 }}>
+            <View style={{ marginTop: 24 }}>
 
               <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8, color: colors.onBackground }}>
                 ⚡ Energy Level
               </Text>
 
-              <Slider
-                minimumValue={0}
-                maximumValue={10}
-                step={1}
-                value={energyLevel}
-                onValueChange={(value: number) => setEnergyLevel(value)}
-                minimumTrackTintColor={colors.primary}
-                maximumTrackTintColor={colors.outline}
-                thumbTintColor={colors.primary}
-              />
+              <View style={{
+                backgroundColor: colors.surface,
+                borderRadius: 12,
+                padding: 12,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 6 },
+                shadowOpacity: 0.06,
+                shadowRadius: 12,
+                elevation: 4,
+              }}>
 
-              <View style={{ flexDirection: "row", marginTop: 10 }}>
+                <Slider
+                  minimumValue={0}
+                  maximumValue={10}
+                  step={1}
+                  value={energyLevel}
+                  onValueChange={(value: number) => setEnergyLevel(value)}
+                  minimumTrackTintColor={colors.primary}
+                  maximumTrackTintColor={colors.outline}
+                  thumbTintColor={colors.primary}
+                />
 
-                {[...Array(10)].map((_, index) => (
-                  <View
-                    key={index}
-                    style={{
-                      flex: 1,
-                      height: 6,
-                      marginRight: index === 9 ? 0 : 4,
-                      borderRadius: 4,
-                      backgroundColor: index < energyLevel ? colors.primary : colors.outline
-                    }}
-                  />
-                ))}
+                <View style={{ flexDirection: "row", marginTop: 10 }}>
+                  {[...Array(10)].map((_, index) => (
+                    <View
+                      key={index}
+                      style={{
+                        flex: 1,
+                        height: 6,
+                        marginRight: index === 9 ? 0 : 4,
+                        borderRadius: 4,
+                        backgroundColor: index < energyLevel ? colors.primary : colors.outline
+                      }}
+                    />
+                  ))}
+                </View>
+
+                <Text style={{ textAlign: "right", marginTop: 8, color: colors.textMuted }}>
+                  Energy: {energyLevel}
+                </Text>
 
               </View>
-
-              <Text style={{ textAlign: "right", marginTop: 4, color: colors.textMuted }}>
-                Energy: {energyLevel}
-              </Text>
 
             </View>
 
@@ -241,15 +315,18 @@ export default function MoodTracking() {
             <TouchableOpacity
               onPress={saveEntry}
               style={{
-                backgroundColor: colors.secondary,
-                padding: 16,
-                borderRadius: 16,
-                marginTop: 40,
-                marginBottom: 30
+                backgroundColor: colors.primary,
+                paddingVertical: 16,
+                borderRadius: 28,
+                marginTop: 32,
+                marginBottom: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+                alignSelf: 'stretch'
               }}
             >
 
-              <Text style={{ color: colors.onSecondary, textAlign: "center", fontWeight: "600" }}>
+              <Text style={{ color: colors.onPrimary, textAlign: "center", fontWeight: "700", fontSize: 16 }}>
                 Save Entry
               </Text>
 
@@ -259,9 +336,11 @@ export default function MoodTracking() {
 
         </ScrollView>
 
-        <Nav />
-
       </View>
+
+      {/* place Nav as a direct child of SafeAreaView so it stays fixed to the bottom */}
+      <Nav />
+
     </SafeAreaView>
   );
 }
