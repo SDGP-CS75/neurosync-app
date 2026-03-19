@@ -481,7 +481,10 @@ const styles = StyleSheet.create({
   subtaskRow: {
     flexDirection: "row",
     alignItems: "center",
+    marginVertical: 2,
+    gap: 6,
   },
+
 
   subtaskText: {
     fontSize: 13,
