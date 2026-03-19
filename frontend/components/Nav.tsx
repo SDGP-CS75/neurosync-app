@@ -85,7 +85,7 @@ function buildBarPath(w: number, h: number, notchR: number): string {
 //   app/(tabs)/profile.tsx       → segment: "profile"
 // ─────────────────────────────────────────────────────────────────
 
-type RouteKey = "home" | "calendar" | "focus" | "settings";
+type RouteKey = "home" | "calendar" | "focus" | "profile";
 
 interface NavItem {
   key:        RouteKey;
@@ -105,8 +105,8 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     key:     "calendar",
-    path:    "/(tabs)/daily-routine",
-    segment: "daily-routine",
+    path:    "/(tabs)/todo-list",
+    segment: "todo-list",
     renderIcon: (size, color) => (
       <Ionicons name="calendar" size={size} color={color} />
     ),
@@ -124,7 +124,7 @@ const NAV_ITEMS: NavItem[] = [
     path:    "/(tabs)/mood-tracking",
     segment: "mood-tracking",
     renderIcon: (size, color) => (
-      <MaterialCommunityIcons name="account-multiple" size={size} color={color} />
+      <MaterialCommunityIcons name="account" size={size} color={color} />
     ),
   },
 ];
@@ -236,7 +236,7 @@ export default function CustomNavBar() {
             shadowColor:  theme.colors.primary,
           },
         ]}
-        onPress={() => router.push("/(tabs)/todo-list")}
+        onPress={() => router.push("/(tabs)/add-task")}
         activeOpacity={0.85}
       >
         <View
