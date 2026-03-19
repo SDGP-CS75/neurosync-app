@@ -1,6 +1,5 @@
 /**
- * TasksContext — Task list per user, persisted to AsyncStorage.
- * Storage key: @neurosync_tasks_${userId}
+ * TasksContext — Offline-first with bidirectional sync
  */
 
 import React, {
@@ -13,58 +12,60 @@ import React, {
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth,db} from "../services/firebase";
-import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "../services/firebase";
+import {
+  doc,
+  setDoc,
+  collection,
+  getDocs,
+} from "firebase/firestore";
 import NetInfo from "@react-native-community/netinfo";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Constants ─────────────────────────────────────────────
 
 const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────
 
 export type TaskStatus = "done" | "in-progress" | "todo";
 
 export interface SubTask {
-  id:          string;
-  text:        string;
-  isAdding:    boolean;  // selected/checked in the add-task form
-  isGenarated: boolean;  // true = created by AI breakdown
-  isDone:      boolean;  // true = marked complete in the task list
+  id: string;
+  text: string;
+  isAdding: boolean;
+  isGenarated: boolean;
+  isDone: boolean;
 }
 
 export interface Task {
-  id:       string;
-  category: string;   // Work | Personal | Shopping | Health | Finance | Creative | Other
-  title:    string;
-  time?:    string;
-  status:   TaskStatus;
-  dueDate?: string;  // Due date for the task
-  location?: string; // Location for the task
-  reminder?: string; // Reminder time for the task
-  icon:     string;   // emoji from aiController CATEGORY_META
-  iconBg:   string;   // hex colour from aiController CATEGORY_META
-  dateKey:  string;   // YYYY-MM-DD — used to filter tasks by day
+  id: string;
+  category: string;
+  title: string;
+  time?: string;
+  status: TaskStatus;
+  dueDate?: string;
+  location?: string;
+  reminder?: string;
+  icon: string;
+  iconBg: string;
+  dateKey: string;
   subtasks?: SubTask[];
-
   isSynced?: boolean;
 }
 
 type TasksContextType = {
-  tasks:            Task[];
-  addTask:          (task: Omit<Task, "id">) => void;
-  updateTask:       (id: string, updates: Partial<Task>) => void;
-  removeTask:       (id: string) => void;
-  toggleSubtaskDone:(taskId: string, subtaskId: string) => void;
-  isLoading:        boolean;
-  userId:           string | null;
+  tasks: Task[];
+  addTask: (task: Omit<Task, "id">) => void;
+  updateTask: (id: string, updates: Partial<Task>) => void;
+  removeTask: (id: string) => void;
+  toggleSubtaskDone: (taskId: string, subtaskId: string) => void;
+  isLoading: boolean;
+  userId: string | null;
 };
-
-// ─── Context ──────────────────────────────────────────────────────────────────
 
 const TasksContext = createContext<TasksContextType | null>(null);
 
-// ─── Storage helpers ──────────────────────────────────────────────────────────
+// ─── Storage Helpers ──────────────────────────────────────
 
 async function loadTasksForUser(userId: string): Promise<Task[]> {
   try {
@@ -77,145 +78,175 @@ async function loadTasksForUser(userId: string): Promise<Task[]> {
   }
 }
 
-async function saveTasksForUser(userId: string, tasks: Task[]): Promise<void> {
+async function saveTasksForUser(userId: string, tasks: Task[]) {
   try {
-    await AsyncStorage.setItem(STORAGE_KEY_PREFIX + userId, JSON.stringify(tasks));
+    await AsyncStorage.setItem(
+      STORAGE_KEY_PREFIX + userId,
+      JSON.stringify(tasks)
+    );
   } catch (e) {
-    console.warn("[TasksContext] Failed to persist tasks:", e);
+    console.warn("Persist failed:", e);
   }
 }
 
-// ─── Provider ─────────────────────────────────────────────────────────────────
+// ─── Provider ─────────────────────────────────────────────
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
-  const [userId,    setUserId]    = useState<string | null>(null);
-  const [tasks,     setTasks]     = useState<Task[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ── Auth: track current user
+  // ── Auth
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsub = onAuthStateChanged(auth, (user) => {
       setUserId(user?.uid ?? null);
     });
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
-  // ── Load tasks when user changes (or clear on logout)
+  // ── Load local tasks
   useEffect(() => {
-    if (userId === null) {
+    if (!userId) {
       setTasks([]);
       setIsLoading(false);
       return;
     }
+
     setIsLoading(true);
+
     loadTasksForUser(userId).then((loaded) => {
       setTasks(loaded);
       setIsLoading(false);
+
+      // 🔥 Merge missing Firebase tasks after load
+      mergeTasksFromFirebase();
     });
   }, [userId]);
 
-  // ── Persist tasks whenever they change (skip during initial load)
+  // ── Persist local
   useEffect(() => {
     if (userId && !isLoading) {
       saveTasksForUser(userId, tasks);
     }
-  }, [userId, tasks, isLoading]);
+  }, [tasks, userId, isLoading]);
+
+  // ─────────────────────────────────────────────────────────
+  // 🔥 Sync Local → Firebase
+  // ─────────────────────────────────────────────────────────
 
   const syncTasksToFirebase = useCallback(async () => {
-    console.log("Starting task sync..."); // 👈 debug
     if (!userId) return;
 
-    const updatedTasks = [...tasks];
+    const updated = [...tasks];
 
-    for (let i = 0; i < updatedTasks.length; i++) {
-      const task = updatedTasks[i];
-
+    for (let i = 0; i < updated.length; i++) {
+      const task = updated[i];
       if (task.isSynced) continue;
 
       try {
-        const { id, ...taskData } = task;
+        const { id, ...data } = task;
 
-        await setDoc(
-          doc(db, "users", userId, "tasks", id),
-          taskData
-        );
+        await setDoc(doc(db, "users", userId, "tasks", id), data);
 
-        updatedTasks[i] = { ...task, isSynced: true };
-
+        updated[i] = { ...task, isSynced: true };
       } catch (e) {
         console.log("Sync failed:", e);
       }
     }
 
-    setTasks(updatedTasks);
+    setTasks(updated);
+  }, [userId,tasks]);
+
+  // ─────────────────────────────────────────────────────────
+  // 🔥 Merge Firebase → Local (ONLY missing)
+  // ─────────────────────────────────────────────────────────
+
+  const mergeTasksFromFirebase = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const snapshot = await getDocs(
+        collection(db, "users", userId, "tasks")
+      );
+
+      setTasks((prev) => {
+        const localMap = new Map(prev.map((t) => [t.id, t]));
+        const newTasks: Task[] = [];
+
+        snapshot.forEach((docSnap) => {
+          const task = {
+            id: docSnap.id,
+            ...docSnap.data(),
+            isSynced: true,
+          } as Task;
+
+          if (!localMap.has(task.id)) {
+            newTasks.push(task);
+          }
+        });
+
+        if (newTasks.length === 0) return prev;
+
+        const merged = [...prev, ...newTasks];
+
+        console.log("Merged:", newTasks.length);
+
+        saveTasksForUser(userId, merged);
+
+        return merged;
+      });
+    } catch (e) {
+      console.log("Merge failed:", e);
+    }
   }, [userId]);
 
-  // useEffect(() => {
-  //   console.log("Setting up network listener for task sync...");   // 👈 debug
-  //   const unsubscribe = NetInfo.addEventListener((state) => {
-  //     if (state.isConnected) {
-  //       console.log("Device is online, attempting to sync tasks...");  // 👈 debug
-  //       syncTasksToFirebase(); // 👈 trigger sync
-  //       console.log("Sync complete."); // 👈 debug
-  //     }
-  //   });
+  // ─────────────────────────────────────────────────────────
+  // 🌐 Network listener (NO stale closure bug)
+  // ─────────────────────────────────────────────────────────
 
-  //   return () => unsubscribe();
-  // }, [syncTasksToFirebase]);
   const syncRef = useRef(syncTasksToFirebase);
 
-    useEffect(() => {
-      syncRef.current = syncTasksToFirebase;
-    }, [syncTasksToFirebase]);
+  useEffect(() => {
+    syncRef.current = syncTasksToFirebase;
+  }, [syncTasksToFirebase]);
 
-    useEffect(() => {
-      const unsubscribe = NetInfo.addEventListener((state) => {
-        if (state.isConnected) {
-          syncRef.current();
-          console.log("Device is online, attempted to sync tasks.");  // 👈 debug
-        }
-      });
+  useEffect(() => {
+    const unsub = NetInfo.addEventListener((state) => {
+      if (state.isConnected) {
+        syncRef.current();         // local → firebase
+        mergeTasksFromFirebase();  // firebase → local
+      }
+    });
 
-      return () => unsubscribe();
-    }, []);
-//   useEffect(() => {
-//   if (userId) {
-//     syncTasksToFirebase();
-//   }
-// }, [userId, syncTasksToFirebase]);
+    return () => unsub();
+  }, [mergeTasksFromFirebase]);
 
-  // ── addTask
+  // ─────────────────────────────────────────────────────────
+  // Actions
+  // ─────────────────────────────────────────────────────────
+
   const addTask = useCallback((task: Omit<Task, "id">) => {
-    const id = String(Date.now());
-
     const newTask: Task = {
       ...task,
-      id,
-      isSynced: false, 
+      id: String(Date.now()),
+      isSynced: false,
     };
 
     setTasks((prev) => [newTask, ...prev]);
   }, []);
 
-  // ── updateTask
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
     setTasks((prev) =>
       prev.map((t) =>
-        t.id === id
-          ? { ...t, ...updates, isSynced: false } // 👈 important
-          : t
+        t.id === id ? { ...t, ...updates, isSynced: false } : t
       )
     );
   }, []);
 
-  // ── removeTask
   const removeTask = useCallback((id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id));
-
-    // OPTIONAL: also delete from Firebase later
   }, []);
 
-  // ── toggleSubtaskDone — flips isDone on a specific subtask
   const toggleSubtaskDone = useCallback(
     (taskId: string, subtaskId: string) => {
       setTasks((prev) =>
@@ -225,10 +256,8 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
           return {
             ...task,
             isSynced: false,
-            subtasks: task.subtasks.map((sub) =>
-              sub.id === subtaskId
-                ? { ...sub, isDone: !sub.isDone }
-                : sub
+            subtasks: task.subtasks.map((s) =>
+              s.id === subtaskId ? { ...s, isDone: !s.isDone } : s
             ),
           };
         })
@@ -254,12 +283,10 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+// ─── Hook ─────────────────────────────────────────────────
 
 export function useTasks(): TasksContextType {
   const ctx = useContext(TasksContext);
-  if (!ctx) {
-    throw new Error("useTasks must be used inside <TasksProvider>");
-  }
+  if (!ctx) throw new Error("useTasks must be used inside provider");
   return ctx;
 }
