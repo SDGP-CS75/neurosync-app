@@ -686,7 +686,7 @@ export default function AddTaskScreen() {
                   value={tempDate}
                   mode="datetime"
                   display="spinner"
-                  onChange={(event, date) => {
+                  onChange={(event: any, date: Date | undefined) => {
                     if (date) setTempDate(date);
                   }}
                   style={{ width: "100%", height: 200 }}
