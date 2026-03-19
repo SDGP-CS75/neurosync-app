@@ -7,6 +7,10 @@ import {
     ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Circle, G } from "react-native-svg";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
