@@ -17,7 +17,7 @@ export default function DashboardScreen() {
   const { profile } = useUser();
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1">
       <ScrollView className="flex-1 px-5 pt-2" showsVerticalScrollIndicator={false}>
         
         {/* Header - Clickable routing to Profile */}

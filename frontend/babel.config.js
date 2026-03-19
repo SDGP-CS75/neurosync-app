@@ -3,7 +3,9 @@ module.exports = function (api) {
   api.cache(true);
   return {
     presets: ["babel-preset-expo"],
-    // ❌ Remove this line if it exists:
-    // plugins: ["expo-router/babel"]
+    plugins: [
+      // Required for react-native-reanimated v4
+      "react-native-worklets/plugin"
+    ]
   };
 };

@@ -377,7 +377,7 @@ export default function AddTaskScreen() {
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      style={styles.container}
       edges={["top"]}
     >
       {/* Full-screen AI loading overlay */}

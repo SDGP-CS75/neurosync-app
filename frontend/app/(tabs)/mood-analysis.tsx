@@ -118,7 +118,7 @@ export default function MoodAnalysis() {
   const quickFeedback = computeFeedback();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* header with greeting + profile */}

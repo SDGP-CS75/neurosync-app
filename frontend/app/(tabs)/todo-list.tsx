@@ -107,7 +107,7 @@ export default function TodoListScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color={theme.colors.text} />

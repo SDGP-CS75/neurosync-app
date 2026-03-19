@@ -86,7 +86,7 @@ export default function MoodTracking() {
   // no entrance animation
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.surface }}>
+    <SafeAreaView style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
         <ScrollView
           style={{ flex: 1, backgroundColor: colors.surface }}
