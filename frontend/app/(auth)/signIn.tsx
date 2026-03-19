@@ -26,9 +26,9 @@ type FormData = {
 
 const styles = StyleSheet.create({
   container: {
-    flex:            1,
-    justifyContent:  "center",
-    padding:         30,
+    flex:           1,
+    justifyContent: "center",
+    padding:        30,
   },
 });
 
@@ -40,12 +40,14 @@ export default function SignIn() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError,   setGoogleError]   = useState<string | null>(null);
 
-  // ── Google OAuth request (native + Expo Go) ──────────────────────────────
+  // ── Google OAuth request ──────────────────────────────────────────────────
+  // Using webClientId for all platforms during Expo Go development.
+  // For production builds, replace androidClientId and iosClientId
+  // with their real values from Firebase Console → Project Settings → Your apps.
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    // For production iOS/Android builds add:
-    // iosClientId:     process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    // androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    webClientId:     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId:     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
   });
 
   // ── Handle native Google response ────────────────────────────────────────
@@ -61,14 +63,14 @@ export default function SignIn() {
           const docRef  = doc(db, "users", user.uid);
           const docSnap = await getDoc(docRef);
 
-          // Create Firestore profile if first Google sign-in
+          // Create Firestore profile on first Google sign-in
           if (!docSnap.exists()) {
             await setDoc(docRef, {
-              firstName:   user.displayName?.split(" ")[0] ?? "",
-              lastName:    user.displayName?.split(" ").slice(1).join(" ") ?? "",
-              email:       user.email,
-              photoURL:    user.photoURL,
-              createdAt:   new Date(),
+              firstName: user.displayName?.split(" ")[0] ?? "",
+              lastName:  user.displayName?.split(" ").slice(1).join(" ") ?? "",
+              email:     user.email,
+              photoURL:  user.photoURL,
+              createdAt: new Date(),
             });
           }
           router.push("/(tabs)/home");
@@ -86,7 +88,7 @@ export default function SignIn() {
     setGoogleError(null);
     try {
       if (Platform.OS === "web") {
-        // Web uses Firebase popup directly
+        // Web: use Firebase popup directly
         setGoogleLoading(true);
         const provider = new GoogleAuthProvider();
         const result   = await signInWithPopup(auth, provider);
@@ -96,16 +98,16 @@ export default function SignIn() {
 
         if (!docSnap.exists()) {
           await setDoc(docRef, {
-            firstName:   user.displayName?.split(" ")[0] ?? "",
-            lastName:    user.displayName?.split(" ").slice(1).join(" ") ?? "",
-            email:       user.email,
-            photoURL:    user.photoURL,
-            createdAt:   new Date(),
+            firstName: user.displayName?.split(" ")[0] ?? "",
+            lastName:  user.displayName?.split(" ").slice(1).join(" ") ?? "",
+            email:     user.email,
+            photoURL:  user.photoURL,
+            createdAt: new Date(),
           });
         }
         router.push("/(tabs)/home");
       } else {
-        // Native / Expo Go uses browser redirect
+        // Native / Expo Go: open browser redirect
         await promptAsync();
       }
     } catch (err: unknown) {
@@ -115,7 +117,7 @@ export default function SignIn() {
     }
   };
 
-  // ── Email/password form ───────────────────────────────────────────────────
+  // ── Email / password form ─────────────────────────────────────────────────
   const {
     control,
     handleSubmit,

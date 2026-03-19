@@ -25,19 +25,29 @@ import Nav from "../../components/Nav";
 import InputDialog from "../../components/InputDialog";
 import { TextInput } from "react-native-paper";
 import SparkleLoader from "../../components/SparkleLoader";
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
+
+// ── Speech recognition — guarded for Expo Go compatibility ───────────────────
+// expo-speech-recognition requires a custom dev build (native module).
+// In Expo Go it is unavailable, so we lazy-load it and fall back to no-ops.
+let ExpoSpeechRecognitionModule: any = null;
+let useSpeechRecognitionEvent: (event: string, cb: (e: any) => void) => void = () => {};
+
+try {
+  const mod = require("expo-speech-recognition");
+  ExpoSpeechRecognitionModule  = mod.ExpoSpeechRecognitionModule;
+  useSpeechRecognitionEvent    = mod.useSpeechRecognitionEvent;
+} catch {
+  // Running in Expo Go — speech recognition is disabled
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SubTask {
-  id: string;
-  text: string;
-  isAdding: boolean;
+  id:          string;
+  text:        string;
+  isAdding:    boolean;
   isGenarated: boolean;
-  isDone: boolean;
+  isDone:      boolean;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -47,7 +57,6 @@ const PLACEHOLDER_MAIN =
 
 const BASE_WIDTH = 390; // matches Nav.tsx
 
-// Default AI metadata used before any AI call and as fallback
 const DEFAULT_AI_META = {
   title:    null as string | null,
   category: "Personal",
@@ -64,9 +73,9 @@ export default function AddTaskScreen() {
   const insets      = useSafeAreaInsets();
 
   // Layout
-  const scale        = Math.min(width / BASE_WIDTH, 1.35);
-  const NAV_HEIGHT   = Math.round(64 * scale);
-  const safeBottom   = Platform.OS === "ios" ? insets.bottom : Math.max(insets.bottom, 8);
+  const scale         = Math.min(width / BASE_WIDTH, 1.35);
+  const NAV_HEIGHT    = Math.round(64 * scale);
+  const safeBottom    = Platform.OS === "ios" ? insets.bottom : Math.max(insets.bottom, 8);
   const bottomPadding = NAV_HEIGHT + safeBottom + 72;
 
   // ── Core form state
@@ -76,22 +85,22 @@ export default function AddTaskScreen() {
   const [reminder, setReminder] = useState("");
   const [subTasks, setSubTasks] = useState<SubTask[]>([]);
 
-  // ── AI state — populated after a successful breakdown call
+  // ── AI state
   const [aiMeta, setAiMeta] = useState(DEFAULT_AI_META);
 
   // ── UI state
-  const [aiLoading,       setAiLoading]       = useState(false);
-  const [aiError,         setAiError]         = useState<string | null>(null);
-  const [dialogBoxVisible,setDialogBoxVisible] = useState(false);
-  const [isRecording,     setIsRecording]     = useState(false);
+  const [aiLoading,        setAiLoading]        = useState(false);
+  const [aiError,          setAiError]          = useState<string | null>(null);
+  const [dialogBoxVisible, setDialogBoxVisible] = useState(false);
+  const [isRecording,      setIsRecording]      = useState(false);
+
+  // ── Speech recognition is only available in custom dev builds, not Expo Go
+  const speechAvailable = ExpoSpeechRecognitionModule !== null;
 
   // ── Navigation
   const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(tabs)");
-    }
+    if (router.canGoBack()) router.back();
+    else router.replace("/(tabs)");
   };
 
   // ── Sub-task helpers
@@ -129,12 +138,9 @@ export default function AddTaskScreen() {
       const data = await res.json();
 
       if (!res.ok) {
-        // Backend returns a user-friendly message for 422 (spam/offensive),
-        // 429 (quota), and 400/500 errors — show it directly.
         throw new Error(data?.error || "Failed to break into steps");
       }
 
-      // ── steps → subtasks
       const steps: string[] = Array.isArray(data?.steps) ? data.steps : [];
       if (steps.length > 0) {
         setSubTasks(
@@ -148,12 +154,10 @@ export default function AddTaskScreen() {
         );
       }
 
-      // ── when — trust the backend entirely (it pre-computes dates server-side)
       if (typeof data?.when === "string" && data.when.trim()) {
         setWhen(data.when.trim());
       }
 
-      // ── title / category / emoji / iconBg — from AI response
       setAiMeta({
         title:    typeof data?.title    === "string" && data.title.trim()    ? data.title.trim()    : null,
         category: typeof data?.category === "string" && data.category.trim() ? data.category.trim() : "Personal",
@@ -162,28 +166,22 @@ export default function AddTaskScreen() {
       });
 
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Something went wrong";
-      setAiError(msg);
+      setAiError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
-      // Enforce minimum 700 ms so the loader doesn't flash too quickly
       const elapsed   = Date.now() - startTime;
       const remaining = 700 - elapsed;
-      if (remaining > 0) {
-        setTimeout(() => setAiLoading(false), remaining);
-      } else {
-        setAiLoading(false);
-      }
+      if (remaining > 0) setTimeout(() => setAiLoading(false), remaining);
+      else setAiLoading(false);
     }
   };
 
   // ── Save task ────────────────────────────────────────────────────────────────
   const handleSave = () => {
-    // Use AI-generated title if available, otherwise fall back to raw input
     const title = (aiMeta.title ?? mainTask).trim();
     if (!title) return;
 
     const today   = new Date();
-    const dateKey = today.toISOString().slice(0, 10); // YYYY-MM-DD
+    const dateKey = today.toISOString().slice(0, 10);
 
     addTask({
       title,
@@ -196,7 +194,6 @@ export default function AddTaskScreen() {
       subtasks: subTasks,
     });
 
-    // Reset all state
     setMainTask("");
     setWhen("");
     setLocation("");
@@ -205,14 +202,11 @@ export default function AddTaskScreen() {
     setAiMeta(DEFAULT_AI_META);
     setAiError(null);
 
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace("/(tabs)");
-    }
+    if (router.canGoBack()) router.back();
+    else router.replace("/(tabs)");
   };
 
-  // ── Speech recognition ───────────────────────────────────────────────────────
+  // ── Speech recognition hooks (no-ops when not available) ─────────────────────
   useSpeechRecognitionEvent("result", (event) => {
     setMainTask(event.results[0]?.transcript ?? "");
   });
@@ -226,6 +220,7 @@ export default function AddTaskScreen() {
   });
 
   const startRecording = async () => {
+    if (!speechAvailable) return;
     setMainTask("");
     const { granted } = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
     if (!granted) {
@@ -241,12 +236,13 @@ export default function AddTaskScreen() {
   };
 
   const stopRecording = () => {
+    if (!speechAvailable) return;
     ExpoSpeechRecognitionModule.stop();
     setIsRecording(false);
   };
 
   // ── Derived styles
-  const inputBg  = theme.colors.surface      ?? "#FFFFFF";
+  const inputBg  = theme.colors.surface       ?? "#FFFFFF";
   const rowBg    = theme.colors.surfaceVariant ?? "#F5F5F5";
   const editTint = theme.colors.primary + "CC";
 
@@ -258,12 +254,7 @@ export default function AddTaskScreen() {
     >
       {/* Full-screen AI loading overlay */}
       {aiLoading && (
-        <View
-          style={[
-            styles.loadingOverlay,
-            { backgroundColor: theme.colors.surfaceVariant },
-          ]}
-        >
+        <View style={[styles.loadingOverlay, { backgroundColor: theme.colors.surfaceVariant }]}>
           <SparkleLoader />
         </View>
       )}
@@ -311,7 +302,6 @@ export default function AddTaskScreen() {
               value={mainTask}
               onChangeText={(text) => {
                 setMainTask(text);
-                // Clear stale AI metadata when user edits the task
                 if (aiMeta.title) setAiMeta(DEFAULT_AI_META);
                 if (aiError)      setAiError(null);
               }}
@@ -320,16 +310,20 @@ export default function AddTaskScreen() {
               mode="outlined"
               outlineStyle={{ borderRadius: 16 }}
             />
-            <TouchableOpacity
-              onPress={isRecording ? stopRecording : startRecording}
-              style={styles.micButton}
-            >
-              <Ionicons
-                name={isRecording ? "mic" : "mic-outline"}
-                size={28}
-                color={isRecording ? theme.colors.primary : theme.colors.textMuted}
-              />
-            </TouchableOpacity>
+
+            {/* Mic button — hidden in Expo Go since speech is unavailable */}
+            {speechAvailable && (
+              <TouchableOpacity
+                onPress={isRecording ? stopRecording : startRecording}
+                style={styles.micButton}
+              >
+                <Ionicons
+                  name={isRecording ? "mic" : "mic-outline"}
+                  size={28}
+                  color={isRecording ? theme.colors.primary : theme.colors.textMuted}
+                />
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* ── AI error message */}
@@ -359,7 +353,7 @@ export default function AddTaskScreen() {
             )}
           </TouchableOpacity>
 
-          {/* ── AI-generated title preview (shown after successful breakdown) */}
+          {/* ── AI-generated title preview */}
           {aiMeta.title ? (
             <View style={[styles.aiTitleRow, { backgroundColor: rowBg }]}>
               <Text style={styles.aiTitleEmoji}>{aiMeta.emoji}</Text>
@@ -384,12 +378,7 @@ export default function AddTaskScreen() {
             <Ionicons name="calendar-outline" size={22} color={theme.colors.primary} />
             <View style={styles.detailTextWrap}>
               <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>When</Text>
-              <Text
-                style={[
-                  styles.detailValue,
-                  { color: when ? theme.colors.text : theme.colors.textMuted },
-                ]}
-              >
+              <Text style={[styles.detailValue, { color: when ? theme.colors.text : theme.colors.textMuted }]}>
                 {when || "Set date & time"}
               </Text>
             </View>
@@ -403,12 +392,7 @@ export default function AddTaskScreen() {
             <Ionicons name="location-outline" size={22} color={theme.colors.primary} />
             <View style={styles.detailTextWrap}>
               <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Location</Text>
-              <Text
-                style={[
-                  styles.detailValue,
-                  { color: location ? theme.colors.text : theme.colors.textMuted },
-                ]}
-              >
+              <Text style={[styles.detailValue, { color: location ? theme.colors.text : theme.colors.textMuted }]}>
                 {location || "Add location"}
               </Text>
             </View>
@@ -422,12 +406,7 @@ export default function AddTaskScreen() {
             <Ionicons name="notifications-outline" size={22} color="#E65100" />
             <View style={styles.detailTextWrap}>
               <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Reminder</Text>
-              <Text
-                style={[
-                  styles.detailValue,
-                  { color: reminder ? theme.colors.text : theme.colors.textMuted },
-                ]}
-              >
+              <Text style={[styles.detailValue, { color: reminder ? theme.colors.text : theme.colors.textMuted }]}>
                 {reminder || "Set reminder"}
               </Text>
             </View>
@@ -459,13 +438,7 @@ export default function AddTaskScreen() {
               >
                 {st.isAdding && <Ionicons name="checkmark" size={14} color="#FFF" />}
               </View>
-              <Text
-                style={[
-                  styles.subTaskText,
-                  { color: theme.colors.text },
-                ]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.subTaskText, { color: theme.colors.text }]} numberOfLines={1}>
                 {st.text}
               </Text>
             </TouchableOpacity>
@@ -486,10 +459,7 @@ export default function AddTaskScreen() {
           <TouchableOpacity
             style={[
               styles.saveButton,
-              {
-                backgroundColor: theme.colors.primary,
-                opacity: !mainTask.trim() ? 0.5 : 1,
-              },
+              { backgroundColor: theme.colors.primary, opacity: !mainTask.trim() ? 0.5 : 1 },
             ]}
             onPress={handleSave}
             activeOpacity={0.85}
@@ -553,11 +523,11 @@ const styles = StyleSheet.create({
     alignItems:     "center",
   },
 
-  aiError:      { fontSize: 14, marginBottom: 8 },
+  aiError:  { fontSize: 14, marginBottom: 8 },
   aiButton: {
-    flexDirection:  "row",
-    alignItems:     "center",
-    justifyContent: "center",
+    flexDirection:   "row",
+    alignItems:      "center",
+    justifyContent:  "center",
     paddingVertical: 14,
     borderRadius:    14,
     gap:             10,
@@ -565,25 +535,20 @@ const styles = StyleSheet.create({
   },
   aiButtonText: { color: "#FFF", fontSize: 16, fontWeight: "600" },
 
-  // AI title preview card shown after breakdown
   aiTitleRow: {
-    flexDirection:  "row",
-    alignItems:     "center",
+    flexDirection:     "row",
+    alignItems:        "center",
     paddingHorizontal: 16,
     paddingVertical:   12,
     borderRadius:      14,
     marginBottom:      12,
     gap:               12,
   },
-  aiTitleEmoji: { fontSize: 24 },
-  aiTitleLabel: { fontSize: 12, fontWeight: "500", marginBottom: 2 },
-  aiTitleValue: { fontSize: 15, fontWeight: "700" },
-  categoryBadge: {
-    paddingHorizontal: 10,
-    paddingVertical:    4,
-    borderRadius:      20,
-  },
-  categoryBadgeText: { fontSize: 12, fontWeight: "600" },
+  aiTitleEmoji:     { fontSize: 24 },
+  aiTitleLabel:     { fontSize: 12, fontWeight: "500", marginBottom: 2 },
+  aiTitleValue:     { fontSize: 15, fontWeight: "700" },
+  categoryBadge:    { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  categoryBadgeText:{ fontSize: 12, fontWeight: "600" },
 
   detailRow: {
     flexDirection:     "row",
@@ -620,24 +585,24 @@ const styles = StyleSheet.create({
   subTaskText: { flex: 1, fontSize: 15, fontWeight: "500" },
 
   addSubTaskBtn: {
-    flexDirection:  "row",
-    alignItems:     "center",
-    justifyContent: "center",
+    flexDirection:   "row",
+    alignItems:      "center",
+    justifyContent:  "center",
     paddingVertical: 12,
     borderRadius:    14,
     borderWidth:     1.5,
-    borderStyle:    "dashed",
-    marginTop:       8,
-    gap:             8,
+    borderStyle:     "dashed",
+    marginTop:        8,
+    gap:              8,
   },
   addSubTaskText: { fontSize: 15, fontWeight: "600" },
 
   saveButton: {
     paddingVertical: 16,
     borderRadius:    14,
-    alignItems:     "center",
-    justifyContent: "center",
-    marginTop:       28,
+    alignItems:      "center",
+    justifyContent:  "center",
+    marginTop:        28,
   },
   saveButtonText: { color: "#FFF", fontSize: 17, fontWeight: "700" },
 });
