@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { SafeAreaView, View, Text, ScrollView, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { SafeAreaView, View, Text, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Image } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from 'react-native-paper';
 import Nav from '../../components/Nav';
+import { useUser } from '../../context/UserContext';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -66,13 +67,63 @@ export default function MoodAnalysis() {
   const getMoodLabel = (index: number) => moods[index]?.label || 'Unknown';
   const getMoodEmoji = (index: number) => moods[index]?.emoji || '🙂';
 
+  // Small computed feedback for the user (uses selected day if available, otherwise overall averages)
+  const computeFeedback = () => {
+    const useDay = selectedDay && selectedDay.items && selectedDay.items.length > 0;
+    const items = useDay ? selectedDay.items : entries;
+    const avgMood = items.length ? Math.round(items.reduce((s: number, e: any) => s + Number(e.mood || 3), 0) / items.length) : averageMoodIndex;
+    const avgEnergy = items.length ? Math.round(items.reduce((s: number, e: any) => s + Number(e.energyLevel || 5), 0) / items.length) : averageEnergy;
+
+    let title = 'Mood overview';
+    const tips: string[] = [];
+
+    if (avgMood <= 1) {
+      title = 'Low mood detected';
+      tips.push('Try a short walk or breathing exercise (5–10 minutes)');
+      tips.push('Reach out to a friend or write down one small win');
+    } else if (avgMood === 2) {
+      title = 'Feeling a bit low';
+      tips.push('Break tasks into small, achievable steps');
+      tips.push('Schedule a relaxing activity this evening');
+    } else if (avgMood === 3) {
+      title = 'Stable';
+      tips.push('Keep routines consistent and track what helps');
+      tips.push('Try a short energizer (movement, music) if needed');
+    } else if (avgMood >= 4) {
+      title = 'Feeling good — nice job!';
+      tips.push('Celebrate the wins and keep doing what works');
+      tips.push('Consider sharing what helped today in notes');
+    }
+
+    // energy-specific hint
+    if (avgEnergy <= 3) tips.push('Prioritize sleep & small nourishing meals');
+    else if (avgEnergy >= 8) tips.push('Use high energy for focused work or creative tasks');
+
+    return { title, tips, avgMood, avgEnergy, useDay };
+  };
+
+  const quickFeedback = computeFeedback();
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content}>
 
-        <View style={styles.headerRow}>
-          <Text style={[styles.title, { color: colors.onBackground }]}>Mood Analysis</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>Insights from your recent check-ins</Text>
+        {/* header with greeting + profile */}
+        <View style={[styles.headerRow, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.greeting, { color: colors.onBackground }]}>Hey, {useUser()?.profile?.name?.split(' ')[0] || 'You'}! <Text style={{ fontSize: 20 }}>👋</Text></Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>Mood Analysis</Text>
+          </View>
+          <View style={{ alignItems: 'center' }}>
+            {useUser()?.profile?.profileImage ? (
+              <Image source={{ uri: useUser()?.profile?.profileImage }} style={styles.headerAvatar} />
+            ) : (
+              <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>
+                <Text style={styles.avatarInitials}>{(useUser()?.profile?.name || 'You').split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</Text>
+              </View>
+            )}
+            <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 6 }}>{useUser()?.profile?.name || 'You'}</Text>
+          </View>
         </View>
 
         {/* Analytics summary cards */}
@@ -100,31 +151,47 @@ export default function MoodAnalysis() {
           </View>
         </View>
 
+        {/* Today's check-in card (top) */}
+        <View style={[styles.todayCard, { backgroundColor: colors.surface }]}> 
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View>
+              <Text style={{ color: colors.onSurfaceVariant, fontSize: 12 }}>Today's check-in</Text>
+              <Text style={{ color: colors.onBackground, fontWeight: '700', marginTop: 6 }}>Check-in</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ color: colors.primary, fontWeight: '700' }}>3/3</Text>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>completed</Text>
+            </View>
+          </View>
+        </View>
+
         {/* Mood chart (custom vertical bars with emoji markers) */}
-        <View style={[styles.chartCard, { backgroundColor: colors.surface }]}>
+        <View style={[styles.chartWrap, { backgroundColor: colors.surface }]}> 
           <Text style={[styles.cardTitle, { color: colors.onBackground }]}>Mood chart</Text>
 
-          <View style={styles.chartInner}>
-            {recent.length === 0 ? (
-              <Text style={{ color: colors.textMuted }}>No data yet — add moods to see the chart.</Text>
-            ) : (
-              <View style={styles.chartRow}>
-                {recent.slice().reverse().map((e, i) => {
-                  const energy = Number(e.energyLevel) || 0; // 0-10
-                  const barHeight = Math.max(8, (energy / 10) * 140);
-                  const timeLabel = new Date(e.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
-                  const moodEmoji = getMoodEmoji(Number(e.mood));
+          <View style={[styles.chartBg]}> 
+            <View style={styles.chartInner}>
+              {recent.length === 0 ? (
+                <Text style={{ color: colors.textMuted }}>No data yet — add moods to see the chart.</Text>
+              ) : (
+                <View style={styles.chartRow}>
+                  {recent.slice().reverse().map((e, i) => {
+                    const energy = Number(e.energyLevel) || 0; // 0-10
+                    const barHeight = Math.max(8, (energy / 10) * 140);
+                    const timeLabel = new Date(e.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+                    const moodEmoji = getMoodEmoji(Number(e.mood));
 
-                  return (
-                    <View key={i} style={styles.chartColumn}>
-                      <View style={[styles.bar, { height: barHeight, backgroundColor: colors.primary + '55' }]} />
-                      <View style={styles.emojiMarker}><Text style={{ fontSize: 18 }}>{moodEmoji}</Text></View>
-                      <Text style={[styles.chartLabel, { color: colors.textMuted }]}>{timeLabel}</Text>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
+                    return (
+                      <View key={i} style={styles.chartColumn}>
+                        <View style={[styles.bar, { height: barHeight, backgroundColor: colors.primary + '55' }]} />
+                        <View style={styles.emojiMarker}><Text style={{ fontSize: 18 }}>{moodEmoji}</Text></View>
+                        <Text style={[styles.chartLabel, { color: colors.textMuted }]}>{timeLabel}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
           </View>
         </View>
 
@@ -147,7 +214,7 @@ export default function MoodAnalysis() {
         )}
 
         {/* Entries for selected day (or all recent if none) */}
-        <View style={[styles.listCard, { backgroundColor: colors.surface }]}>
+        <View style={[styles.listCard, { backgroundColor: colors.surface }]}> 
           <Text style={[styles.cardTitle, { color: colors.onBackground }]}>{selectedDay ? `Check-ins — ${selectedDay.dateKey}` : 'Recent check-ins'}</Text>
 
           {(!selectedDay || selectedDay.items.length === 0) && entries.length === 0 && (
@@ -155,18 +222,35 @@ export default function MoodAnalysis() {
           )}
 
           {(selectedDay ? selectedDay.items : entries.slice(0, 20)).map((e, idx) => (
-            <View key={idx} style={styles.entryRow}>
-              <View style={[styles.entryEmoji, { backgroundColor: colors.surfaceVariant }]}> 
-                <Text style={{ fontSize: 20 }}>{getMoodEmoji(Number(e.mood))}</Text>
+            <View key={idx} style={[styles.entryCard, { backgroundColor: colors.background }]}> 
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={[styles.entryEmoji, { backgroundColor: colors.surfaceVariant }]}> 
+                  <Text style={{ fontSize: 20 }}>{getMoodEmoji(Number(e.mood))}</Text>
+                </View>
+                <View style={{ flex: 1, marginLeft: 8 }}>
+                  <Text style={[styles.entryTitle, { color: colors.onBackground }]}>{getMoodLabel(Number(e.mood))}</Text>
+                  <Text style={[styles.entrySubtitle, { color: colors.textMuted }]}>{e.note || e.tags?.join(', ') || '—'}</Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ color: colors.textMuted }}>{new Date(e.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</Text>
+                  <Text style={{ color: colors.primary, marginTop: 6 }}>Edit</Text>
+                </View>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colors.onBackground, fontWeight: '600' }}>{getMoodLabel(Number(e.mood))}</Text>
-                <Text style={{ color: colors.textMuted, marginTop: 4 }}>{e.note || e.tags?.join(', ') || '—'}</Text>
-              </View>
-              <Text style={{ color: colors.textMuted }}>{new Date(e.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</Text>
             </View>
           ))}
 
+        </View>
+
+        {/* Quick feedback summary at the end */}
+        <View style={[styles.feedbackSummary, { backgroundColor: colors.surface }]}> 
+          <Text style={[styles.cardTitle, { color: colors.onBackground }]}>Quick feedback</Text>
+          <Text style={{ color: colors.onBackground, fontWeight: '700' }}>{quickFeedback.title}</Text>
+          <Text style={{ color: colors.textMuted, marginTop: 8 }}>Avg mood: {quickFeedback.avgMood} • Avg energy: {quickFeedback.avgEnergy}</Text>
+          <View style={{ marginTop: 10 }}>
+            {quickFeedback.tips.map((t, i) => (
+              <Text key={i} style={{ color: colors.textMuted, marginTop: 6 }}>{'•  '}{t}</Text>
+            ))}
+          </View>
         </View>
 
         <View style={{ height: 120 }} />
@@ -187,7 +271,9 @@ const styles = StyleSheet.create({
   statCard: { flex: 1, padding: 12, borderRadius: 12, marginRight: 12 },
   statLabel: { fontSize: 12 },
   statValue: { fontSize: 16, fontWeight: '700', marginTop: 6 },
-  chartCard: { marginTop: 16, borderRadius: 12, padding: 12 },
+  todayCard: { marginTop: 12, padding: 12, borderRadius: 12 },
+  chartWrap: { marginTop: 16, borderRadius: 12, padding: 12 },
+  chartBg: { marginTop: 8, borderRadius: 12, padding: 16, backgroundColor: '#f3eefe' },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
   chartInner: { alignItems: 'center', justifyContent: 'center' },
   chartRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
@@ -196,8 +282,16 @@ const styles = StyleSheet.create({
   emojiMarker: { marginBottom: 6 },
   chartLabel: { fontSize: 11, marginTop: 6 },
   listCard: { marginTop: 16, borderRadius: 12, padding: 12 },
+  entryCard: { marginTop: 8, padding: 12, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
   entryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#00000004' },
   entryEmoji: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  entryTitle: { fontWeight: '700' },
+  entrySubtitle: { marginTop: 4 },
   datePillsRow: { paddingVertical: 8, paddingHorizontal: 4 },
   datePill: { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginRight: 8, backgroundColor: '#ffffff10', alignItems: 'center', justifyContent: 'center' },
+  greeting: { fontSize: 20, fontWeight: '700' },
+  headerAvatar: { width: 48, height: 48, borderRadius: 24 },
+  avatarPlaceholder: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  avatarInitials: { color: '#fff', fontWeight: '700' },
+  feedbackSummary: { marginTop: 16, borderRadius: 12, padding: 12 },
 });
