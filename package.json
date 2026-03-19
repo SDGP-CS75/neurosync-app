@@ -4,7 +4,9 @@
   "description": "NeuroSync - A productivity app with AI-powered features",
   "private": true,
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "@types/react": "~19.2.10",
+    "concurrently": "^9.2.1",
+    "typescript": "~5.9.2"
   },
   "scripts": {
     "start:all": "concurrently \"cd backend && npm start\" \"cd frontend && npm dev\"",
@@ -13,6 +15,7 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-vector-icons/material-design-icons": "^12.4.0",
+    "expo": "^55.0.5",
     "firebase": "^12.9.0",
     "react-native-paper": "^5.14.5",
     "react-native-progress": "^5.0.1",
