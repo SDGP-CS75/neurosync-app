@@ -27,7 +27,7 @@ const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
 
 // ─── Types ─────────────────────────────────────────────────
 
-export type TaskStatus = "done" | "in-progress" | "todo";
+export type TaskStatus = "done" |"in-progress" |"todo";
 
 export interface SubTask {
   id: string;
@@ -50,7 +50,7 @@ export interface Task {
   iconBg: string;
   dateKey: string;
   subtasks?: SubTask[];
-  isSynced?: boolean;
+  isSynced: boolean;
 }
 
 type TasksContextType = {
@@ -59,6 +59,7 @@ type TasksContextType = {
   updateTask: (id: string, updates: Partial<Task>) => void;
   removeTask: (id: string) => void;
   toggleSubtaskDone: (taskId: string, subtaskId: string) => void;
+  toggleTaskStatus: (taskId: string) => void;
   isLoading: boolean;
   userId: string | null;
 };
@@ -266,6 +267,35 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     []
   );
 
+  const toggleTaskStatus = useCallback((taskId: string) => {
+    setTasks((prev) =>
+      prev.map((task) => {
+        if (task.id !== taskId) return task;
+
+        let newStatus: TaskStatus;
+
+        switch (task.status) {
+          case "todo":
+            newStatus = "in-progress";
+            break;
+          case "in-progress":
+            newStatus = "done";
+            break;
+          case "done":
+          default:
+            newStatus = "todo";
+            break;
+        }
+
+        return {
+          ...task,
+          status: newStatus,
+          isSynced: false,
+        };
+      })
+    );
+  }, []);
+
   return (
     <TasksContext.Provider
       value={{
@@ -274,6 +304,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         updateTask,
         removeTask,
         toggleSubtaskDone,
+        toggleTaskStatus,
         isLoading,
         userId,
       }}

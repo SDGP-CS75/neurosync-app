@@ -18,7 +18,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAppTheme } from "../../context/ThemeContext";
-import { useTasks, type Task, type TaskStatus } from "../../context/TasksContext";
+import { useTasks, type Task, type TaskStatus, } from "../../context/TasksContext";
 import Nav from "../../components/Nav";
 
 interface DateItem {
@@ -58,7 +58,7 @@ const todayDateKey = () => new Date().toISOString().slice(0, 10);
 
 export default function TodoListScreen() {
   const { theme } = useAppTheme();
-  const { tasks, isLoading, removeTask, toggleSubtaskDone } = useTasks();
+  const { tasks, isLoading, removeTask, toggleSubtaskDone, toggleTaskStatus } = useTasks();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -318,16 +318,18 @@ export default function TodoListScreen() {
                     </Text>
                   </View>
 
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      { backgroundColor: statusConfig.bg },
-                    ]}
-                  >
-                    <Text style={[styles.statusText, { color: statusConfig.color }]}>
-                      {statusConfig.label}
-                    </Text>
-                  </View>
+                  <TouchableOpacity onPress={() => toggleTaskStatus(task.id)}>
+                    <View
+                      style={[
+                        styles.statusBadge,
+                        { backgroundColor: statusConfig.bg },
+                      ]}
+                    >
+                      <Text style={[styles.statusText, { color: statusConfig.color }]}>
+                        {statusConfig.label}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
                 </View>
               </View>
             );

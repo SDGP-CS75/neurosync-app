@@ -312,6 +312,7 @@ export default function AddTaskScreen() {
       status:   "todo",
       dateKey,
       subtasks: subTasks,
+      isSynced: false,
     });
 
     setMainTask("");
