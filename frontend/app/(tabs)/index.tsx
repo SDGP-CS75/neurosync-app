@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, useWindowDimensions, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import CircularProgress from 'react-native-circular-progress-indicator';
@@ -12,74 +12,107 @@ import TaskGroupCard from '../../components/TaskGroupCard';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useUser } from '../../context/UserContext';
 
+const BASE_WIDTH = 390;
+
 export default function DashboardScreen() {
   const router = useRouter();
   const { profile } = useUser();
+  const { width } = useWindowDimensions();
+  
+  // Responsive scaling
+  const scale = Math.min(width / BASE_WIDTH, 1.3);
+  const horizontalPadding = Math.round(20 * scale);
+  const avatarSize = Math.round(48 * scale);
+  const avatarRadius = avatarSize / 2;
+  const cardPadding = Math.round(24 * scale);
+  const titleFontSize = Math.round(20 * scale);
+  const subtitleFontSize = Math.round(14 * scale);
+
+  // Styles
+  const styles = StyleSheet.create({
+    container: { flex: 1 },
+    scrollView: { flex: 1 },
+    scrollContent: { paddingTop: 8, paddingBottom: 100 },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 * scale },
+    headerLeft: { flexDirection: 'row', alignItems: 'center' },
+    greetingContainer: { marginLeft: 12 * scale },
+    greetingText: { color: '#6B7280' },
+    userNameText: { fontWeight: 'bold', color: '#1F2937' },
+    notificationBtn: { backgroundColor: 'white', padding: 8 * scale, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+    heroCard: { backgroundColor: '#8B5CF6', borderRadius: 24 * scale, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 * scale },
+    heroContent: { flex: 1, paddingRight: 16 * scale },
+    heroTitle: { color: 'white', fontWeight: 'bold', marginBottom: 16 * scale, lineHeight: 28 * scale },
+    heroButton: { backgroundColor: 'white', paddingVertical: 12 * scale, paddingHorizontal: 24 * scale, borderRadius: 12 * scale, alignSelf: 'flex-start' },
+    heroButtonText: { color: '#8B5CF6', fontWeight: '600', fontSize: 14 * scale },
+    heroRight: { alignItems: 'center' },
+    heroMenuBtn: { alignSelf: 'flex-end', marginBottom: 8 * scale },
+    inProgressScroll: { marginBottom: 24 * scale },
+    taskGroupsContainer: { marginBottom: 96 },
+  });
 
   return (
-    <SafeAreaView className="flex-1">
-      <ScrollView className="flex-1 px-5 pt-2" showsVerticalScrollIndicator={false}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: horizontalPadding }]} showsVerticalScrollIndicator={false}>
         
         {/* Header - Clickable routing to Profile */}
-        <View className="flex-row justify-between items-center mb-6">
+        <View style={styles.header}>
           <TouchableOpacity 
-            className="flex-row items-center"
+            style={styles.headerLeft}
             onPress={() => router.push('/settings')}
             activeOpacity={0.7}
           >
             {/* Profile image from user context */}
             <Image
               source={{ uri: profile.profileImage || 'https://via.placeholder.com/48' }}
-              style={{ width: 48, height: 48, borderRadius: 24 }}
-              className="mr-3"
+              style={{ width: avatarSize, height: avatarSize, borderRadius: avatarRadius }}
             />
-            <View>
-              <Text className="text-gray-500 text-base">Hello!</Text>
-              <Text className="text-xl font-bold text-gray-800">{profile.name || 'User'}</Text>
+            <View style={styles.greetingContainer}>
+              <Text style={[styles.greetingText, { fontSize: subtitleFontSize }]}>Hello!</Text>
+              <Text style={[styles.userNameText, { fontSize: titleFontSize }]}>{profile.name || 'User'}</Text>
             </View>
           </TouchableOpacity>
           
-          <TouchableOpacity className="bg-white p-2 rounded-full shadow-sm shadow-gray-200">
-            <Ionicons name="notifications-outline" size={24} color="black" />
+          <TouchableOpacity style={styles.notificationBtn}>
+            <Ionicons name="notifications-outline" size={24 * scale} color="black" />
           </TouchableOpacity>
         </View>
 
         {/* Hero Card */}
-        <View className="bg-purple-600 rounded-3xl p-6 mb-6 flex-row justify-between items-center">
-          <View className="flex-1 pr-4">
-            <Text className="text-white text-xl font-bold mb-4 leading-7">
+        <View style={[styles.heroCard, { padding: cardPadding }]}>
+          <View style={styles.heroContent}>
+            <Text style={[styles.heroTitle, { fontSize: titleFontSize }]}>
               Your today's task{'\n'}almost done!
             </Text>
-            <TouchableOpacity className="bg-white py-3 px-6 rounded-xl self-start">
-              <Text className="text-purple-700 font-semibold">View Task</Text>
+            <TouchableOpacity style={styles.heroButton}>
+              <Text style={styles.heroButtonText}>View Task</Text>
             </TouchableOpacity>
           </View>
-          <View className="items-center">
-            <TouchableOpacity className="self-end mb-2">
-              <Ionicons name="ellipsis-horizontal" size={24} color="rgba(255,255,255,0.6)" />
+          <View style={styles.heroRight}>
+            <TouchableOpacity style={styles.heroMenuBtn}>
+              <Ionicons name="ellipsis-horizontal" size={24 * scale} color="rgba(255,255,255,0.6)" />
             </TouchableOpacity>
             <CircularProgress
               value={85}
-              radius={45}
+              radius={45 * scale}
               duration={1500}
               progressValueColor={'#fff'}
               activeStrokeColor={'#fff'}
               inActiveStrokeColor={'rgba(255,255,255,0.2)'}
-              activeStrokeWidth={8}
-              inActiveStrokeWidth={8}
+              activeStrokeWidth={8 * scale}
+              inActiveStrokeWidth={8 * scale}
               valueSuffix={'%'}
-              titleStyle={{ fontWeight: 'bold' }}
+              titleStyle={{ fontWeight: 'bold', fontSize: 14 * scale }}
             />
           </View>
         </View>
 
         {/* In Progress Section */}
         <SectionTitle title="In Progress" count={6} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inProgressScroll}>
           <InProgressCard
             title="Office Project"
             subtitle="Grocery shopping app design"
-            icon={<Ionicons name="briefcase-outline" size={24} color="#8B5CF6" />}
+            icon={<Ionicons name="briefcase-outline" size={24 * scale} color="#8B5CF6" />}
             bgColor="bg-purple-100"
             progress={0.7}
             progressColor="#8B5CF6"
@@ -87,7 +120,7 @@ export default function DashboardScreen() {
           <InProgressCard
             title="Personal Project"
             subtitle="Uber Eats redesign challenge"
-            icon={<Ionicons name="person-outline" size={24} color="#F97316" />}
+            icon={<Ionicons name="person-outline" size={24 * scale} color="#F97316" />}
             bgColor="bg-orange-100"
             progress={0.5}
             progressColor="#F97316"
@@ -96,26 +129,26 @@ export default function DashboardScreen() {
 
         {/* Task Groups Section */}
         <SectionTitle title="Task Groups" count={4} />
-        <View className="mb-24">
+        <View style={styles.taskGroupsContainer}>
           <TaskGroupCard
             title="Office Project"
             tasks={23}
             progress={70}
-            icon={<Ionicons name="briefcase-outline" size={24} color="#EC4899" />}
+            icon={<Ionicons name="briefcase-outline" size={24 * scale} color="#EC4899" />}
             iconBgColor="bg-pink-100"
           />
           <TaskGroupCard
             title="Office Project"
             tasks={30}
             progress={70}
-            icon={<MaterialCommunityIcons name="briefcase-clock-outline" size={24} color="#8B5CF6" />}
+            icon={<MaterialCommunityIcons name="briefcase-clock-outline" size={24 * scale} color="#8B5CF6" />}
             iconBgColor="bg-purple-100"
           />
           <TaskGroupCard
             title="Daily Study"
             tasks={30}
             progress={87}
-            icon={<Ionicons name="book-outline" size={24} color="#F59E0B" />}
+            icon={<Ionicons name="book-outline" size={24 * scale} color="#F59E0B" />}
             iconBgColor="bg-orange-100"
           />
         </View>
