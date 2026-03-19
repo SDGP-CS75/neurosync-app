@@ -225,38 +225,80 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Today's Task Card */}
-          <LinearGradient
-            colors={[theme.colors.primary, theme.colors.secondary]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.todayCard}
+          {/* Swipeable cards: Today's Task + Mood Tracking widget */}
+          <ScrollView
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            style={{ marginBottom: 25 }}
+            contentContainerStyle={{ paddingHorizontal: 20 }}
           >
-            <View style={styles.todayCardContent}>
-              <View style={styles.todayCardLeft}>
-                <Text style={styles.todayCardTitle}>
-                  Your today's task{"\n"}almost done!
-                </Text>
-                <TouchableOpacity style={styles.viewTaskBtn}>
-                  <Text style={[styles.viewTaskText, { color: theme.colors.primary }]}>
-                    View Task
+            {/* Today's Task Card (centered, inset) */}
+            <LinearGradient
+              colors={[theme.colors.primary, theme.colors.secondary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.todayCard, { width: width - 48, marginHorizontal: 12 }]}
+            >
+              <View style={styles.todayCardContent}>
+                <View style={styles.todayCardLeft}>
+                  <Text style={styles.todayCardTitle}>
+                    Your today's task{"\n"}almost done!
                   </Text>
-                </TouchableOpacity>
+                  <TouchableOpacity style={styles.viewTaskBtn} onPress={() => router.push('/(tabs)/todo-list' as any)}>
+                    <Text style={[styles.viewTaskText, { color: theme.colors.primary }]}>View Task</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.todayCardRight}>
+                  <TouchableOpacity style={styles.chatIcon}>
+                    <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
+                  </TouchableOpacity>
+                  <CircularProgress
+                    percentage={85}
+                    size={90}
+                    strokeWidth={8}
+                    progressColor="#fff"
+                    bgColor="rgba(255,255,255,0.3)"
+                  />
+                </View>
               </View>
-              <View style={styles.todayCardRight}>
-                <TouchableOpacity style={styles.chatIcon}>
-                  <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
-                </TouchableOpacity>
-                <CircularProgress
-                  percentage={85}
-                  size={90}
-                  strokeWidth={8}
-                  progressColor="#fff"
-                  bgColor="rgba(255,255,255,0.3)"
-                />
+            </LinearGradient>
+
+            {/* Mood Tracking Widget Card (centered, inset) */}
+            <LinearGradient
+              colors={[theme.colors.secondary, theme.colors.primary]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[styles.todayCard, { width: width - 48, marginHorizontal: 12 }]}
+            >
+              <View style={styles.todayCardContent}>
+                <View style={styles.todayCardLeft}>
+                  <Text style={[styles.todayCardTitle, { color: '#fff' }]}>Mood Check-in</Text>
+                  <Text style={{ color: 'rgba(255,255,255,0.9)', marginTop: 8 }}>
+                    Quick mood snapshot to help track how you feel.
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.viewTaskBtn, { marginTop: 12 }]}
+                    onPress={() => router.push('/(tabs)/mood-analysis' as any)}
+                  >
+                    <Text style={[styles.viewTaskText, { color: theme.colors.primary }]}>Your Mood Analysis</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.todayCardRight}>
+                  <View style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: 40,
+                    backgroundColor: 'rgba(255,255,255,0.15)',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Text style={{ fontSize: 36 }}>😊</Text>
+                  </View>
+                </View>
               </View>
-            </View>
-          </LinearGradient>
+            </LinearGradient>
+          </ScrollView>
 
           {/* In Progress Section */}
           <View style={styles.section}>

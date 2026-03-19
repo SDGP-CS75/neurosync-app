@@ -4,6 +4,7 @@ import { BlurView } from 'expo-blur';
 import Slider from "@react-native-community/slider";
 import { useTheme } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Nav from "../../components/Nav";
 
 export default function MoodTracking() {
@@ -61,6 +62,17 @@ export default function MoodTracking() {
     };
 
     console.log("Mood Entry:", entry);
+    // persist entry to AsyncStorage
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem('mood_entries');
+        const arr = raw ? JSON.parse(raw) : [];
+        arr.unshift(entry); // newest first
+        await AsyncStorage.setItem('mood_entries', JSON.stringify(arr));
+      } catch (e) {
+        console.log('Error saving mood entry', e);
+      }
+    })();
   };
 
   // no entrance animation
