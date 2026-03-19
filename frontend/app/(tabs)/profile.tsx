@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, ScrollView, Image, TouchableOpacity, Switch, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useUser } from '../../context/UserContext';
+import { logoutUser } from '../../services/auth';
 
 // Reusable component for grouped settings items to keep the code clean
 interface SettingsItemProps {
@@ -57,7 +58,30 @@ const SettingsGroupTitle = ({ title }: { title: string }) => (
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { profile } = useUser();
+  const { profile, resetProfile } = useUser();
+  
+  const handleLogout = async () => {
+    Alert.alert(
+      'Log Out',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logoutUser();
+              resetProfile();
+              router.replace('/(auth)/welcome');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to log out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
   
   // State for our ADHD-friendly toggles
   const [isAiSuggestionsEnabled, setIsAiSuggestionsEnabled] = useState(true);
@@ -160,7 +184,10 @@ export default function ProfileScreen() {
         />
 
         {/* Logout Button */}
-        <TouchableOpacity className="mt-8 mb-12 bg-purple-100 py-4 rounded-2xl items-center flex-row justify-center">
+        <TouchableOpacity 
+          className="mt-8 mb-12 bg-purple-100 py-4 rounded-2xl items-center flex-row justify-center"
+          onPress={handleLogout}
+        >
           <Ionicons name="log-out-outline" size={20} color="#7C3AED" style={{ marginRight: 8 }} />
           <Text className="text-purple-700 text-lg font-bold">Log Out</Text>
         </TouchableOpacity>

@@ -1,7 +1,20 @@
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { API_BASE } from '../constants/api';
 
 const auth = getAuth();
+
+export const logoutUser = async () => {
+  try {
+    await signOut(auth);
+    return true;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error('Logout failed: ' + error.message);
+    } else {
+      throw new Error('Logout failed: Unknown error');
+    }
+  }
+};
 
 export const loginUser = async (email: string, password: string) => {
   try {
