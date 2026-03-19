@@ -121,8 +121,8 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     key:     "profile",
-    path:    "/(tabs)/profile",
-    segment: "profile",
+    path:    "/(tabs)/settings",
+    segment: "settings",
     renderIcon: (size, color) => (
       <MaterialCommunityIcons name="account" size={size} color={color} />
     ),
