@@ -203,7 +203,7 @@ export default function HomeScreen() {
             >
               <Image
                 source={{
-                  uri: profile.profileImage,
+                  uri: profile.profileImage || 'https://via.placeholder.com/50',
                 }}
                 style={styles.avatar}
               />

@@ -48,18 +48,16 @@ function AppShell() {
   );
 }
 
-// Root wraps everything in SafeAreaProvider + ThemeProvider + UserProvider
-// Root wraps everything in SafeAreaProvider + ThemeProvider + TasksProvider
+// Root wraps everything in SafeAreaProvider + ThemeProvider + UserProvider + TasksProvider
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
         <UserProvider>
-          <AppShell />
+          <TasksProvider>
+            <AppShell />
+          </TasksProvider>
         </UserProvider>
-        <TasksProvider>
-          <AppShell />
-        </TasksProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

@@ -123,9 +123,6 @@ export default function AddTaskScreen() {
     setAiError(null);
     setAiLoading(true);
     const url = `${API_BASE}/api/ai/breakdown`;
-    // #region agent log
-    fetch(`${API_BASE}/api/debug-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'add-task.tsx:handleBreakIntoSteps',message:'AI breakdown request',data:{apiBase:API_BASE,url},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
 
     const startTime = Date.now();
 
@@ -136,9 +133,6 @@ export default function AddTaskScreen() {
         body: JSON.stringify({ task: taskText }),
       });
       const data = await res.json();
-      // #region agent log
-      fetch(`${API_BASE}/api/debug-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'add-task.tsx:handleBreakIntoSteps',message:'AI breakdown response',data:{ok:res.ok,status:res.status},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       if (!res.ok) {
         throw new Error(data?.error || "Failed to break into steps");
       }
@@ -159,9 +153,6 @@ export default function AddTaskScreen() {
       }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Something went wrong";
-      // #region agent log
-      fetch(`${API_BASE}/api/debug-log`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'add-task.tsx:handleBreakIntoSteps',message:'AI breakdown error',data:{message:msg},timestamp:Date.now(),hypothesisId:'C'})}).catch(()=>{});
-      // #endregion
       const isQuota = /quota|exceeded|rate.limit|limit:\s*0/i.test(msg);
       setAiError(
         isQuota
