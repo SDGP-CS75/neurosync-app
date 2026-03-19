@@ -9,6 +9,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { onAuthStateChanged } from "firebase/auth";
@@ -118,6 +119,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   }, [userId, tasks, isLoading]);
 
   const syncTasksToFirebase = useCallback(async () => {
+    console.log("Starting task sync..."); // 👈 debug
     if (!userId) return;
 
     const updatedTasks = [...tasks];
@@ -145,18 +147,34 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     setTasks(updatedTasks);
   }, [userId]);
 
-  useEffect(() => {
-    console.log("Setting up network listener for task sync...");   // 👈 debug
-    const unsubscribe = NetInfo.addEventListener((state) => {
-      if (state.isConnected) {
-        console.log("Device is online, attempting to sync tasks...");  // 👈 debug
-        syncTasksToFirebase(); // 👈 trigger sync
-      }
-    });
+  // useEffect(() => {
+  //   console.log("Setting up network listener for task sync...");   // 👈 debug
+  //   const unsubscribe = NetInfo.addEventListener((state) => {
+  //     if (state.isConnected) {
+  //       console.log("Device is online, attempting to sync tasks...");  // 👈 debug
+  //       syncTasksToFirebase(); // 👈 trigger sync
+  //       console.log("Sync complete."); // 👈 debug
+  //     }
+  //   });
 
-    return () => unsubscribe();
-  }, [syncTasksToFirebase]);
+  //   return () => unsubscribe();
+  // }, [syncTasksToFirebase]);
+  const syncRef = useRef(syncTasksToFirebase);
 
+    useEffect(() => {
+      syncRef.current = syncTasksToFirebase;
+    }, [syncTasksToFirebase]);
+
+    useEffect(() => {
+      const unsubscribe = NetInfo.addEventListener((state) => {
+        if (state.isConnected) {
+          syncRef.current();
+          console.log("Device is online, attempted to sync tasks.");  // 👈 debug
+        }
+      });
+
+      return () => unsubscribe();
+    }, []);
 //   useEffect(() => {
 //   if (userId) {
 //     syncTasksToFirebase();
