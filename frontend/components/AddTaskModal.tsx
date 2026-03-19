@@ -1,7 +1,8 @@
 /**
  * app/components/AddTaskModal.tsx
  * ─────────────────────────────────────────────────────────────────
- * Bottom sheet modal for adding new tasks.
+ * Bottom sheet modal for adding new tasks manually (no AI).
+ * Category is now a horizontal chip selector matching AI-returned categories.
  */
 
 import React, { useState } from "react";
@@ -18,41 +19,82 @@ import { Button, TextInput } from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useAppTheme } from "../context/ThemeContext";
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+// Must match the categories returned by aiController
+type Category = "Work" | "Personal" | "Shopping" | "Health" | "Finance" | "Creative" | "Other";
+
+const CATEGORIES: Category[] = [
+  "Work", "Personal", "Shopping", "Health", "Finance", "Creative", "Other",
+];
+
+// Maps each category to the same emoji + iconBg as CATEGORY_META in aiController
+const CATEGORY_META: Record<Category, { emoji: string; iconBg: string }> = {
+  Work:     { emoji: "💼", iconBg: "#E3F2FD" },
+  Personal: { emoji: "🙂", iconBg: "#F3E5F5" },
+  Shopping: { emoji: "🛒", iconBg: "#E8F5E9" },
+  Health:   { emoji: "💪", iconBg: "#FCE4EC" },
+  Finance:  { emoji: "💰", iconBg: "#FFFDE7" },
+  Creative: { emoji: "🎨", iconBg: "#FFF3E0" },
+  Other:    { emoji: "📋", iconBg: "#E8E4FF" },
+};
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+
 interface AddTaskModalProps {
   visible: boolean;
   onClose: () => void;
   onSave?: (task: {
-    title: string;
+    title:    string;
     category: string;
-    time: string;
-    status: string;
+    icon:     string;
+    iconBg:   string;
+    time:     string;
+    dueDate?:  string;
+    location?: string;
+    reminder?: string;
+    status:   string;
   }) => void;
 }
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalProps) {
   const { theme } = useAppTheme();
   const { width } = useWindowDimensions();
 
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("");
-  const [time, setTime] = useState("");
-  const [status, setStatus] = useState<"todo" | "in-progress" | "done">("todo");
-
   const isSmallScreen = width < 375;
+
+  const [title,    setTitle]    = useState("");
+  const [category, setCategory] = useState<Category>("Personal");
+  const [time,     setTime]     = useState("");
+  const [location, setLocation] = useState("");
+  const [reminder, setReminder] = useState("");
+  const [status,   setStatus]   = useState<"todo" | "in-progress" | "done">("todo");
 
   const handleSave = () => {
     if (!title.trim()) return;
 
+    const meta = CATEGORY_META[category];
+
     onSave?.({
-      title: title.trim(),
-      category: category.trim() || "Personal",
-      time: time.trim() || "12:00 PM",
+      title:    title.trim(),
+      category,
+      icon:     meta.emoji,
+      iconBg:   meta.iconBg,
+      time:     time.trim() || "No time",
+      dueDate:  time.trim() || undefined,
+      location: location.trim() || undefined,
+      reminder: reminder.trim() || undefined,
       status,
     });
 
+    // Reset
     setTitle("");
-    setCategory("");
+    setCategory("Personal");
     setTime("");
+    setLocation("");
+    setReminder("");
     setStatus("todo");
     onClose();
   };
@@ -73,16 +115,16 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
           style={[
             styles.sheet,
             {
-              backgroundColor: theme.colors.surface,
+              backgroundColor:  theme.colors.surface,
               paddingHorizontal: isSmallScreen ? 20 : 24,
             },
           ]}
           onStartShouldSetResponder={() => true}
         >
-          <View
-            style={[styles.handleBar, { backgroundColor: theme.colors.outline }]}
-          />
+          {/* Handle bar */}
+          <View style={[styles.handleBar, { backgroundColor: theme.colors.outline }]} />
 
+          {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: theme.colors.text }]}>
               Add New Task
@@ -93,6 +135,8 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
+
+            {/* ── Task Title */}
             <View style={styles.field}>
               <Text style={[styles.label, { color: theme.colors.textMuted }]}>
                 Task Title
@@ -102,8 +146,8 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
                   styles.input,
                   {
                     backgroundColor: theme.colors.background,
-                    color: theme.colors.text,
-                    borderColor: theme.colors.outline,
+                    color:           theme.colors.text,
+                    borderColor:     theme.colors.outline,
                   },
                 ]}
                 placeholder="Enter task title"
@@ -113,26 +157,52 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
               />
             </View>
 
+            {/* ── Category chips */}
             <View style={styles.field}>
               <Text style={[styles.label, { color: theme.colors.textMuted }]}>
                 Category
               </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.colors.background,
-                    color: theme.colors.text,
-                    borderColor: theme.colors.outline,
-                  },
-                ]}
-                placeholder="e.g. Work, Personal, Shopping"
-                placeholderTextColor={theme.colors.textMuted}
-                value={category}
-                onChangeText={setCategory}
-              />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipsRow}
+              >
+                {CATEGORIES.map((cat) => {
+                  const isSelected = category === cat;
+                  const meta       = CATEGORY_META[cat];
+                  return (
+                    <TouchableOpacity
+                      key={cat}
+                      onPress={() => setCategory(cat)}
+                      activeOpacity={0.8}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: isSelected
+                            ? theme.colors.primary
+                            : theme.colors.background,
+                          borderColor: isSelected
+                            ? theme.colors.primary
+                            : theme.colors.outline,
+                        },
+                      ]}
+                    >
+                      <Text style={styles.chipEmoji}>{meta.emoji}</Text>
+                      <Text
+                        style={[
+                          styles.chipLabel,
+                          { color: isSelected ? "#FFF" : theme.colors.textMuted },
+                        ]}
+                      >
+                        {cat}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
             </View>
 
+            {/* ── Time */}
             <View style={styles.field}>
               <Text style={[styles.label, { color: theme.colors.textMuted }]}>
                 Time
@@ -142,8 +212,8 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
                   styles.input,
                   {
                     backgroundColor: theme.colors.background,
-                    color: theme.colors.text,
-                    borderColor: theme.colors.outline,
+                    color:           theme.colors.text,
+                    borderColor:     theme.colors.outline,
                   },
                 ]}
                 placeholder="e.g. 10:00 AM"
@@ -153,6 +223,49 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
               />
             </View>
 
+            {/* ── Location */}
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.colors.textMuted }]}>
+                Location
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.background,
+                    color:           theme.colors.text,
+                    borderColor:     theme.colors.outline,
+                  },
+                ]}
+                placeholder="e.g. Whole Foods"
+                placeholderTextColor={theme.colors.textMuted}
+                value={location}
+                onChangeText={setLocation}
+              />
+            </View>
+
+            {/* ── Reminder */}
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.colors.textMuted }]}>
+                Reminder
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.background,
+                    color:           theme.colors.text,
+                    borderColor:     theme.colors.outline,
+                  },
+                ]}
+                placeholder="e.g. 30 minutes before"
+                placeholderTextColor={theme.colors.textMuted}
+                value={reminder}
+                onChangeText={setReminder}
+              />
+            </View>
+
+            {/* ── Status chips */}
             <View style={styles.field}>
               <Text style={[styles.label, { color: theme.colors.textMuted }]}>
                 Status
@@ -160,7 +273,9 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
               <View style={styles.statusRow}>
                 {(["todo", "in-progress", "done"] as const).map((s) => {
                   const isSelected = status === s;
-                  const label = s === "todo" ? "To-do" : s === "in-progress" ? "In Progress" : "Done";
+                  const label =
+                    s === "todo"        ? "To-do"       :
+                    s === "in-progress" ? "In Progress" : "Done";
                   return (
                     <TouchableOpacity
                       key={s}
@@ -200,6 +315,7 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
             >
               Add Task
             </Button>
+
           </ScrollView>
         </View>
       </TouchableOpacity>
@@ -207,11 +323,13 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
   backdrop: {
-    flex: 1,
+    flex:            1,
     backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
+    justifyContent:  "flex-end",
   },
   sheet: {
     borderTopLeftRadius:  24,
@@ -222,10 +340,10 @@ const styles = StyleSheet.create({
   },
   handleBar: {
     width:        40,
-    height:       4,
-    borderRadius: 2,
+    height:        4,
+    borderRadius:  2,
     alignSelf:    "center",
-    marginBottom: 16,
+    marginBottom:  16,
   },
   header: {
     flexDirection:  "row",
@@ -233,42 +351,43 @@ const styles = StyleSheet.create({
     alignItems:     "center",
     marginBottom:   24,
   },
-  title: {
-    fontSize:   22,
-    fontWeight: "700",
-  },
-  field: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize:     14,
-    fontWeight:   "600",
-    marginBottom: 8,
-  },
+  title: { fontSize: 22, fontWeight: "700" },
+
+  field:  { marginBottom: 20 },
+  label:  { fontSize: 14, fontWeight: "600", marginBottom: 8 },
+
   input: {
     borderRadius:      12,
-    borderWidth:       1,
+    borderWidth:        1,
     paddingHorizontal: 16,
     paddingVertical:   14,
     fontSize:          16,
   },
-  statusRow: {
-    flexDirection: "row",
-    gap: 10,
+
+  // Category chips
+  chipsRow: { gap: 8, paddingVertical: 2 },
+  chip: {
+    flexDirection:    "row",
+    alignItems:       "center",
+    paddingHorizontal: 14,
+    paddingVertical:   10,
+    borderRadius:      20,
+    borderWidth:        1,
+    gap:                6,
   },
+  chipEmoji: { fontSize: 15 },
+  chipLabel: { fontSize: 13, fontWeight: "600" },
+
+  // Status chips
+  statusRow: { flexDirection: "row", gap: 10 },
   statusChip: {
-    flex: 1,
-    paddingVertical:   12,
-    borderRadius:      12,
-    borderWidth:       1,
-    alignItems:        "center",
+    flex:            1,
+    paddingVertical: 12,
+    borderRadius:    12,
+    borderWidth:      1,
+    alignItems:      "center",
   },
-  statusLabel: {
-    fontSize:   14,
-    fontWeight: "600",
-  },
-  saveButton: {
-    marginTop:      24,
-    paddingVertical: 8,
-  },
+  statusLabel: { fontSize: 14, fontWeight: "600" },
+
+  saveButton: { marginTop: 24, paddingVertical: 8 },
 });

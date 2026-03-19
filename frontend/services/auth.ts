@@ -4,11 +4,29 @@ import { API_BASE } from '../constants/api';
 const auth = getAuth();
 
 export const loginUser = async (email: string, password: string) => {
-  return await signInWithEmailAndPassword(auth, email, password);
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error('Login failed: ' + error.message);
+    } else {
+      throw new Error('Login failed: Unknown error');
+    }
+  }
 };
 
 export const signUpUser = async (email: string, password: string) => {
-  return await createUserWithEmailAndPassword(auth, email, password);
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error('Signup failed: ' + error.message);
+    } else {
+      throw new Error('Signup failed: Unknown error');
+    }
+  }
 };
 
 export const createUserProfile = async (uid: string, firstName: string, lastName: string) => {

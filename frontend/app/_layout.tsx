@@ -41,6 +41,13 @@ function AppShell() {
                 contentStyle: { backgroundColor: "transparent" },
               }}
             />
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                headerShown: false,
+                contentStyle: { backgroundColor: "transparent" },
+              }}
+            />
           </Stack>
         </View>
       </ImageBackground>

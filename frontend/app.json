@@ -36,7 +36,10 @@
             "backgroundColor": "#000000"
           }
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-speech-recognition",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,
