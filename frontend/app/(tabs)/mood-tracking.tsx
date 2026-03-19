@@ -1,5 +1,5 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Animated } from "react-native";
-import { useState, useRef, useEffect } from "react";
+import { View, Text, TextInput, TouchableOpacity, ScrollView } from "react-native";
+import { useState } from "react";
 import Slider from "@react-native-community/slider";
 import { useTheme } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -57,33 +57,11 @@ export default function MoodTracking() {
     console.log("Mood Entry:", entry);
   };
 
-  // Entrance animation for smoother transitions
-  const entranceAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(entranceAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
-  }, [entranceAnim]);
+  // no entrance animation
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
-      <Animated.View
-        style={{
-          flex: 1,
-          opacity: entranceAnim,
-          transform: [
-            {
-              translateY: entranceAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [8, 0],
-              }),
-            },
-          ],
-        }}
-      >
+      <View style={{ flex: 1 }}>
         <ScrollView
           style={{ flex: 1, backgroundColor: colors.background }}
           contentContainerStyle={{
@@ -283,7 +261,7 @@ export default function MoodTracking() {
 
         <Nav />
 
-      </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }
