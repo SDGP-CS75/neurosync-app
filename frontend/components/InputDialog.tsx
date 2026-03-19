@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Portal, Dialog, Button, TextInput } from "react-native-paper";
 import { theme } from "../constants/theme";
 
@@ -8,6 +8,7 @@ interface InputDialogProps {
   title: string;
   placeholder?: string;
   onSubmit: (value: string) => void;
+  initialValue?: string;
 }
 
 const InputDialog: React.FC<InputDialogProps> = ({
@@ -16,13 +17,21 @@ const InputDialog: React.FC<InputDialogProps> = ({
     title,
     placeholder,
     onSubmit,
+    initialValue = "",
 }) => {
 
-    const [text, setText] = useState<string>("");
+    const [text, setText] = useState<string>(initialValue);
+
+    // Reset text when dialog opens with a new initial value
+    useEffect(() => {
+        if (visible) {
+            setText(initialValue);
+        }
+    }, [visible, initialValue]);
 
     const handleSubmit = () => {
         onSubmit(text);
-        setText(""); 
+        setText("");
         hideDialog();
     };
 

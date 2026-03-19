@@ -40,7 +40,8 @@
         }
       ],
       "expo-web-browser",
-      "expo-speech-recognition"
+      "expo-speech-recognition",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -50,6 +50,9 @@ interface AddTaskModalProps {
     icon:     string;
     iconBg:   string;
     time:     string;
+    dueDate?:  string;
+    location?: string;
+    reminder?: string;
     status:   string;
   }) => void;
 }
@@ -65,6 +68,8 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
   const [title,    setTitle]    = useState("");
   const [category, setCategory] = useState<Category>("Personal");
   const [time,     setTime]     = useState("");
+  const [location, setLocation] = useState("");
+  const [reminder, setReminder] = useState("");
   const [status,   setStatus]   = useState<"todo" | "in-progress" | "done">("todo");
 
   const handleSave = () => {
@@ -78,6 +83,9 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
       icon:     meta.emoji,
       iconBg:   meta.iconBg,
       time:     time.trim() || "No time",
+      dueDate:  time.trim() || undefined,
+      location: location.trim() || undefined,
+      reminder: reminder.trim() || undefined,
       status,
     });
 
@@ -85,6 +93,8 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
     setTitle("");
     setCategory("Personal");
     setTime("");
+    setLocation("");
+    setReminder("");
     setStatus("todo");
     onClose();
   };
@@ -210,6 +220,48 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
                 placeholderTextColor={theme.colors.textMuted}
                 value={time}
                 onChangeText={setTime}
+              />
+            </View>
+
+            {/* ── Location */}
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.colors.textMuted }]}>
+                Location
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.background,
+                    color:           theme.colors.text,
+                    borderColor:     theme.colors.outline,
+                  },
+                ]}
+                placeholder="e.g. Whole Foods"
+                placeholderTextColor={theme.colors.textMuted}
+                value={location}
+                onChangeText={setLocation}
+              />
+            </View>
+
+            {/* ── Reminder */}
+            <View style={styles.field}>
+              <Text style={[styles.label, { color: theme.colors.textMuted }]}>
+                Reminder
+              </Text>
+              <TextInput
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: theme.colors.background,
+                    color:           theme.colors.text,
+                    borderColor:     theme.colors.outline,
+                  },
+                ]}
+                placeholder="e.g. 30 minutes before"
+                placeholderTextColor={theme.colors.textMuted}
+                value={reminder}
+                onChangeText={setReminder}
               />
             </View>
 

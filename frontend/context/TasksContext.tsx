@@ -39,6 +39,9 @@ export interface Task {
   title:    string;
   time?:    string;
   status:   TaskStatus;
+  dueDate?: string;  // Due date for the task
+  location?: string; // Location for the task
+  reminder?: string; // Reminder time for the task
   icon:     string;   // emoji from aiController CATEGORY_META
   iconBg:   string;   // hex colour from aiController CATEGORY_META
   dateKey:  string;   // YYYY-MM-DD — used to filter tasks by day
