@@ -29,7 +29,7 @@ export const signUpUser = async (email: string, password: string) => {
   }
 };
 
-export const createUserProfile = async (uid: string, firstName: string, lastName: string) => {
+export const createUserProfile = async (firstName: string, lastName: string) => {
   const token = await getAuth().currentUser?.getIdToken();
   const url = `${API_BASE}/api/users`;
   const response = await fetch(url, {
@@ -38,7 +38,8 @@ export const createUserProfile = async (uid: string, firstName: string, lastName
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ uid, firstName, lastName }),
+    // UID is now extracted from the authenticated user's token on the backend
+    body: JSON.stringify({ firstName, lastName }),
   });
   const data = await response.json();
   return data;

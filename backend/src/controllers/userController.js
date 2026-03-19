@@ -13,10 +13,22 @@ export const getUserProfile = async (req, res) => {
 
 export const createUserProfile = async (req, res) => {
   try {
-    const { uid, firstName, lastName } = req.body;
-    if (!uid || !firstName || !lastName) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    // Get UID from authenticated user, not from request body
+    const uid = req.user.uid;
+    const { firstName, lastName } = req.body;
+    
+    if (!firstName || !lastName) {
+      return res.status(400).json({ error: 'Missing required fields: firstName and lastName are required' });
     }
+    
+    // Validate input length
+    if (firstName.length > 100 || lastName.length > 100) {
+      return res.status(400).json({ error: 'Name fields must be 100 characters or less' });
+    }
+    
+    // Sanitize inputs to prevent injection
+    const sanitizedFirstName = firstName.trim().replace(/[<>"'&]/g, '');
+    const sanitizedLastName = lastName.trim().replace(/[<>"'&]/g, '');
     
     const userDoc = await admin.firestore().collection('users').doc(uid).get();
     if (userDoc.exists) {
@@ -24,13 +36,14 @@ export const createUserProfile = async (req, res) => {
     }
     
     await admin.firestore().collection('users').doc(uid).set({
-      firstName,
-      lastName,
+      firstName: sanitizedFirstName,
+      lastName: sanitizedLastName,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
     res.status(201).json({ message: 'User profile created successfully' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Error creating user profile:', err);
+    res.status(500).json({ error: 'Failed to create user profile' });
   }
 };
