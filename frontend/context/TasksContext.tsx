@@ -173,6 +173,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       setTasks((prev) => {
         const localMap = new Map(prev.map((t) => [t.id, t]));
         const newTasks: Task[] = [];
+        const updatedTasks: Task[] = [];
 
         snapshot.forEach((docSnap) => {
           const task = {
@@ -181,16 +182,30 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
             isSynced: true,
           } as Task;
 
-          if (!localMap.has(task.id)) {
+          const localTask = localMap.get(task.id);
+          
+          if (!localTask) {
+            // New task from Firebase
             newTasks.push(task);
+          } else if (localTask.isSynced === false && localTask.isSynced !== task.isSynced) {
+            // Firebase has synced version - update local with Firebase data
+            // but keep locally created tasks that haven't been synced yet
+            updatedTasks.push(task);
           }
         });
 
-        if (newTasks.length === 0) return prev;
+        // Replace local tasks with Firebase versions for synced tasks
+        let merged = prev.map((t) => {
+          const firebaseTask = updatedTasks.find((ft) => ft.id === t.id);
+          return firebaseTask || t;
+        });
 
-        const merged = [...prev, ...newTasks];
+        // Add entirely new tasks from Firebase
+        merged = [...merged, ...newTasks];
 
-        console.log("Merged:", newTasks.length);
+        if (newTasks.length === 0 && updatedTasks.length === 0) return prev;
+
+        console.log("Merged:", newTasks.length, "new,", updatedTasks.length, "updated");
 
         saveTasksForUser(userId, merged);
 

@@ -15,7 +15,7 @@ export const createUserProfile = async (req, res) => {
   try {
     // Get UID from authenticated user, not from request body
     const uid = req.user.uid;
-    const { firstName, lastName } = req.body;
+    const { firstName, lastName, email } = req.body;
     
     if (!firstName || !lastName) {
       return res.status(400).json({ error: 'Missing required fields: firstName and lastName are required' });
@@ -35,9 +35,13 @@ export const createUserProfile = async (req, res) => {
       return res.status(409).json({ error: 'User profile already exists' });
     }
     
+    // Try to get email from token claims, or use provided email
+    const userEmail = req.user.email || email || '';
+    
     await admin.firestore().collection('users').doc(uid).set({
       firstName: sanitizedFirstName,
       lastName: sanitizedLastName,
+      email: userEmail,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
     });
     
