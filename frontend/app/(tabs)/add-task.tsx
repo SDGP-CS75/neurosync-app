@@ -243,6 +243,8 @@ export default function AddTaskScreen() {
 
     setAiError(null);
     setAiLoading(true);
+    const url = `${API_BASE}/api/ai/breakdown`;
+
     const startTime = Date.now();
 
     try {
@@ -253,7 +255,6 @@ export default function AddTaskScreen() {
       });
 
       const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data?.error || "Failed to break into steps");
       }
@@ -283,7 +284,13 @@ export default function AddTaskScreen() {
       });
 
     } catch (e) {
-      setAiError(e instanceof Error ? e.message : "Something went wrong");
+      const msg = e instanceof Error ? e.message : "Something went wrong";
+      const isQuota = /quota|exceeded|rate.limit|limit:\s*0/i.test(msg);
+      setAiError(
+        isQuota
+          ? "AI limit reached. Try again later or check your Gemini API quota."
+          : msg
+      );
     } finally {
       const elapsed   = Date.now() - startTime;
       const remaining = 700 - elapsed;

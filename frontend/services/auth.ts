@@ -30,33 +30,16 @@ export const signUpUser = async (email: string, password: string) => {
 };
 
 export const createUserProfile = async (uid: string, firstName: string, lastName: string) => {
-  try {
-    const token = await getAuth().currentUser?.getIdToken();
-    if (!token) {
-      throw new Error('No authentication token available');
-    }
-    
-    const url = `${API_BASE}/api/users`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ uid, firstName, lastName }),
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`Failed to create user profile: ${errorData.error || response.statusText}`);
-    }
-    
-    return await response.json();
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new Error('Profile creation failed: ' + error.message);
-    } else {
-      throw new Error('Profile creation failed: Unknown error');
-    }
-  }
+  const token = await getAuth().currentUser?.getIdToken();
+  const url = `${API_BASE}/api/users`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ uid, firstName, lastName }),
+  });
+  const data = await response.json();
+  return data;
 };

@@ -12,6 +12,7 @@ import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
+import { UserProvider } from "../context/UserContext";
 import { TasksProvider } from "../context/TasksContext";
 
 // Inner component so it can read from ThemeContext
@@ -54,14 +55,16 @@ function AppShell() {
   );
 }
 
-// Root wraps everything in SafeAreaProvider + ThemeProvider + TasksProvider
+// Root wraps everything in SafeAreaProvider + ThemeProvider + UserProvider + TasksProvider
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <TasksProvider>
-          <AppShell />
-        </TasksProvider>
+        <UserProvider>
+          <TasksProvider>
+            <AppShell />
+          </TasksProvider>
+        </UserProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );
