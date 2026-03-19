@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Dimensions } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Dimensions, Modal, Pressable, StyleSheet } from "react-native";
 import { useState, useRef, useEffect } from "react";
 import { BlurView } from 'expo-blur';
 import Slider from "@react-native-community/slider";
@@ -20,6 +20,7 @@ export default function MoodTracking() {
   const [mood, setMood] = useState(3);
   const [energyLevel, setEnergyLevel] = useState(3);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [showSavedModal, setShowSavedModal] = useState(false);
 
   const tags = ["Work", "Family", "Sleep", "Friends", "Health", "Hobby", "Love"];
 
@@ -69,6 +70,13 @@ export default function MoodTracking() {
         const arr = raw ? JSON.parse(raw) : [];
         arr.unshift(entry); // newest first
         await AsyncStorage.setItem('mood_entries', JSON.stringify(arr));
+        // reset inputs so next entry is fresh
+        setNote('');
+        setSelectedTags([]);
+        setMood(3);
+        setEnergyLevel(3);
+        // show success modal
+        setShowSavedModal(true);
       } catch (e) {
         console.log('Error saving mood entry', e);
       }
@@ -353,6 +361,49 @@ export default function MoodTracking() {
       {/* place Nav as a direct child of SafeAreaView so it stays fixed to the bottom */}
       <Nav />
 
+      {/* Saved modal overlay (shown after saving an entry) */}
+      <Modal transparent animationType="fade" visible={showSavedModal} onRequestClose={() => setShowSavedModal(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.savedCard, { backgroundColor: colors.background }] }>
+            <View style={styles.savedEmojiWrap}>
+              <Text style={styles.savedEmoji}>😍</Text>
+            </View>
+            <Text style={[{ fontSize: 18, fontWeight: '700', textAlign: 'center', marginTop: 12, color: colors.onBackground }]}>You're on a good way!</Text>
+            <Text style={{ textAlign: 'center', color: colors.textMuted, marginTop: 8 }}>Your day is going amazing{"\n"}Keep tracking your mood to improve your mental health.</Text>
+
+            <Pressable
+              onPress={() => setShowSavedModal(false)}
+              style={({ pressed }) => [
+                {
+                  marginTop: 18,
+                  paddingVertical: 14,
+                  paddingHorizontal: 36,
+                  borderRadius: 999,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: colors.primary,
+                  width: '80%',
+                  alignSelf: 'center',
+                  opacity: pressed ? 0.9 : 1,
+                },
+              ]}
+            >
+              <Text style={{ color: colors.onPrimary, fontWeight: '700' }}>Got it</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+     
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  avatarPlaceholder: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  avatarInitials: { color: '#fff', fontWeight: '700' },
+  // saved modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  savedCard: { width: '100%', maxWidth: 360, borderRadius: 18, padding: 20, alignItems: 'center', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 12, elevation: 8 },
+  savedEmojiWrap: { width: 110, height: 110, borderRadius: 60, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, marginTop: -60 },
+  savedEmoji: { fontSize: 48 },
+});
