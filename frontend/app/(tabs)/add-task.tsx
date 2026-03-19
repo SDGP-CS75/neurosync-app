@@ -18,6 +18,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks } from "../../context/TasksContext";
 import { API_BASE } from "../../constants/api";
@@ -93,6 +94,122 @@ export default function AddTaskScreen() {
   const [aiError,          setAiError]          = useState<string | null>(null);
   const [dialogBoxVisible, setDialogBoxVisible] = useState(false);
   const [isRecording,      setIsRecording]      = useState(false);
+
+  // ── Field editing state
+  const [editingField, setEditingField] = useState<"when" | "location" | "reminder" | null>(null);
+
+  // Preset reminder options
+  const REMINDER_OPTIONS = [
+    { label: "At time of task", value: "0" },
+    { label: "5 minutes before", value: "5" },
+    { label: "15 minutes before", value: "15" },
+    { label: "30 minutes before", value: "30" },
+    { label: "1 hour before", value: "60" },
+    { label: "1 day before", value: "1440" },
+  ];
+
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
+
+  // DateTimePicker state (for iOS native picker)
+  const [showNativePicker, setShowNativePicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
+
+  // Preset date/time options for "When" field (for Android/web)
+  const DATE_OPTIONS = [
+    { label: "Today", getDate: () => { const d = new Date(); d.setHours(9, 0, 0, 0); return d; } },
+    { label: "Today at 12pm", getDate: () => { const d = new Date(); d.setHours(12, 0, 0, 0); return d; } },
+    { label: "Today at 5pm", getDate: () => { const d = new Date(); d.setHours(17, 0, 0, 0); return d; } },
+    { label: "Tomorrow", getDate: () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; } },
+    { label: "Tomorrow at 9am", getDate: () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); return d; } },
+    { label: "Tomorrow at 5pm", getDate: () => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(17, 0, 0, 0); return d; } },
+    { label: "This weekend", getDate: () => { const d = new Date(); const day = d.getDay(); const saturday = d.getDate() + (6 - day); d.setDate(saturday); d.setHours(10, 0, 0, 0); return d; } },
+    { label: "Next week", getDate: () => { const d = new Date(); d.setDate(d.getDate() + 7); d.setHours(9, 0, 0, 0); return d; } },
+  ];
+
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  // Helper to format date/time for display
+  const formatDateTime = (date: Date): string => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const isToday = date.toDateString() === today.toDateString();
+    const isTomorrow = date.toDateString() === tomorrow.toDateString();
+
+    const dateStr = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    
+    return `${dateStr} at ${timeStr}`;
+  };
+
+  // Get display text for reminder
+  const getReminderDisplayText = (reminderValue: string): string => {
+    if (!reminderValue) return "Set reminder";
+    const option = REMINDER_OPTIONS.find(o => o.value === reminderValue);
+    return option ? option.label : "Set reminder";
+  };
+
+  // Handle date input (for When field)
+  const handleWhenDateChange = (event: any, selectedDate?: Date) => {
+    // This is kept for future native picker support
+    setEditingField(null);
+  };
+
+  // Handle field save from dialog (for when and location)
+  const handleFieldSave = (value: string) => {
+    const trimmed = value.trim();
+    if (editingField === "when") {
+      setWhen(trimmed);
+    } else if (editingField === "location") {
+      setLocation(trimmed);
+    }
+    setEditingField(null);
+    setDialogBoxVisible(false);
+  };
+
+  const handleReminderSelect = (value: string) => {
+    setReminder(value);
+    setShowReminderPicker(false);
+    setEditingField(null);
+  };
+
+  // Handle date selection from preset options
+  const handleDateSelect = (getDate: () => Date) => {
+    const date = getDate();
+    setWhen(formatDateTime(date));
+    setShowDatePicker(false);
+    setEditingField(null);
+  };
+
+  // Handle native DateTimePicker change (iOS)
+  const handleNativeDateChange = (event: any, selectedDate?: Date) => {
+    if (selectedDate) {
+      setWhen(formatDateTime(selectedDate));
+    }
+    setShowNativePicker(false);
+    setEditingField(null);
+  };
+
+  // ── Handle field editing
+  const openFieldEditor = (field: "when" | "location" | "reminder") => {
+    if (field === "when") {
+      setEditingField(field);
+      // Use native DateTimePicker on iOS, preset options on Android
+      if (Platform.OS === "ios") {
+        setTempDate(new Date());
+        setShowNativePicker(true);
+      } else {
+        setShowDatePicker(true);
+      }
+    } else if (field === "reminder") {
+      setEditingField(field);
+      setShowReminderPicker(true);
+    } else {
+      setEditingField(field);
+      setDialogBoxVisible(true);
+    }
+  };
 
   // ── Speech recognition is only available in custom dev builds, not Expo Go
   const speechAvailable = ExpoSpeechRecognitionModule !== null;
@@ -189,6 +306,9 @@ export default function AddTaskScreen() {
       icon:     aiMeta.emoji,
       iconBg:   aiMeta.iconBg,
       time:     when.trim() || "No time",
+      dueDate:  when.trim() || undefined,
+      location: location.trim() || undefined,
+      reminder: reminder.trim() || undefined,
       status:   "todo",
       dateKey,
       subtasks: subTasks,
@@ -285,12 +405,17 @@ export default function AddTaskScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Sub-task input dialog */}
+          {/* Field input dialog (for when and location) */}
           <InputDialog
-            visible={dialogBoxVisible}
-            hideDialog={() => setDialogBoxVisible(false)}
-            title="Enter the sub task"
-            onSubmit={addSubTask}
+            visible={dialogBoxVisible && (editingField === "when" || editingField === "location")}
+            hideDialog={() => {
+              setDialogBoxVisible(false);
+              setEditingField(null);
+            }}
+            title={editingField === "when" ? "Set date & time" : "Add location"}
+            onSubmit={handleFieldSave}
+            initialValue={editingField === "when" ? when : location}
+            placeholder={editingField === "when" ? "e.g., Tomorrow at 5pm" : "e.g., Whole Foods"}
           />
 
           {/* ── Main task input */}
@@ -382,7 +507,11 @@ export default function AddTaskScreen() {
                 {when || "Set date & time"}
               </Text>
             </View>
-            <TouchableOpacity hitSlop={12} activeOpacity={0.7}>
+            <TouchableOpacity 
+              hitSlop={12} 
+              activeOpacity={0.7}
+              onPress={() => openFieldEditor("when")}
+            >
               <Ionicons name="pencil" size={18} color={editTint} />
             </TouchableOpacity>
           </View>
@@ -396,7 +525,11 @@ export default function AddTaskScreen() {
                 {location || "Add location"}
               </Text>
             </View>
-            <TouchableOpacity hitSlop={12} activeOpacity={0.7}>
+            <TouchableOpacity 
+              hitSlop={12} 
+              activeOpacity={0.7}
+              onPress={() => openFieldEditor("location")}
+            >
               <Ionicons name="pencil" size={18} color={editTint} />
             </TouchableOpacity>
           </View>
@@ -407,10 +540,14 @@ export default function AddTaskScreen() {
             <View style={styles.detailTextWrap}>
               <Text style={[styles.detailLabel, { color: theme.colors.textMuted }]}>Reminder</Text>
               <Text style={[styles.detailValue, { color: reminder ? theme.colors.text : theme.colors.textMuted }]}>
-                {reminder || "Set reminder"}
+                {getReminderDisplayText(reminder)}
               </Text>
             </View>
-            <TouchableOpacity hitSlop={12} activeOpacity={0.7}>
+            <TouchableOpacity 
+              hitSlop={12} 
+              activeOpacity={0.7}
+              onPress={() => openFieldEditor("reminder")}
+            >
               <Ionicons name="pencil" size={18} color={editTint} />
             </TouchableOpacity>
           </View>
@@ -468,6 +605,113 @@ export default function AddTaskScreen() {
             <Text style={styles.saveButtonText}>Save Task</Text>
           </TouchableOpacity>
         </ScrollView>
+
+        {/* ── Reminder Picker Modal */}
+        {showReminderPicker && (
+          <View style={styles.reminderPickerOverlay}>
+            <View style={[styles.reminderPicker, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.reminderPickerTitle, { color: theme.colors.text }]}>
+                Set Reminder
+              </Text>
+              {REMINDER_OPTIONS.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[styles.reminderOption, { borderBottomColor: theme.colors.outline }]}
+                  onPress={() => handleReminderSelect(option.value)}
+                >
+                  <Text style={[styles.reminderOptionText, { color: theme.colors.text }]}>
+                    {option.label}
+                  </Text>
+                  {reminder === option.value && (
+                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={[styles.reminderCancelBtn, { backgroundColor: theme.colors.surfaceVariant }]}
+                onPress={() => {
+                  setShowReminderPicker(false);
+                  setEditingField(null);
+                }}
+              >
+                <Text style={[styles.reminderCancelText, { color: theme.colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ── Date Picker Modal */}
+        {showDatePicker && (
+          <View style={styles.reminderPickerOverlay}>
+            <View style={[styles.reminderPicker, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.reminderPickerTitle, { color: theme.colors.text }]}>
+                Set Date & Time
+              </Text>
+              {DATE_OPTIONS.map((option, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={[styles.reminderOption, { borderBottomColor: theme.colors.outline }]}
+                  onPress={() => handleDateSelect(option.getDate)}
+                >
+                  <Text style={[styles.reminderOptionText, { color: theme.colors.text }]}>
+                    {option.label}
+                  </Text>
+                  {when === formatDateTime(option.getDate()) && (
+                    <Ionicons name="checkmark" size={20} color={theme.colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={[styles.reminderCancelBtn, { backgroundColor: theme.colors.surfaceVariant }]}
+                onPress={() => {
+                  setShowDatePicker(false);
+                  setEditingField(null);
+                }}
+              >
+                <Text style={[styles.reminderCancelText, { color: theme.colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* ── Native DateTimePicker (iOS) */}
+        {showNativePicker && Platform.OS === "ios" && (
+          <View style={styles.reminderPickerOverlay}>
+            <View style={[styles.reminderPicker, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.reminderPickerTitle, { color: theme.colors.text }]}>
+                Set Date & Time
+              </Text>
+              <View style={{ alignItems: "center", paddingVertical: 10 }}>
+                <DateTimePicker
+                  value={tempDate}
+                  mode="datetime"
+                  display="spinner"
+                  onChange={(event, date) => {
+                    if (date) setTempDate(date);
+                  }}
+                  style={{ width: "100%", height: 200 }}
+                />
+              </View>
+              <View style={{ flexDirection: "row", gap: 12, paddingHorizontal: 20, paddingBottom: 20 }}>
+                <TouchableOpacity
+                  style={[styles.reminderCancelBtn, { flex: 1, backgroundColor: theme.colors.surfaceVariant }]}
+                  onPress={() => {
+                    setShowNativePicker(false);
+                    setEditingField(null);
+                  }}
+                >
+                  <Text style={[styles.reminderCancelText, { color: theme.colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.reminderCancelBtn, { flex: 1, backgroundColor: theme.colors.primary }]}
+                  onPress={() => handleNativeDateChange(undefined, tempDate)}
+                >
+                  <Text style={[styles.reminderCancelText, { color: "#FFF" }]}>Done</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       <Nav />
@@ -605,4 +849,51 @@ const styles = StyleSheet.create({
     marginTop:        28,
   },
   saveButtonText: { color: "#FFF", fontSize: 17, fontWeight: "700" },
+
+  // Reminder Picker Styles
+  reminderPickerOverlay: {
+    position:     "absolute",
+    top:          0,
+    left:         0,
+    right:        0,
+    bottom:       0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems:   "center",
+    zIndex:       1000,
+  },
+  reminderPicker: {
+    width:         "80%",
+    maxWidth:      320,
+    borderRadius:   16,
+    paddingVertical: 16,
+  },
+  reminderPickerTitle: {
+    fontSize:     18,
+    fontWeight:    "700",
+    textAlign:    "center",
+    marginBottom:  16,
+  },
+  reminderOption: {
+    flexDirection:  "row",
+    alignItems:     "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+  },
+  reminderOptionText: {
+    fontSize: 16,
+  },
+  reminderCancelBtn: {
+    marginTop:    12,
+    marginHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius:  12,
+    alignItems:   "center",
+  },
+  reminderCancelText: {
+    fontSize:   16,
+    fontWeight: "600",
+  },
 });
