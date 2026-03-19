@@ -8,6 +8,7 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { auth, db } from "../../services/firebase";
 import { useAppTheme } from "../../context/ThemeContext";
+import { useUser } from "../../context/UserContext";
 
 type FormData = {
   firstName: string;
@@ -28,6 +29,7 @@ const styles = StyleSheet.create({
 export default function SignUp() {
   const { width } = useWindowDimensions();
   const { theme } = useAppTheme();
+  const { updateProfile } = useUser();
 
   const isSmallScreen = width < 375;
 
@@ -52,6 +54,12 @@ export default function SignUp() {
         lastName:  data.lastName,
         email:     data.email,
         createdAt: new Date(),
+      });
+
+      // Update UserContext with profile data
+      updateProfile({
+        name: `${data.firstName} ${data.lastName}`.trim(),
+        email: data.email,
       });
 
       router.push("/(tabs)/home");

@@ -10,9 +10,11 @@ import SectionTitle from '../../components/SectionTitle';
 import InProgressCard from '../../components/InProgressCard';
 import TaskGroupCard from '../../components/TaskGroupCard';
 import BottomNavBar from '../../components/BottomNavBar';
+import { useUser } from '../../context/UserContext';
 
 export default function DashboardScreen() {
   const router = useRouter();
+  const { profile } = useUser();
 
   return (
     <SafeAreaView className="flex-1 bg-gray-50">
@@ -25,15 +27,15 @@ export default function DashboardScreen() {
             onPress={() => router.push('/profile')}
             activeOpacity={0.7}
           >
-            {/* FIXED IMAGE: Explicit inline styles applied */}
+            {/* Profile image from user context */}
             <Image
-              source={{ uri: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80' }}
+              source={{ uri: profile.profileImage || 'https://via.placeholder.com/48' }}
               style={{ width: 48, height: 48, borderRadius: 24 }}
               className="mr-3"
             />
             <View>
               <Text className="text-gray-500 text-base">Hello!</Text>
-              <Text className="text-xl font-bold text-gray-800">Desmond Miles</Text>
+              <Text className="text-xl font-bold text-gray-800">{profile.name || 'User'}</Text>
             </View>
           </TouchableOpacity>
           

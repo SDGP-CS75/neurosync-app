@@ -87,7 +87,7 @@ export default function ProfileScreen() {
         <View className="items-center mb-2">
           <View className="relative mb-4">
             <Image
-              source={{ uri: profile.profileImage }}
+              source={{ uri: profile.profileImage || 'https://via.placeholder.com/100' }}
               style={{ width: 100, height: 100, borderRadius: 50, borderWidth: 4, borderColor: '#FFFFFF' }}
             />
             <TouchableOpacity 

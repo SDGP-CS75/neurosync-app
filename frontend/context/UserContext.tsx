@@ -14,12 +14,13 @@ interface UserContextType {
   setProfileImage: (uri: string) => void;
 }
 
+// Default empty profile - should be replaced with actual user data after authentication
 const defaultProfile: UserProfile = {
-  name: 'Sujaya Nimneth',
-  email: 'sujaya@example.com',
-  age: '22',
-  about: 'Computer Science undergraduate at University of Westminster.',
-  profileImage: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80',
+  name: '',
+  email: '',
+  age: '',
+  about: '',
+  profileImage: '',
 };
 
 const UserContext = createContext<UserContextType | undefined>(undefined);

@@ -16,6 +16,7 @@ import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
 import { auth, db } from "../../services/firebase";
 import { useAppTheme } from "../../context/ThemeContext";
+import { useUser } from "../../context/UserContext";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -35,6 +36,7 @@ const styles = StyleSheet.create({
 export default function SignIn() {
   const { width }     = useWindowDimensions();
   const { theme }     = useAppTheme();
+  const { updateProfile } = useUser();
   const isSmallScreen = width < 375;
 
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -73,6 +75,20 @@ export default function SignIn() {
               createdAt: new Date(),
             });
           }
+          
+          // Update UserContext with profile data
+          const userData = docSnap.exists() ? docSnap.data() : {
+            firstName: user.displayName?.split(" ")[0] ?? "",
+            lastName:  user.displayName?.split(" ").slice(1).join(" ") ?? "",
+            email:     user.email,
+            photoURL:  user.photoURL,
+          };
+          updateProfile({
+            name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+            email: userData.email || user.email || '',
+            profileImage: userData.photoURL || '',
+          });
+          
           router.push("/(tabs)/home");
         })
         .catch((err: Error) => setGoogleError(err.message))
@@ -105,6 +121,20 @@ export default function SignIn() {
             createdAt: new Date(),
           });
         }
+        
+        // Update UserContext with profile data
+        const userData = docSnap.exists() ? docSnap.data() : {
+          firstName: user.displayName?.split(" ")[0] ?? "",
+          lastName:  user.displayName?.split(" ").slice(1).join(" ") ?? "",
+          email:     user.email,
+          photoURL:  user.photoURL,
+        };
+        updateProfile({
+          name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+          email: userData.email || user.email || '',
+          profileImage: userData.photoURL || '',
+        });
+        
         router.push("/(tabs)/home");
       } else {
         // Native / Expo Go: open browser redirect
@@ -134,7 +164,21 @@ export default function SignIn() {
       const docSnap        = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        console.log("User profile:", docSnap.data());
+        const userData = docSnap.data();
+        console.log("User profile:", userData);
+        // Update UserContext with profile data
+        updateProfile({
+          name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
+          email: userData.email || user.email || '',
+          profileImage: userData.photoURL || '',
+          about: userData.about || '',
+          age: userData.age || '',
+        });
+      } else {
+        // If no profile exists, at least set email from auth
+        updateProfile({
+          email: user.email || '',
+        });
       }
       router.push("/(tabs)/home");
     } catch (error: unknown) {
