@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   viewTaskBtn: {
-    backgroundColor: "#3b3838",
+    backgroundColor: "#fff",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
