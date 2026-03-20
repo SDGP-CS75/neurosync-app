@@ -44,7 +44,8 @@ export default function TabsLayout() {
     <Stack 
       screenOptions={{ 
         headerShown: false, 
-        contentStyle: { backgroundColor: 'transparent' } 
+        contentStyle: { backgroundColor: 'transparent' },
+        animation: 'fade'
       }}
     >
       {/* 1. This sets your Dashboard as the main starting screen */}

@@ -17,8 +17,83 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Audio } from "expo-av";
+import Svg, { Circle } from "react-native-svg";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
+
+// Custom AnimatedCircularProgress component using react-native-svg
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+interface CircularProgressProps {
+  size: number;
+  width: number;
+  fill: number;
+  rotation?: number;
+  lineCap?: "butt" | "round" | "square";
+  tintColor: string;
+  backgroundColor: string;
+  duration?: number;
+  children?: React.ReactNode;
+}
+
+function CustomAnimatedCircularProgress({
+  size,
+  width,
+  fill,
+  tintColor,
+  backgroundColor,
+  duration = 300,
+  children,
+}: CircularProgressProps) {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const radius = (size - width) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+
+  React.useEffect(() => {
+    Animated.timing(animatedValue, {
+      toValue: fill,
+      duration: duration,
+      useNativeDriver: false, // SVG animations require native driver to be false
+    }).start();
+  }, [fill, duration]);
+
+  const strokeDashoffset = animatedValue.interpolate({
+    inputRange: [0, 100],
+    outputRange: [circumference, 0],
+  });
+
+  return (
+    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+      <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        {/* Background Circle */}
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={backgroundColor}
+          strokeWidth={width}
+          fill="transparent"
+        />
+        {/* Progress Circle */}
+        <AnimatedCircle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={tintColor}
+          strokeWidth={width}
+          fill="transparent"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${center}, ${center}`}
+        />
+      </Svg>
+      {children}
+    </View>
+  );
+}
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CIRCLE_SIZE = Math.min(SCREEN_WIDTH * 0.7, 280);
@@ -108,7 +183,6 @@ export default function FocusTimerCounting() {
   const screenSaverAnim = useRef(new Animated.Value(0)).current;
 
   // Animation
-  const progressAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const loadingAnim = useRef(new Animated.Value(0)).current;
 
@@ -301,14 +375,7 @@ export default function FocusTimerCounting() {
     return timeLeft / total;
   }, [timeLeft, getTotalDuration]);
 
-  // Update progress animation
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: getProgress(),
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [timeLeft, progressAnim, getProgress]);
+
 
   // Pulse animation when running
   useEffect(() => {
@@ -440,11 +507,7 @@ export default function FocusTimerCounting() {
     router.back();
   };
 
-  // Progress circle interpolation
-  const progressInterpolate = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  });
+
 
   const loadingScale = loadingAnim.interpolate({
     inputRange: [0, 1],
@@ -637,21 +700,14 @@ export default function FocusTimerCounting() {
               { transform: [{ scale: pulseAnim }] },
             ]}
           >
-            {/* Progress Ring */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBackground} />
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  {
-                    transform: [{ rotate: progressInterpolate }],
-                  },
-                ]}
-              />
-              <View style={styles.progressCover} />
-            </View>
-
-            {/* Timer Content */}
+          <CustomAnimatedCircularProgress
+            size={CIRCLE_SIZE}
+            width={8}
+            fill={getProgress() * 100}
+            tintColor={mode === "focus" ? theme.colors.primary : theme.colors.secondary}
+            backgroundColor={theme.colors.background}
+            duration={isRunning ? 1000 : 300}
+          >
             <View style={styles.timerContent}>
               <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
               <Text style={styles.timerLabel}>
@@ -666,6 +722,7 @@ export default function FocusTimerCounting() {
                 </Text>
               </View>
             </View>
+          </CustomAnimatedCircularProgress>
           </Animated.View>
         </View>
 
@@ -761,26 +818,39 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     header: {
       flexDirection: "row",
-      justifyContent: "space-between",
+      justifyContent: "center",
       alignItems: "center",
       paddingHorizontal: 20,
-      paddingTop: 16,
-      paddingBottom: 8,
+      paddingTop: 30,
+      paddingBottom: 24,
+      position: "relative",
     },
     backButton: {
+      position: "absolute",
+      left: 20,
+      zIndex: 1,
       width: 40,
       height: 40,
       borderRadius: 20,
       backgroundColor: theme.colors.surface,
       justifyContent: "center",
       alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     title: {
       fontSize: 20,
       fontWeight: "bold",
       color: theme.colors.onBackground,
+      textAlign: "center",
     },
     sessionBadge: {
+      position: "absolute",
+      right: 20,
+      zIndex: 1,
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: theme.colors.surface,
@@ -788,6 +858,11 @@ const createStyles = (theme: any, mode: TimerMode) =>
       paddingVertical: 6,
       borderRadius: 20,
       gap: 4,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     sessionText: {
       fontSize: 14,
@@ -822,6 +897,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       justifyContent: "center",
       alignItems: "center",
       minHeight: 320,
+      marginVertical: 40,
     },
     timerCircle: {
       width: CIRCLE_SIZE,
@@ -836,40 +912,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       shadowRadius: 20,
       elevation: 10,
     },
-    progressContainer: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      overflow: "hidden",
-    },
-    progressBackground: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      borderWidth: 8,
-      borderColor: theme.colors.background,
-    },
-    progressFill: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      borderWidth: 8,
-      borderColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
-      borderTopColor: "transparent",
-      borderRightColor: "transparent",
-    },
-    progressCover: {
-      position: "absolute",
-      width: CIRCLE_SIZE - 16,
-      height: CIRCLE_SIZE - 16,
-      borderRadius: (CIRCLE_SIZE - 16) / 2,
-      backgroundColor: theme.colors.surface,
-      top: 8,
-      left: 8,
-    },
+
     timerContent: {
       alignItems: "center",
     },
@@ -911,6 +954,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       gap: 24,
       marginTop: 20,
       paddingHorizontal: 24,
+      paddingVertical: 12,
     },
     primaryButton: {
       width: 72,
@@ -932,6 +976,11 @@ const createStyles = (theme: any, mode: TimerMode) =>
       backgroundColor: theme.colors.surface,
       justifyContent: "center",
       alignItems: "center",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     buttonLabel: {
       fontSize: 10,
@@ -945,6 +994,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       gap: 24,
       marginTop: 20,
       paddingHorizontal: 24,
+      paddingVertical: 12,
     },
     musicToggleButton: {
       flexDirection: "row",
@@ -955,6 +1005,11 @@ const createStyles = (theme: any, mode: TimerMode) =>
       paddingHorizontal: 24,
       backgroundColor: theme.colors.surface,
       borderRadius: 25,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     musicToggleButtonActive: {
       borderWidth: 2,
@@ -969,6 +1024,11 @@ const createStyles = (theme: any, mode: TimerMode) =>
       paddingHorizontal: 24,
       backgroundColor: theme.colors.surface,
       borderRadius: 25,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     musicButtonLabel: {
       fontSize: 14,
@@ -988,6 +1048,11 @@ const createStyles = (theme: any, mode: TimerMode) =>
       borderRadius: 25,
       borderWidth: 1,
       borderColor: theme.colors.error || "#ef4444",
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     stopButtonText: {
       fontSize: 14,
