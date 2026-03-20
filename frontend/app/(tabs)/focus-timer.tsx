@@ -251,15 +251,15 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     scrollContent: {
       flexGrow: 1,
-      paddingBottom: 100,
+      paddingBottom: 80,
     },
     header: {
       flexDirection: "row",
       justifyContent: "center",
       alignItems: "center",
       paddingHorizontal: 24,
-      paddingTop: 30,
-      paddingBottom: 20,
+      paddingTop: 16,
+      paddingBottom: 4,
       position: "relative",
     },
     title: {
@@ -394,8 +394,8 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     previewSection: {
       paddingHorizontal: 24,
-      marginTop: 20,
-      marginBottom: 10,
+      marginTop: 16,
+      marginBottom: 8,
     },
     previewCard: {
       backgroundColor: theme.colors.surface,
@@ -437,7 +437,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       gap: 12,
       backgroundColor: theme.colors.primary,
       marginHorizontal: 24,
-      marginTop: 24,
+      marginTop: 16,
       paddingVertical: 16,
       borderRadius: 16,
       shadowColor: theme.colors.primary,

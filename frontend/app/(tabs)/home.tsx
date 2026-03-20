@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
+  Easing,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,6 +17,7 @@ import { useRouter } from "expo-router";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useUser } from "../../context/UserContext";
+import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { useTasks } from "../../context/TasksContext";
 
 const { width } = Dimensions.get("window");
@@ -287,13 +289,20 @@ export default function HomeScreen() {
                   <TouchableOpacity style={styles.chatIcon}>
                     <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
                   </TouchableOpacity>
-                  <CircularProgress
-                    percentage={todayCompletion}
-                    size={90}
-                    strokeWidth={8}
-                    progressColor="#fff"
-                    bgColor="rgba(255,255,255,0.3)"
-                  />
+                  <AnimatedCircularProgress
+                    style={{ marginRight: 15 }}
+                    size={102}
+                    width={9}
+                    fill={85}
+                    rotation={0}
+                    lineCap="round"
+                    tintColor="#fff"
+                    backgroundColor="#8A78F3"
+                    duration={1200}
+                    easing={Easing.out(Easing.ease)}
+                >
+                    {() => <Text style={styles.progressText}>{85}%</Text>}
+                  </AnimatedCircularProgress>
                 </View>
               </View>
             </LinearGradient>
@@ -542,7 +551,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   viewTaskBtn: {
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
@@ -592,10 +601,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
-  inProgressScroll: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
-  },
+ 
   inProgressCard: {
     width: width * 0.6,
     padding: 15,
