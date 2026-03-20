@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Portal, Dialog, Button, TextInput } from "react-native-paper";
+import { StyleSheet, TextInput, View } from "react-native";
+import { Portal, Dialog, Button } from "react-native-paper";
 import { useAppTheme } from "../context/ThemeContext";
 
 interface InputDialogProps {
@@ -47,19 +48,30 @@ const InputDialog: React.FC<InputDialogProps> = ({
             <Dialog.Title style={{ color: theme.colors.textMuted }}>{title}</Dialog.Title>
 
             <Dialog.Content>
-                <TextInput
-                    placeholder={placeholder}
-                    value={text}
-                    onChangeText={setText}
-                    mode="outlined"
-                    autoFocus
-                    textColor={theme.colors.text}
-                    outlineColor={theme.colors.outline}
-                    activeOutlineColor={theme.colors.primary}
-                    style={{
-                        backgroundColor: theme.colors.surface,
-                    }}
-                />
+                <View
+                    style={[
+                        styles.inputWrap,
+                        {
+                            backgroundColor: theme.colors.surfaceVariant,
+                            borderColor: theme.colors.outline,
+                        },
+                    ]}
+                >
+                    <TextInput
+                        placeholder={placeholder}
+                        placeholderTextColor={theme.colors.textMuted}
+                        value={text}
+                        onChangeText={(value) => setText(value)}
+                        autoFocus
+                        selectionColor={theme.colors.primary}
+                        style={[
+                            styles.input,
+                            {
+                                color: theme.colors.text,
+                            },
+                        ]}
+                    />
+                </View>
             </Dialog.Content>
 
             <Dialog.Actions>
@@ -71,5 +83,18 @@ const InputDialog: React.FC<InputDialogProps> = ({
         </Portal>
     );
 };
+
+const styles = StyleSheet.create({
+    inputWrap: {
+        borderWidth: 1,
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 2,
+    },
+    input: {
+        minHeight: 44,
+        fontSize: 16,
+    },
+});
 
 export default InputDialog;
