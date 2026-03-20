@@ -57,6 +57,12 @@ type TasksContextType = {
 
 const TasksContext = createContext<TasksContextType | null>(null);
 
+function omitUndefinedFields<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined)
+  ) as T;
+}
+
 function getStatusFromSubtasks(subtasks?: SubTask[]): TaskStatus | null {
   if (!subtasks || subtasks.length === 0) return null;
 
@@ -158,7 +164,10 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     for (const task of pendingTasks) {
       try {
         const { id, ...data } = task;
-        await setDoc(doc(db, "users", userId, "tasks", id), data);
+        await setDoc(
+          doc(db, "users", userId, "tasks", id),
+          omitUndefinedFields(data)
+        );
         syncedTaskIds.add(id);
       } catch (e) {
         console.log("Sync failed:", e);

@@ -578,6 +578,7 @@ export default function AddTaskScreen() {
   const [aiLoading,          setAiLoading]          = useState(false);
   const [aiError,            setAiError]            = useState<string | null>(null);
   const [locationDialog,     setLocationDialog]     = useState(false);
+  const [subTaskDialog,      setSubTaskDialog]      = useState(false);
   const [isRecording,        setIsRecording]        = useState(false);
   const [showDatePicker,     setShowDatePicker]     = useState(false);
   const [showReminderPicker, setShowReminderPicker] = useState(false);
@@ -645,6 +646,23 @@ export default function AddTaskScreen() {
   // ── Sub-task helpers
   const toggleSubTask = (id: string) =>
     setSubTasks(prev => prev.map(t => t.id === id ? { ...t, isAdding: !t.isAdding } : t));
+
+  const addSubTask = (value: string) => {
+    const text = value.trim();
+    if (!text) return;
+
+    setSubTasks((prev) => [
+      ...prev,
+      {
+        id: String(Date.now()),
+        text,
+        isAdding: true,
+        isGenarated: false,
+        isDone: false,
+      },
+    ]);
+    setSubTaskDialog(false);
+  };
 
   // ── AI breakdown
   const handleBreakIntoSteps = async () => {
@@ -774,6 +792,14 @@ export default function AddTaskScreen() {
         onSubmit={(v) => { setLocation(v.trim()); setLocationDialog(false); }}
         initialValue={location}
         placeholder="e.g. Whole Foods"
+      />
+
+      <InputDialog
+        visible={subTaskDialog}
+        hideDialog={() => setSubTaskDialog(false)}
+        title="Add sub-task"
+        onSubmit={addSubTask}
+        
       />
 
       <KeyboardAvoidingView
@@ -989,7 +1015,7 @@ export default function AddTaskScreen() {
           {/* Add sub-task */}
           <TouchableOpacity
             style={[styles.addSubTaskBtn, { borderColor: theme.colors.primary }]}
-            onPress={() => {/* handled via InputDialog wired to addSubTask */}}
+            onPress={() => setSubTaskDialog(true)}
             activeOpacity={0.7}
           >
             <Ionicons name="add" size={20} color={theme.colors.primary} />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Portal, Dialog, Button, TextInput } from "react-native-paper";
-import { theme } from "../constants/theme";
+import { useAppTheme } from "../context/ThemeContext";
 
 interface InputDialogProps {
   visible: boolean;
@@ -19,6 +19,7 @@ const InputDialog: React.FC<InputDialogProps> = ({
     onSubmit,
     initialValue = "",
 }) => {
+    const { theme } = useAppTheme();
 
     const [text, setText] = useState<string>(initialValue);
 
@@ -37,23 +38,33 @@ const InputDialog: React.FC<InputDialogProps> = ({
 
     return (
         <Portal>
-            <Dialog visible={visible} onDismiss={hideDialog}>
+            <Dialog
+                visible={visible}
+                onDismiss={hideDialog}
+                style={{ backgroundColor: theme.colors.surface }}
+            >
             
             <Dialog.Title style={{ color: theme.colors.textMuted }}>{title}</Dialog.Title>
 
             <Dialog.Content>
                 <TextInput
-                label={placeholder}
-                value={text}
-                onChangeText={setText}
-                mode="outlined"
-                style={{ borderRadius: 30 }}
+                    placeholder={placeholder}
+                    value={text}
+                    onChangeText={setText}
+                    mode="outlined"
+                    autoFocus
+                    textColor={theme.colors.text}
+                    outlineColor={theme.colors.outline}
+                    activeOutlineColor={theme.colors.primary}
+                    style={{
+                        backgroundColor: theme.colors.surface,
+                    }}
                 />
             </Dialog.Content>
 
             <Dialog.Actions>
-                <Button onPress={hideDialog}>Cancel</Button>
-                <Button onPress={handleSubmit}>Submit</Button>
+                <Button textColor={theme.colors.textMuted} onPress={hideDialog}>Cancel</Button>
+                <Button textColor={theme.colors.primary} onPress={handleSubmit}>Submit</Button>
             </Dialog.Actions>
 
             </Dialog>
