@@ -503,7 +503,18 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   // In Progress Section Styles
-
+  section: {
+    marginBottom: 25,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
   badge: {
     backgroundColor: "#5838b5",
     borderRadius: 10,
