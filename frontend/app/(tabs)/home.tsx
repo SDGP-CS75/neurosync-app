@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   },
   inProgressScroll: {
     marginHorizontal: -20,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
   },
   inProgressCard: {
     width: width * 0.6,
