@@ -152,7 +152,6 @@ export default function MoodTracking() {
             }}
           >
             {/* Note Input */}
-
             <TextInput
               placeholder="What made you feel this way?"
               placeholderTextColor={colors.textMuted}
@@ -175,7 +174,6 @@ export default function MoodTracking() {
                 elevation: 3,
               }}
             />
-
 
             {/* Tags */}
 
@@ -205,11 +203,10 @@ export default function MoodTracking() {
                       elevation: isSelected ? 4 : 2,
                     }}
                   >
-
                     <Text style={{ color: isSelected ? colors.onPrimary : colors.onSurface }}>
                       {tag}
                     </Text>
-
+                  
                   </TouchableOpacity>
                 );
               })}
@@ -334,7 +331,6 @@ export default function MoodTracking() {
 
 
             {/* Save Button */}
-
             <TouchableOpacity
               onPress={saveEntry}
               style={{
@@ -349,6 +345,7 @@ export default function MoodTracking() {
                 marginBottom: 38,
               }}
             >
+            
 
               <Text style={{ color: colors.onPrimary, textAlign: "center", fontWeight: "700", fontSize: 16 }}>
                 Save Entry
