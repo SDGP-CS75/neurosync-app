@@ -27,7 +27,10 @@ export default function SettingsScreen() {
   const horizontalPadding = Math.round(24 * scale);
   const cardPadding = Math.round(20 * scale);
 
-  // Preference States
+  // PROFILE IMAGE HANDLER
+  // Launches the native device photo gallery.
+  // Enforces a 1:1 aspect ratio crop so the image fits perfectly into the circular avatar UI.
+  // Updates the global UserContext upon successful selection.
   const [dailyReminders, setDailyReminders] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [strictFocus, setStrictFocus] = useState(false);
