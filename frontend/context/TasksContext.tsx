@@ -1,33 +1,24 @@
 /**
- * TasksContext — Offline-first with bidirectional sync
+ * TasksContext - offline-first task storage with Firebase sync
  */
 
 import React, {
   createContext,
-  useContext,
-  useState,
-  useEffect,
   useCallback,
+  useContext,
+  useEffect,
   useRef,
+  useState,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../services/firebase";
-import {
-  doc,
-  setDoc,
-  collection,
-  getDocs,
-} from "firebase/firestore";
 import NetInfo from "@react-native-community/netinfo";
-
-// ─── Constants ─────────────────────────────────────────────
+import { onAuthStateChanged } from "firebase/auth";
+import { collection, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore";
+import { auth, db } from "../services/firebase";
 
 const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
 
-// ─── Types ─────────────────────────────────────────────────
-
-export type TaskStatus = "done" |"in-progress" |"todo";
+export type TaskStatus = "done" | "in-progress" | "todo";
 
 export interface SubTask {
   id: string;
@@ -66,12 +57,11 @@ type TasksContextType = {
 
 const TasksContext = createContext<TasksContextType | null>(null);
 
-// ─── Storage Helpers ──────────────────────────────────────
-
 async function loadTasksForUser(userId: string): Promise<Task[]> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY_PREFIX + userId);
     if (!raw) return [];
+
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -81,35 +71,120 @@ async function loadTasksForUser(userId: string): Promise<Task[]> {
 
 async function saveTasksForUser(userId: string, tasks: Task[]) {
   try {
-    await AsyncStorage.setItem(
-      STORAGE_KEY_PREFIX + userId,
-      JSON.stringify(tasks)
-    );
+    await AsyncStorage.setItem(STORAGE_KEY_PREFIX + userId, JSON.stringify(tasks));
   } catch (e) {
     console.warn("Persist failed:", e);
   }
 }
 
-// ─── Provider ─────────────────────────────────────────────
-
 export function TasksProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const deletedTaskIdsRef = useRef<Set<string>>(new Set());
+  const hasHydratedFirebaseRef = useRef<string | null>(null);
 
-  // ── Auth
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       setUserId(user?.uid ?? null);
     });
+
     return () => unsub();
   }, []);
 
-  // ── Load local tasks
+  const mergeTasksFromFirebase = useCallback(async () => {
+    if (!userId) return;
+
+    try {
+      const snapshot = await getDocs(collection(db, "users", userId, "tasks"));
+
+      setTasks((prev) => {
+        const localMap = new Map(prev.map((task) => [task.id, task]));
+        const newTasks: Task[] = [];
+        const updatedTasks = new Map<string, Task>();
+
+        snapshot.forEach((docSnap) => {
+          const firebaseTask = {
+            id: docSnap.id,
+            ...docSnap.data(),
+            isSynced: true,
+          } as Task;
+
+          const localTask = localMap.get(firebaseTask.id);
+          if (!localTask) {
+            newTasks.push(firebaseTask);
+            return;
+          }
+
+          if (!localTask.isSynced) {
+            updatedTasks.set(firebaseTask.id, firebaseTask);
+          }
+        });
+
+        if (newTasks.length === 0 && updatedTasks.size === 0) {
+          return prev;
+        }
+
+        const merged = [
+          ...prev.map((task) => updatedTasks.get(task.id) ?? task),
+          ...newTasks,
+        ];
+
+        saveTasksForUser(userId, merged);
+        return merged;
+      });
+    } catch (e) {
+      console.log("Merge failed:", e);
+    }
+  }, [userId]);
+
+  const syncTasksToFirebase = useCallback(async () => {
+    if (!userId) return;
+
+    const pendingTasks = tasks.filter((task) => !task.isSynced);
+    if (pendingTasks.length === 0) return;
+
+    const syncedTaskIds = new Set<string>();
+
+    for (const task of pendingTasks) {
+      try {
+        const { id, ...data } = task;
+        await setDoc(doc(db, "users", userId, "tasks", id), data);
+        syncedTaskIds.add(id);
+      } catch (e) {
+        console.log("Sync failed:", e);
+      }
+    }
+
+    if (syncedTaskIds.size === 0) return;
+
+    setTasks((prev) =>
+      prev.map((task) =>
+        syncedTaskIds.has(task.id) ? { ...task, isSynced: true } : task
+      )
+    );
+  }, [tasks, userId]);
+
+  const syncDeletedTasksToFirebase = useCallback(async () => {
+    if (!userId || deletedTaskIdsRef.current.size === 0) return;
+
+    const deletedTaskIds = Array.from(deletedTaskIdsRef.current);
+
+    for (const taskId of deletedTaskIds) {
+      try {
+        await deleteDoc(doc(db, "users", userId, "tasks", taskId));
+        deletedTaskIdsRef.current.delete(taskId);
+      } catch (e) {
+        console.log("Delete sync failed:", e);
+      }
+    }
+  }, [userId]);
+
   useEffect(() => {
     if (!userId) {
       setTasks([]);
       setIsLoading(false);
+      hasHydratedFirebaseRef.current = null;
       return;
     }
 
@@ -118,107 +193,51 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     loadTasksForUser(userId).then((loaded) => {
       setTasks(loaded);
       setIsLoading(false);
-
-      // 🔥 Merge missing Firebase tasks after load
-      mergeTasksFromFirebase();
     });
   }, [userId]);
 
-  // ── Persist local
   useEffect(() => {
     if (userId && !isLoading) {
       saveTasksForUser(userId, tasks);
     }
-  }, [tasks, userId, isLoading]);
+  }, [isLoading, tasks, userId]);
 
-  // ─────────────────────────────────────────────────────────
-  // 🔥 Sync Local → Firebase
-  // ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!userId || isLoading) return;
+    const needsInitialMerge = hasHydratedFirebaseRef.current !== userId;
+    if (!needsInitialMerge && tasks.every((task) => task.isSynced) && deletedTaskIdsRef.current.size === 0) {
+      return;
+    }
 
-  const syncTasksToFirebase = useCallback(async () => {
-    if (!userId) return;
+    let cancelled = false;
 
-    const updated = [...tasks];
-
-    for (let i = 0; i < updated.length; i++) {
-      const task = updated[i];
-      if (task.isSynced) continue;
-
+    const syncIfOnline = async () => {
       try {
-        const { id, ...data } = task;
+        const state = await NetInfo.fetch();
+        if (cancelled || !state.isConnected) return;
 
-        await setDoc(doc(db, "users", userId, "tasks", id), data);
-
-        updated[i] = { ...task, isSynced: true };
+        await syncTasksToFirebase();
+        await syncDeletedTasksToFirebase();
+        await mergeTasksFromFirebase();
+        hasHydratedFirebaseRef.current = userId;
       } catch (e) {
-        console.log("Sync failed:", e);
+        console.log("Online sync check failed:", e);
       }
-    }
+    };
 
-    setTasks(updated);
-  }, [userId,tasks]);
+    syncIfOnline();
 
-  // ─────────────────────────────────────────────────────────
-  // 🔥 Merge Firebase → Local (ONLY missing)
-  // ─────────────────────────────────────────────────────────
-
-  const mergeTasksFromFirebase = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      const snapshot = await getDocs(
-        collection(db, "users", userId, "tasks")
-      );
-
-      setTasks((prev) => {
-        const localMap = new Map(prev.map((t) => [t.id, t]));
-        const newTasks: Task[] = [];
-        const updatedTasks: Task[] = [];
-
-        snapshot.forEach((docSnap) => {
-          const task = {
-            id: docSnap.id,
-            ...docSnap.data(),
-            isSynced: true,
-          } as Task;
-
-          const localTask = localMap.get(task.id);
-          
-          if (!localTask) {
-            // New task from Firebase
-            newTasks.push(task);
-          } else if (localTask.isSynced === false && localTask.isSynced !== task.isSynced) {
-            // Firebase has synced version - update local with Firebase data
-            // but keep locally created tasks that haven't been synced yet
-            updatedTasks.push(task);
-          }
-        });
-
-        // Replace local tasks with Firebase versions for synced tasks
-        let merged = prev.map((t) => {
-          const firebaseTask = updatedTasks.find((ft) => ft.id === t.id);
-          return firebaseTask || t;
-        });
-
-        // Add entirely new tasks from Firebase
-        merged = [...merged, ...newTasks];
-
-        if (newTasks.length === 0 && updatedTasks.length === 0) return prev;
-
-        console.log("Merged:", newTasks.length, "new,", updatedTasks.length, "updated");
-
-        saveTasksForUser(userId, merged);
-
-        return merged;
-      });
-    } catch (e) {
-      console.log("Merge failed:", e);
-    }
-  }, [userId]);
-
-  // ─────────────────────────────────────────────────────────
-  // 🌐 Network listener (NO stale closure bug)
-  // ─────────────────────────────────────────────────────────
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isLoading,
+    mergeTasksFromFirebase,
+    syncDeletedTasksToFirebase,
+    syncTasksToFirebase,
+    tasks,
+    userId,
+  ]);
 
   const syncRef = useRef(syncTasksToFirebase);
 
@@ -229,17 +248,14 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsub = NetInfo.addEventListener((state) => {
       if (state.isConnected) {
-        syncRef.current();         // local → firebase
-        mergeTasksFromFirebase();  // firebase → local
+        syncRef.current();
+        syncDeletedTasksToFirebase();
+        mergeTasksFromFirebase();
       }
     });
 
     return () => unsub();
-  }, [mergeTasksFromFirebase]);
-
-  // ─────────────────────────────────────────────────────────
-  // Actions
-  // ─────────────────────────────────────────────────────────
+  }, [mergeTasksFromFirebase, syncDeletedTasksToFirebase]);
 
   const addTask = useCallback((task: Omit<Task, "id">) => {
     const newTask: Task = {
@@ -253,34 +269,34 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === id ? { ...t, ...updates, isSynced: false } : t
+      prev.map((task) =>
+        task.id === id ? { ...task, ...updates, isSynced: false } : task
       )
     );
   }, []);
 
   const removeTask = useCallback((id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+    deletedTaskIdsRef.current.add(id);
+    setTasks((prev) => prev.filter((task) => task.id !== id));
   }, []);
 
-  const toggleSubtaskDone = useCallback(
-    (taskId: string, subtaskId: string) => {
-      setTasks((prev) =>
-        prev.map((task) => {
-          if (task.id !== taskId || !task.subtasks) return task;
+  const toggleSubtaskDone = useCallback((taskId: string, subtaskId: string) => {
+    setTasks((prev) =>
+      prev.map((task) => {
+        if (task.id !== taskId || !task.subtasks) return task;
 
-          return {
-            ...task,
-            isSynced: false,
-            subtasks: task.subtasks.map((s) =>
-              s.id === subtaskId ? { ...s, isDone: !s.isDone } : s
-            ),
-          };
-        })
-      );
-    },
-    []
-  );
+        return {
+          ...task,
+          isSynced: false,
+          subtasks: task.subtasks.map((subtask) =>
+            subtask.id === subtaskId
+              ? { ...subtask, isDone: !subtask.isDone }
+              : subtask
+          ),
+        };
+      })
+    );
+  }, []);
 
   const toggleTaskStatus = useCallback((taskId: string) => {
     setTasks((prev) =>
@@ -288,7 +304,6 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         if (task.id !== taskId) return task;
 
         let newStatus: TaskStatus;
-
         switch (task.status) {
           case "todo":
             newStatus = "in-progress";
@@ -328,8 +343,6 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     </TasksContext.Provider>
   );
 }
-
-// ─── Hook ─────────────────────────────────────────────────
 
 export function useTasks(): TasksContextType {
   const ctx = useContext(TasksContext);
