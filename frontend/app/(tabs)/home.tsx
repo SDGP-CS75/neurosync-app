@@ -229,7 +229,7 @@ export default function HomeScreen() {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 25 }}
+            style={{ marginBottom: 10 }}
             // contentContainerStyle={{ paddingHorizontal: 20 }}
           >
             {/* Today's Task Card (centered, inset) */}
@@ -429,6 +429,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
+    marginTop: 10,
   },
   headerLeft: {
     flexDirection: "row",
@@ -554,6 +555,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    marginBottom: 5,
+    marginTop: 1,
   },
   inProgressHeader: {
     flexDirection: "row",
