@@ -204,9 +204,7 @@ export default function MoodTracking() {
                     }}
                   >
 
-                    <Text style={{ color: isSelected ? colors.onPrimary : colors.onSurface }}>
-                      {tag}
-                    </Text>
+                    
 
                   </TouchableOpacity>
                 );
