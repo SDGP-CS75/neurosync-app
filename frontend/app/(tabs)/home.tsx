@@ -490,20 +490,20 @@ const styles = StyleSheet.create({
   todayCardRight: {
     alignItems: "flex-end",
   },
-
-  // In Progress Section Styles
-  section: {
-    marginBottom: 25,
+  chatIcon: {
+    marginBottom: 8,
+    opacity: 0.8,
   },
-  sectionHeader: {
-    flexDirection: "row",
+  progressTextContainer: {
+    justifyContent: "center",
     alignItems: "center",
-    marginBottom: 15,
   },
-  sectionTitle: {
+  progressText: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "bold",
   },
+  // In Progress Section Styles
+
   badge: {
     backgroundColor: "#5838b5",
     borderRadius: 10,
