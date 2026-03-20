@@ -196,12 +196,16 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/settings")}
               activeOpacity={0.7}
             >
-              <Image
-                source={{
-                  uri: profile.profileImage || 'https://via.placeholder.com/50',
-                }}
-                style={styles.avatar}
-              />
+              <View style={{ alignItems: 'center' }}>
+                {useUser()?.profile?.profileImage ? (
+                  <Image source={{ uri: useUser()?.profile?.profileImage }} style={styles.headerAvatar} />
+                ) : (
+                  <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.primary }]}>
+                    <Text style={styles.avatarInitials}>{(useUser()?.profile?.name || 'You').split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</Text>
+                  </View>
+                )}
+              </View>
+
               <View style={styles.greeting}>
                 <Text style={[styles.helloText, { color: theme.colors.onSurfaceVariant }]}>
                   Hello!
@@ -226,14 +230,14 @@ export default function HomeScreen() {
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             style={{ marginBottom: 25 }}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
+            // contentContainerStyle={{ paddingHorizontal: 20 }}
           >
             {/* Today's Task Card (centered, inset) */}
             <LinearGradient
               colors={[theme.colors.primary, theme.colors.secondary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={[styles.todayCard, { width: width - 48, marginHorizontal: 12 }]}
+              style={[styles.todayCard, { width: width - 48 }]}
             >
               <View style={styles.todayCardContent}>
                 <View style={styles.todayCardLeft}>
@@ -436,7 +440,25 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginRight: 12,
   },
-  greeting: {},
+  headerAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  avatarPlaceholder: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 24, 
+    alignItems: 'center',
+    justifyContent: 'center' 
+  },
+  avatarInitials: { 
+    color: '#fff', 
+    fontWeight: '700' 
+  },
+  greeting: {
+    marginLeft: 8,
+  },
   helloText: {
     fontSize: 14,
   },
