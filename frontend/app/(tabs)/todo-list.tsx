@@ -31,6 +31,11 @@ interface DateItem {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const STATUS_ORDER: Record<TaskStatus, number> = {
+  "in-progress": 0,
+  todo: 1,
+  done: 2,
+};
 
 function getDatesAroundToday(): DateItem[] {
   const items: DateItem[] = [];
@@ -80,7 +85,7 @@ export default function TodoListScreen() {
   const tasksForDate = tasks.filter((t) => t.dateKey === selectedDate);
   const filteredTasks =
     filter === "all"
-      ? tasksForDate
+      ? [...tasksForDate].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
       : tasksForDate.filter((t) => t.status === filter);
 
   const getStatusConfig = (status: TaskStatus) => {
@@ -273,7 +278,15 @@ export default function TodoListScreen() {
                   </View>
                 </View>
 
-                <Text style={[styles.taskTitle, { color: theme.colors.text }]}>
+                <Text
+                  style={[
+                    styles.taskTitle,
+                    {
+                      color: theme.colors.text,
+                      textDecorationLine: task.status === "done" ? "line-through" : "none",
+                    },
+                  ]}
+                >
                   {task.title}
                 </Text>
 
