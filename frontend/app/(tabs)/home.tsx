@@ -82,7 +82,7 @@ function CircularProgress({
   size,
   strokeWidth,
   progressColor,
-  bgColor = "#564949",
+  bgColor = "#E0E0E0",
 }: CircularProgressProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
