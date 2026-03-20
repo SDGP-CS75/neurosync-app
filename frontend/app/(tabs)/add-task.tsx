@@ -306,20 +306,23 @@ export default function AddTaskScreen() {
 
     const today   = new Date();
     const dateKey = today.toISOString().slice(0, 10);
+    const trimmedWhen = when.trim();
+    const trimmedLocation = location.trim();
+    const trimmedReminder = reminder.trim();
 
     addTask({
       title,
       category: aiMeta.category,
       icon:     aiMeta.emoji,
       iconBg:   aiMeta.iconBg,
-      time:     when.trim() || "No time",
-      dueDate:  when.trim() || undefined,
-      location: location.trim() || undefined,
-      reminder: reminder.trim() || undefined,
+      time:     trimmedWhen || "No time",
       status:   "todo",
       dateKey,
       subtasks: subTasks,
       isSynced: false,
+      ...(trimmedWhen ? { dueDate: trimmedWhen } : {}),
+      ...(trimmedLocation ? { location: trimmedLocation } : {}),
+      ...(trimmedReminder ? { reminder: trimmedReminder } : {}),
     });
 
     setMainTask("");

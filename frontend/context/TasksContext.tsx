@@ -57,6 +57,15 @@ type TasksContextType = {
 
 const TasksContext = createContext<TasksContextType | null>(null);
 
+function getStatusFromSubtasks(subtasks?: SubTask[]): TaskStatus | null {
+  if (!subtasks || subtasks.length === 0) return null;
+
+  const doneCount = subtasks.filter((subtask) => subtask.isDone).length;
+  if (doneCount === 0) return "todo";
+  if (doneCount === subtasks.length) return "done";
+  return "in-progress";
+}
+
 async function loadTasksForUser(userId: string): Promise<Task[]> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY_PREFIX + userId);
@@ -285,14 +294,19 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       prev.map((task) => {
         if (task.id !== taskId || !task.subtasks) return task;
 
+        const updatedSubtasks = task.subtasks.map((subtask) =>
+          subtask.id === subtaskId
+            ? { ...subtask, isDone: !subtask.isDone }
+            : subtask
+        );
+
+        const derivedStatus = getStatusFromSubtasks(updatedSubtasks);
+
         return {
           ...task,
           isSynced: false,
-          subtasks: task.subtasks.map((subtask) =>
-            subtask.id === subtaskId
-              ? { ...subtask, isDone: !subtask.isDone }
-              : subtask
-          ),
+          status: derivedStatus ?? task.status,
+          subtasks: updatedSubtasks,
         };
       })
     );
@@ -320,6 +334,10 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         return {
           ...task,
           status: newStatus,
+          subtasks: task.subtasks?.map((subtask) => ({
+            ...subtask,
+            isDone: newStatus === "done" ? true : subtask.isDone,
+          })),
           isSynced: false,
         };
       })

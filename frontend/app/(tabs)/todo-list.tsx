@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
   },
   filterRowWrap: {
     paddingHorizontal: 20,
-    marginBottom: 4,
+    marginBottom: 10,
     height: 48,
     justifyContent: "center",
   },
@@ -415,6 +415,9 @@ const styles = StyleSheet.create({
     shadowRadius:      4,
     elevation:         2,
     alignSelf:         "center",
+    marginBottom: 3,
+    marginTop: 3,
+
   },
   filterText: {
     fontSize:   15,
