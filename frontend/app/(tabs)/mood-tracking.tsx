@@ -152,8 +152,28 @@ export default function MoodTracking() {
             }}
           >
             {/* Note Input */}
-
-            
+            <TextInput
+              placeholder="What made you feel this way?"
+              placeholderTextColor={colors.textMuted}
+              value={note}
+              onChangeText={setNote}
+              multiline
+              style={{
+                backgroundColor: colors.surfaceVariant,
+                borderRadius: 12,
+                padding: 16,
+                marginTop: 20,
+                minHeight: 100,
+                color: colors.onBackground,
+                textAlignVertical: "top",
+                // card-like inset
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.04,
+                shadowRadius: 8,
+                elevation: 3,
+              }}
+            />
 
             {/* Tags */}
 
