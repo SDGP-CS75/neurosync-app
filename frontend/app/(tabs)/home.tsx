@@ -527,10 +527,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
-  inProgressScroll: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
-  },
+ 
   inProgressCard: {
     width: width * 0.6,
     padding: 15,
