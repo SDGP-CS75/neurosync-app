@@ -103,7 +103,9 @@ export default function MoodTracking() {
 
             <View style={{ alignItems: "center", marginTop: 0 }}>
 
-              
+              <Text style={{ fontSize: 16, color: colors.textMuted }}>
+                {dateString} • {timeString}
+              </Text>
 
               <View style={{
                 width: 96,
