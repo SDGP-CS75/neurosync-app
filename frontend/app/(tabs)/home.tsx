@@ -182,12 +182,7 @@ export default function HomeScreen() {
   const router = useRouter();
 
   return (
-    <LinearGradient
-      colors={["#fef6e4", "#f0e6ff", "#e6f0ff", "#e6fff0"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
-    >
+    <>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
         <ScrollView
           style={styles.scrollView}
@@ -407,7 +402,7 @@ export default function HomeScreen() {
         </ScrollView>
       </SafeAreaView>
       <Nav />
-    </LinearGradient>
+    </>
   );
 }
 

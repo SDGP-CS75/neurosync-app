@@ -250,7 +250,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      // backgroundColor: theme.colors.background,
     },
     scrollContent: {
       flexGrow: 1,

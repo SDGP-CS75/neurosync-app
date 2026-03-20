@@ -14,7 +14,7 @@ export default function MoodTracking() {
 
   // compute bottom padding to avoid overlap with bottom navigation
   // keep minimal extra space so nav remains fixed at the bottom like on home
-  const bottomPadding = Math.max(insets.bottom, 12) + 16;
+  const bottomPadding = Math.max(insets.bottom, 12) + 60;
 
   const [note, setNote] = useState("");
   const [mood, setMood] = useState(3);
@@ -89,7 +89,7 @@ export default function MoodTracking() {
     <SafeAreaView style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
         <ScrollView
-          style={{ flex: 1, backgroundColor: colors.surface }}
+          style={{ flex: 1 }}
           contentContainerStyle={{
             paddingTop: 40,
             paddingBottom: bottomPadding, // use safe area to avoid nav overlap
@@ -98,21 +98,6 @@ export default function MoodTracking() {
           }}
         >
 
-          <View
-            style={{
-              alignSelf: "stretch",
-              marginHorizontal: 16,
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 20,
-              // subtle card shadow
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-              elevation: 6,
-            }}
-          >
 
             {/* Header */}
 
@@ -150,6 +135,22 @@ export default function MoodTracking() {
             </View>
 
 
+          <View
+            style={{
+              alignSelf: "stretch",
+              marginHorizontal: 16,
+              backgroundColor: colors.surface,
+              borderRadius: 20,
+              padding: 20,
+              // subtle card shadow
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.06,
+              shadowRadius: 12,
+              elevation: 6,
+              marginTop: 32,
+            }}
+          >
             {/* Note Input */}
 
             <TextInput
@@ -275,10 +276,11 @@ export default function MoodTracking() {
                 zIndex: -1,
               }}
             />
-
+          </View>
+          
             {/* Energy Level */}
 
-            <View style={{ marginTop: 24 }}>
+            <View style={{ marginTop: 24, marginHorizontal: 16 }}>
 
               <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8, color: colors.onBackground }}>
                 ⚡ Energy Level
@@ -288,6 +290,7 @@ export default function MoodTracking() {
                 backgroundColor: colors.surface,
                 borderRadius: 12,
                 padding: 12,
+                paddingTop: 20,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 6 },
                 shadowOpacity: 0.06,
@@ -338,11 +341,12 @@ export default function MoodTracking() {
                 backgroundColor: colors.primary,
                 paddingVertical: 16,
                 borderRadius: 28,
-                marginTop: 32,
-                marginBottom: 12,
+                marginTop: 20,
                 alignItems: 'center',
                 justifyContent: 'center',
-                alignSelf: 'stretch'
+                alignSelf: 'stretch',
+                marginHorizontal: 16,
+                marginBottom: 38,
               }}
             >
 
@@ -352,7 +356,6 @@ export default function MoodTracking() {
 
             </TouchableOpacity>
 
-          </View>
 
         </ScrollView>
 
