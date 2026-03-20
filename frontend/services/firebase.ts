@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { initializeAuth, getAuth } from "firebase/auth";
+import { getAuth, initializeAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { Platform } from "react-native";
 
@@ -23,10 +23,13 @@ if (Platform.OS === "web") {
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const AsyncStorage = require("@react-native-async-storage/async-storage").default;
+    // The RN helper is exported at runtime from firebase/auth, but not typed yet.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { getReactNativePersistence } = require("@firebase/auth/react-native");
+    const { getReactNativePersistence } = require("firebase/auth") as {
+      getReactNativePersistence: (storage: typeof AsyncStorage) => unknown;
+    };
     auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
+      persistence: getReactNativePersistence(AsyncStorage) as never,
     });
   } catch {
     auth = getAuth(app);

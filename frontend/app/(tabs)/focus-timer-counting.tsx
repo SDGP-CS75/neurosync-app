@@ -16,7 +16,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Audio } from "expo-av";
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import Svg, { Circle } from "react-native-svg";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
@@ -175,7 +175,7 @@ export default function FocusTimerCounting() {
   const [isMusicLoading, setIsMusicLoading] = useState(false);
   const [showMusicPicker, setShowMusicPicker] = useState(false);
   const [selectedStream, setSelectedStream] = useState<MusicStream>(MUSIC_STREAMS[0]);
-  const soundRef = useRef<Audio.Sound | null>(null);
+  const soundRef = useRef<ReturnType<typeof createAudioPlayer> | null>(null);
   
   // Screen saver state
   const [showScreenSaver, setShowScreenSaver] = useState(false);
@@ -242,11 +242,11 @@ export default function FocusTimerCounting() {
   useEffect(() => {
     const setupAudio = async () => {
       try {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          playsInSilentModeIOS: true,
-          staysActiveInBackground: true,
-          shouldDuckAndroid: true,
+        await setAudioModeAsync({
+          allowsRecording: false,
+          playsInSilentMode: true,
+          shouldPlayInBackground: true,
+          interruptionMode: "duckOthers",
         });
       } catch (error) {
         console.log("Error setting audio mode:", error);
@@ -257,7 +257,8 @@ export default function FocusTimerCounting() {
     // Cleanup on unmount
     return () => {
       if (soundRef.current) {
-        soundRef.current.unloadAsync();
+        soundRef.current.remove();
+        soundRef.current = null;
       }
     };
   }, []);
@@ -272,8 +273,9 @@ export default function FocusTimerCounting() {
   const stopMusic = async () => {
     try {
       if (soundRef.current) {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
+        soundRef.current.pause();
+        soundRef.current.seekTo(0);
+        soundRef.current.remove();
         soundRef.current = null;
       }
       setIsMusicOn(false);
@@ -296,42 +298,35 @@ export default function FocusTimerCounting() {
       if (soundRef.current) {
         const currentSound = soundRef.current;
         soundRef.current = null; // Clear ref immediately to prevent race conditions
-        
+
         try {
-          await currentSound.stopAsync();
+          currentSound.pause();
+          await currentSound.seekTo(0);
         } catch (e) {
-          // Ignore stop errors
+          // Ignore pause/seek errors
         }
-        
+
         try {
-          await currentSound.unloadAsync();
+          currentSound.remove();
         } catch (e) {
-          // Ignore unload errors
+          // Ignore cleanup errors
         }
-        
+
         // Small delay to ensure audio system is ready
         await new Promise(resolve => setTimeout(resolve, 100));
       }
-      
-      const { sound } = await Audio.Sound.createAsync(
+
+      const sound = createAudioPlayer(
         { uri: stream.url },
-        { 
-          shouldPlay: true, 
-          isLooping: true,
-          volume: 0.5,
-        }
+        { updateInterval: 1000 }
       );
-      
+      sound.loop = true;
+      sound.volume = 0.5;
+      sound.play();
+
       soundRef.current = sound;
       setIsMusicOn(true);
       setIsMusicLoading(false);
-
-      // Handle playback status updates
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && !status.isPlaying && !status.didJustFinish) {
-          // Sound was stopped externally
-        }
-      });
     } catch (error) {
       console.log("Error playing music:", error);
       setIsMusicLoading(false);
@@ -345,9 +340,9 @@ export default function FocusTimerCounting() {
       if (soundRef.current && isMusicOn) {
         try {
           if (isRunning) {
-            await soundRef.current.playAsync();
+            soundRef.current.play();
           } else {
-            await soundRef.current.pauseAsync();
+            soundRef.current.pause();
           }
         } catch (error) {
           console.log("Error handling music with timer:", error);
@@ -497,8 +492,9 @@ export default function FocusTimerCounting() {
     // Stop and cleanup music before leaving
     if (soundRef.current) {
       try {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
+        soundRef.current.pause();
+        await soundRef.current.seekTo(0);
+        soundRef.current.remove();
         soundRef.current = null;
       } catch (error) {
         console.log("Error stopping music:", error);
