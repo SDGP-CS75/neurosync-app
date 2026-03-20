@@ -332,20 +332,7 @@ export default function MoodTracking() {
 
             {/* Save Button */}
 
-            <TouchableOpacity
-              onPress={saveEntry}
-              style={{
-                backgroundColor: colors.primary,
-                paddingVertical: 16,
-                borderRadius: 28,
-                marginTop: 20,
-                alignItems: 'center',
-                justifyContent: 'center',
-                alignSelf: 'stretch',
-                marginHorizontal: 16,
-                marginBottom: 38,
-              }}
-            >
+            
 
               <Text style={{ color: colors.onPrimary, textAlign: "center", fontWeight: "700", fontSize: 16 }}>
                 Save Entry
