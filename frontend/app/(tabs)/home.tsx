@@ -456,11 +456,7 @@ const styles = StyleSheet.create({
   notificationBtn: {
     padding: 8,
   },
-  todayCard: {
-    borderRadius: 20,
-    padding: 20,
-    marginBottom: 25,
-  },
+
   todayCardContent: {
     flexDirection: "row",
     justifyContent: "space-between",
