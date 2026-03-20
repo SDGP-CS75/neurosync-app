@@ -17,9 +17,83 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Audio } from "expo-av";
-import { AnimatedCircularProgress } from "react-native-circular-progress";
+import Svg, { Circle } from "react-native-svg";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
+
+// Custom AnimatedCircularProgress component using react-native-svg
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+interface CircularProgressProps {
+  size: number;
+  width: number;
+  fill: number;
+  rotation?: number;
+  lineCap?: "butt" | "round" | "square";
+  tintColor: string;
+  backgroundColor: string;
+  duration?: number;
+  children?: React.ReactNode;
+}
+
+function CustomAnimatedCircularProgress({
+  size,
+  width,
+  fill,
+  tintColor,
+  backgroundColor,
+  duration = 300,
+  children,
+}: CircularProgressProps) {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const radius = (size - width) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+
+  React.useEffect(() => {
+    Animated.timing(animatedValue, {
+      toValue: fill,
+      duration: duration,
+      useNativeDriver: false, // SVG animations require native driver to be false
+    }).start();
+  }, [fill, duration]);
+
+  const strokeDashoffset = animatedValue.interpolate({
+    inputRange: [0, 100],
+    outputRange: [circumference, 0],
+  });
+
+  return (
+    <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
+      <Svg width={size} height={size} style={{ position: 'absolute' }}>
+        {/* Background Circle */}
+        <Circle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={backgroundColor}
+          strokeWidth={width}
+          fill="transparent"
+        />
+        {/* Progress Circle */}
+        <AnimatedCircle
+          cx={center}
+          cy={center}
+          r={radius}
+          stroke={tintColor}
+          strokeWidth={width}
+          fill="transparent"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          rotation="-90"
+          origin={`${center}, ${center}`}
+        />
+      </Svg>
+      {children}
+    </View>
+  );
+}
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CIRCLE_SIZE = Math.min(SCREEN_WIDTH * 0.7, 280);
@@ -626,33 +700,29 @@ export default function FocusTimerCounting() {
               { transform: [{ scale: pulseAnim }] },
             ]}
           >
-          <AnimatedCircularProgress
+          <CustomAnimatedCircularProgress
             size={CIRCLE_SIZE}
             width={8}
             fill={getProgress() * 100}
-            rotation={0}
-            lineCap="round"
             tintColor={mode === "focus" ? theme.colors.primary : theme.colors.secondary}
             backgroundColor={theme.colors.background}
             duration={isRunning ? 1000 : 300}
           >
-            {() => (
-              <View style={styles.timerContent}>
-                <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-                <Text style={styles.timerLabel}>
-                  {mode === "focus" ? "Stay focused!" : "Take a break"}
+            <View style={styles.timerContent}>
+              <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+              <Text style={styles.timerLabel}>
+                {mode === "focus" ? "Stay focused!" : "Take a break"}
+              </Text>
+              
+              {/* Status indicator */}
+              <View style={styles.statusContainer}>
+                <View style={[styles.statusDot, isRunning && styles.statusDotActive]} />
+                <Text style={styles.statusText}>
+                  {isRunning ? "Running" : "Paused"}
                 </Text>
-                
-                {/* Status indicator */}
-                <View style={styles.statusContainer}>
-                  <View style={[styles.statusDot, isRunning && styles.statusDotActive]} />
-                  <Text style={styles.statusText}>
-                    {isRunning ? "Running" : "Paused"}
-                  </Text>
-                </View>
               </View>
-            )}
-          </AnimatedCircularProgress>
+            </View>
+          </CustomAnimatedCircularProgress>
           </Animated.View>
         </View>
 
