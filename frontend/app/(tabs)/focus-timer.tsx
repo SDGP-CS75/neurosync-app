@@ -90,9 +90,6 @@ export default function FocusTimer() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Focus Timer</Text>
-          <View style={styles.infoBadge}>
-            <Ionicons name="information-circle-outline" size={20} color={theme.colors.onSurfaceVariant} />
-          </View>
         </View>
 
         {/* Description */}
@@ -258,34 +255,30 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     header: {
       flexDirection: "row",
-      justifyContent: "space-between",
+      justifyContent: "center",
       alignItems: "center",
       paddingHorizontal: 24,
-      paddingTop: 16,
-      paddingBottom: 8,
+      paddingTop: 10,
+      paddingBottom: 12,
+      position: "relative",
     },
     title: {
       fontSize: 28,
       fontWeight: "bold",
       color: theme.colors.onBackground,
-    },
-    infoBadge: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: theme.colors.surface,
-      justifyContent: "center",
-      alignItems: "center",
+      textAlign: "center",
     },
     description: {
       fontSize: 14,
       color: theme.colors.onSurfaceVariant,
       paddingHorizontal: 24,
-      marginBottom: 24,
+      marginBottom: 12,
+      textAlign: "center",
     },
     modeContainer: {
       flexDirection: "row",
       paddingHorizontal: 24,
+      paddingVertical: 4,
       gap: 12,
     },
     modeButton: {
@@ -295,6 +288,11 @@ const createStyles = (theme: any, mode: TimerMode) =>
       borderRadius: 16,
       backgroundColor: theme.colors.surface,
       gap: 8,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     modeButtonActive: {
       backgroundColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
@@ -315,17 +313,19 @@ const createStyles = (theme: any, mode: TimerMode) =>
       color: "rgba(255,255,255,0.8)",
     },
     durationSection: {
-      marginTop: 32,
+      marginTop: 12,
+      marginBottom: 4,
     },
     sectionTitle: {
       fontSize: 16,
       fontWeight: "600",
       color: theme.colors.onBackground,
-      marginBottom: 16,
+      marginBottom: 10,
       paddingHorizontal: 24,
     },
     presetsScrollContent: {
       paddingHorizontal: 24,
+      paddingVertical: 10,
       gap: 10,
     },
     presetButton: {
@@ -335,6 +335,11 @@ const createStyles = (theme: any, mode: TimerMode) =>
       backgroundColor: theme.colors.surface,
       alignItems: "center",
       minWidth: 65,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 3,
+      elevation: 2,
     },
     presetButtonActive: {
       backgroundColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
@@ -355,7 +360,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
-      marginTop: 16,
+      marginTop: 10,
       paddingHorizontal: 24,
     },
     customInputLabel: {
@@ -389,12 +394,18 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     previewSection: {
       paddingHorizontal: 24,
-      marginTop: 32,
+      marginTop: 12,
+      marginBottom: 4,
     },
     previewCard: {
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
       padding: 20,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     previewRow: {
       flexDirection: "row",
@@ -426,8 +437,8 @@ const createStyles = (theme: any, mode: TimerMode) =>
       gap: 12,
       backgroundColor: theme.colors.primary,
       marginHorizontal: 24,
-      marginTop: 32,
-      paddingVertical: 18,
+      marginTop: 16,
+      paddingVertical: 16,
       borderRadius: 16,
       shadowColor: theme.colors.primary,
       shadowOffset: { width: 0, height: 4 },
@@ -442,11 +453,17 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     tipsSection: {
       paddingHorizontal: 24,
-      marginTop: 32,
+      marginTop: 20,
+      marginBottom: 30,
       backgroundColor: theme.colors.surface,
       marginHorizontal: 24,
       borderRadius: 16,
       padding: 20,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
     },
     tipsTitle: {
       fontSize: 14,
