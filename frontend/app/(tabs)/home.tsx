@@ -69,13 +69,7 @@ const taskGroups = [
 ];
 
 // Circular Progress Component
-interface CircularProgressProps {
-  percentage: number;
-  size: number;
-  strokeWidth: number;
-  progressColor: string;
-  bgColor?: string;
-}
+
 
 function CircularProgress({
   percentage,
