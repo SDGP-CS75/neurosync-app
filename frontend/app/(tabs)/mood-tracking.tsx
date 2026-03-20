@@ -206,8 +206,7 @@ export default function MoodTracking() {
                     <Text style={{ color: isSelected ? colors.onPrimary : colors.onSurface }}>
                       {tag}
                     </Text>
-                    
-
+                  
                   </TouchableOpacity>
                 );
               })}
@@ -280,9 +279,7 @@ export default function MoodTracking() {
 
             <View style={{ marginTop: 24, marginHorizontal: 16 }}>
 
-              <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8, color: colors.onBackground }}>
-                ⚡ Energy Level
-              </Text>
+              
 
               <View style={{
                 backgroundColor: colors.surface,
