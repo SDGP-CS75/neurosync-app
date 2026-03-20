@@ -123,7 +123,14 @@ function CircularProgress({
 }
 
 // Small Circular Progress for Task Groups
-
+interface SmallCircularProgressProps {
+  percentage: number;
+  size: number;
+  strokeWidth: number;
+  progressColor: string;
+  bgColor?: string;
+  textColor?: string;
+}
 
 function SmallCircularProgress({
   percentage,
