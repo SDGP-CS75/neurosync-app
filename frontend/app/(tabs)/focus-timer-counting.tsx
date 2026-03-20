@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Audio } from "expo-av";
+import { AnimatedCircularProgress } from "react-native-circular-progress";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 
@@ -108,7 +109,6 @@ export default function FocusTimerCounting() {
   const screenSaverAnim = useRef(new Animated.Value(0)).current;
 
   // Animation
-  const progressAnim = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const loadingAnim = useRef(new Animated.Value(0)).current;
 
@@ -301,14 +301,7 @@ export default function FocusTimerCounting() {
     return timeLeft / total;
   }, [timeLeft, getTotalDuration]);
 
-  // Update progress animation
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: getProgress(),
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [timeLeft, progressAnim, getProgress]);
+
 
   // Pulse animation when running
   useEffect(() => {
@@ -440,11 +433,7 @@ export default function FocusTimerCounting() {
     router.back();
   };
 
-  // Progress circle interpolation
-  const progressInterpolate = progressAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ["0deg", "360deg"],
-  });
+
 
   const loadingScale = loadingAnim.interpolate({
     inputRange: [0, 1],
@@ -637,35 +626,33 @@ export default function FocusTimerCounting() {
               { transform: [{ scale: pulseAnim }] },
             ]}
           >
-            {/* Progress Ring */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBackground} />
-              <Animated.View
-                style={[
-                  styles.progressFill,
-                  {
-                    transform: [{ rotate: progressInterpolate }],
-                  },
-                ]}
-              />
-              <View style={styles.progressCover} />
-            </View>
-
-            {/* Timer Content */}
-            <View style={styles.timerContent}>
-              <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-              <Text style={styles.timerLabel}>
-                {mode === "focus" ? "Stay focused!" : "Take a break"}
-              </Text>
-              
-              {/* Status indicator */}
-              <View style={styles.statusContainer}>
-                <View style={[styles.statusDot, isRunning && styles.statusDotActive]} />
-                <Text style={styles.statusText}>
-                  {isRunning ? "Running" : "Paused"}
+          <AnimatedCircularProgress
+            size={CIRCLE_SIZE}
+            width={8}
+            fill={getProgress() * 100}
+            rotation={0}
+            lineCap="round"
+            tintColor={mode === "focus" ? theme.colors.primary : theme.colors.secondary}
+            backgroundColor={theme.colors.background}
+            duration={isRunning ? 1000 : 300}
+          >
+            {() => (
+              <View style={styles.timerContent}>
+                <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+                <Text style={styles.timerLabel}>
+                  {mode === "focus" ? "Stay focused!" : "Take a break"}
                 </Text>
+                
+                {/* Status indicator */}
+                <View style={styles.statusContainer}>
+                  <View style={[styles.statusDot, isRunning && styles.statusDotActive]} />
+                  <Text style={styles.statusText}>
+                    {isRunning ? "Running" : "Paused"}
+                  </Text>
+                </View>
               </View>
-            </View>
+            )}
+          </AnimatedCircularProgress>
           </Animated.View>
         </View>
 
@@ -764,7 +751,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       justifyContent: "center",
       alignItems: "center",
       paddingHorizontal: 20,
-      paddingTop: 16,
+      paddingTop: 30,
       paddingBottom: 24,
       position: "relative",
     },
@@ -840,7 +827,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       justifyContent: "center",
       alignItems: "center",
       minHeight: 320,
-      marginVertical: 20,
+      marginVertical: 40,
     },
     timerCircle: {
       width: CIRCLE_SIZE,
@@ -855,40 +842,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       shadowRadius: 20,
       elevation: 10,
     },
-    progressContainer: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      overflow: "hidden",
-    },
-    progressBackground: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      borderWidth: 8,
-      borderColor: theme.colors.background,
-    },
-    progressFill: {
-      position: "absolute",
-      width: CIRCLE_SIZE,
-      height: CIRCLE_SIZE,
-      borderRadius: CIRCLE_SIZE / 2,
-      borderWidth: 8,
-      borderColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
-      borderTopColor: "transparent",
-      borderRightColor: "transparent",
-    },
-    progressCover: {
-      position: "absolute",
-      width: CIRCLE_SIZE - 16,
-      height: CIRCLE_SIZE - 16,
-      borderRadius: (CIRCLE_SIZE - 16) / 2,
-      backgroundColor: theme.colors.surface,
-      top: 8,
-      left: 8,
-    },
+
     timerContent: {
       alignItems: "center",
     },

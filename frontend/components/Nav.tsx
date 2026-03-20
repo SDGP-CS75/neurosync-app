@@ -174,7 +174,7 @@ export default function CustomNavBar() {
     return (
       <TouchableOpacity
         key={item.key}
-        onPress={() => router.push(item.path as any)}
+        onPress={() => router.replace(item.path as any)}
         style={styles.navItem}
         activeOpacity={0.7}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}

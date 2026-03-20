@@ -258,8 +258,8 @@ const createStyles = (theme: any, mode: TimerMode) =>
       justifyContent: "center",
       alignItems: "center",
       paddingHorizontal: 24,
-      paddingTop: 10,
-      paddingBottom: 12,
+      paddingTop: 30,
+      paddingBottom: 20,
       position: "relative",
     },
     title: {
@@ -394,8 +394,8 @@ const createStyles = (theme: any, mode: TimerMode) =>
     },
     previewSection: {
       paddingHorizontal: 24,
-      marginTop: 12,
-      marginBottom: 4,
+      marginTop: 20,
+      marginBottom: 10,
     },
     previewCard: {
       backgroundColor: theme.colors.surface,
@@ -437,7 +437,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       gap: 12,
       backgroundColor: theme.colors.primary,
       marginHorizontal: 24,
-      marginTop: 16,
+      marginTop: 24,
       paddingVertical: 16,
       borderRadius: 16,
       shadowColor: theme.colors.primary,
