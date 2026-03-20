@@ -203,7 +203,9 @@ export default function MoodTracking() {
                       elevation: isSelected ? 4 : 2,
                     }}
                   >
-
+                    <Text style={{ color: isSelected ? colors.onPrimary : colors.onSurface }}>
+                      {tag}
+                    </Text>
                     
 
                   </TouchableOpacity>
