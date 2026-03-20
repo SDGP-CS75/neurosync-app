@@ -69,14 +69,20 @@ const taskGroups = [
 ];
 
 // Circular Progress Component
-
+interface CircularProgressProps {
+  percentage: number;
+  size: number;
+  strokeWidth: number;
+  progressColor: string;
+  bgColor?: string;
+}
 
 function CircularProgress({
   percentage,
   size,
   strokeWidth,
   progressColor,
-  bgColor = "#E0E0E0",
+  bgColor = "#564949",
 }: CircularProgressProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
