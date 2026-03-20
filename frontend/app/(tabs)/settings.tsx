@@ -85,7 +85,9 @@ export default function SettingsScreen() {
     );
   };
 
-  // Dynamic styles
+ // DYNAMIC STYLESHEET
+  // Utilizing the calculated 'scale' multiplier to dynamically adjust padding, 
+  // margins, font sizes, and border radii for cross-device compatibility.
   const styles = StyleSheet.create({
     safeArea: { flex: 1 },
     scrollContainer: { paddingHorizontal: horizontalPadding, paddingTop: 8 * scale, paddingBottom: 40 * scale },
