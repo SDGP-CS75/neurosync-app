@@ -18,55 +18,25 @@ import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useUser } from "../../context/UserContext";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
+import { useTasks } from "../../context/TasksContext";
 
 const { width } = Dimensions.get("window");
 
-// Mock Data
-const inProgressTasks = [
-  {
-    id: 1,
-    category: "Office Project",
-    title: "Grocery shopping app design",
-    progress: 0.7,
-    color: "#5838b5",
-    icon: "briefcase",
-  },
-  {
-    id: 2,
-    category: "Personal Project",
-    title: "Uber Eats redesign challenge",
-    progress: 0.4,
-    color: "#E91E63",
-    icon: "person",
-  },
-];
+const FALLBACK_ICON_BG = "#E8E4FF";
 
-const taskGroups = [
-  {
-    id: 1,
-    title: "Office Project",
-    tasks: 23,
-    progress: 78,
-    color: "#5838b5",
-    icon: "briefcase",
-  },
-  {
-    id: 2,
-    title: "Personal Project",
-    tasks: 12,
-    progress: 45,
-    color: "#E91E63",
-    icon: "person",
-  },
-  {
-    id: 3,
-    title: "Daily Study",
-    tasks: 8,
-    progress: 92,
-    color: "#4CAF50",
-    icon: "book",
-  },
-];
+function getTaskProgress(task: {
+  status: "done" | "in-progress" | "todo";
+  subtasks?: { isDone: boolean }[];
+}) {
+  if (task.subtasks && task.subtasks.length > 0) {
+    const completedSubtasks = task.subtasks.filter((subtask) => subtask.isDone).length;
+    return completedSubtasks / task.subtasks.length;
+  }
+
+  if (task.status === "done") return 1;
+  if (task.status === "in-progress") return 0.5;
+  return 0;
+}
 
 // Circular Progress Component
 interface CircularProgressProps {
@@ -181,7 +151,68 @@ function SmallCircularProgress({
 export default function HomeScreen() {
   const { theme } = useAppTheme();
   const { profile } = useUser();
+  const { tasks } = useTasks();
   const router = useRouter();
+
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const displayName = profile.name || "You";
+  const displayInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("") || "Y";
+
+  const todayTasks = tasks.filter((task) => task.dateKey === todayKey);
+  const completedToday = todayTasks.filter((task) => task.status === "done").length;
+  const todayCompletion = todayTasks.length
+    ? Math.round((completedToday / todayTasks.length) * 100)
+    : 0;
+  const remainingToday = todayTasks.length - completedToday;
+
+  const inProgressTasks = tasks
+    .filter((task) => task.status === "in-progress")
+    .map((task) => ({
+      id: task.id,
+      category: task.category || "Uncategorized",
+      title: task.title,
+      progress: getTaskProgress(task),
+      color: theme.colors.primary,
+      icon: task.icon || "📝",
+      iconBg: task.iconBg || FALLBACK_ICON_BG,
+    }));
+
+  const taskGroups = Array.from(
+    tasks.reduce((map, task) => {
+      const key = task.category || "Uncategorized";
+      const current = map.get(key) ?? {
+        id: key,
+        title: key,
+        tasks: 0,
+        doneTasks: 0,
+        icon: task.icon || "📝",
+        iconBg: task.iconBg || FALLBACK_ICON_BG,
+      };
+
+      current.tasks += 1;
+      if (task.status === "done") current.doneTasks += 1;
+
+      map.set(key, current);
+      return map;
+    }, new Map<string, {
+      id: string;
+      title: string;
+      tasks: number;
+      doneTasks: number;
+      icon: string;
+      iconBg: string;
+    }>())
+  )
+    .map(([, group]) => ({
+      ...group,
+      progress: group.tasks ? Math.round((group.doneTasks / group.tasks) * 100) : 0,
+    }))
+    .sort((a, b) => b.tasks - a.tasks);
 
   return (
     <>
@@ -198,18 +229,22 @@ export default function HomeScreen() {
               onPress={() => router.push("/(tabs)/settings")}
               activeOpacity={0.7}
             >
-              <Image
-                source={{
-                  uri: profile.profileImage || 'https://via.placeholder.com/50',
-                }}
-                style={styles.avatar}
-              />
+              <View style={{ alignItems: "center" }}>
+                {profile.profileImage ? (
+                  <Image source={{ uri: profile.profileImage }} style={styles.headerAvatar} />
+                ) : (
+                  <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.primary }]}>
+                    <Text style={styles.avatarInitials}>{displayInitials}</Text>
+                  </View>
+                )}
+              </View>
+
               <View style={styles.greeting}>
                 <Text style={[styles.helloText, { color: theme.colors.onSurfaceVariant }]}>
                   Hello!
                 </Text>
                 <Text style={[styles.userName, { color: theme.colors.onSurface }]}>
-                  {profile.name}
+                  {displayName}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -227,20 +262,24 @@ export default function HomeScreen() {
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 25 }}
-            contentContainerStyle={{ paddingHorizontal: 20 }}
+            style={{ marginBottom: 10 }}
+            // contentContainerStyle={{ paddingHorizontal: 20 }}
           >
             {/* Today's Task Card (centered, inset) */}
             <LinearGradient
               colors={[theme.colors.primary, theme.colors.secondary]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
-              style={[styles.todayCard, { width: width - 48, marginHorizontal: 12 }]}
+              style={[styles.todayCard, { width: width - 48 }]}
             >
               <View style={styles.todayCardContent}>
                 <View style={styles.todayCardLeft}>
                   <Text style={styles.todayCardTitle}>
-                    Your today's task{"\n"}almost done!
+                    {todayTasks.length === 0
+                      ? "No tasks planned\nyet for today"
+                      : todayCompletion === 100
+                        ? "Today's tasks are\nall completed!"
+                        : `${remainingToday} task${remainingToday === 1 ? "" : "s"} left\nto finish today`}
                   </Text>
                   <TouchableOpacity style={styles.viewTaskBtn} onPress={() => router.push('/(tabs)/todo-list' as any)}>
                     <Text style={[styles.viewTaskText, { color: theme.colors.primary }]}>View Task</Text>
@@ -314,61 +353,69 @@ export default function HomeScreen() {
                 <Text style={styles.badgeText}>{inProgressTasks.length}</Text>
               </View>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.inProgressScroll}
-            >
-              {inProgressTasks.map((task) => (
-                <View
-                  key={task.id}
-                  style={[styles.inProgressCard, { backgroundColor: theme.colors.surface }]}
-                >
-                  <View style={styles.inProgressHeader}>
-                    <Text
-                      style={[
-                        styles.inProgressCategory,
-                        { color: theme.colors.onSurfaceVariant },
-                      ]}
-                    >
-                      {task.category}
-                    </Text>
-                    <View
-                      style={[
-                        styles.categoryIcon,
-                        { backgroundColor: task.color + "20" },
-                      ]}
-                    >
-                      <Ionicons name={task.icon as any} size={14} color={task.color} />
-                    </View>
-                  </View>
-                  <Text
-                    style={[styles.inProgressTitle, { color: theme.colors.onSurface }]}
-                    numberOfLines={2}
+            {inProgressTasks.length === 0 ? (
+              <View style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
+                <Text style={[styles.emptyCardText, { color: theme.colors.onSurfaceVariant }]}>
+                  No tasks are in progress right now.
+                </Text>
+              </View>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.inProgressScroll}
+              >
+                {inProgressTasks.map((task) => (
+                  <View
+                    key={task.id}
+                    style={[styles.inProgressCard, { backgroundColor: theme.colors.surface }]}
                   >
-                    {task.title}
-                  </Text>
-                  <View style={styles.progressBarContainer}>
-                    <View
-                      style={[
-                        styles.progressBar,
-                        { backgroundColor: task.color + "30" },
-                      ]}
-                    >
+                    <View style={styles.inProgressHeader}>
+                      <Text
+                        style={[
+                          styles.inProgressCategory,
+                          { color: theme.colors.onSurfaceVariant },
+                        ]}
+                      >
+                        {task.category}
+                      </Text>
                       <View
                         style={[
-                          styles.progressBarFill,
-                          {
-                            backgroundColor: task.color,
-                            width: `${task.progress * 100}%`,
-                          },
+                          styles.categoryIcon,
+                          { backgroundColor: task.iconBg },
                         ]}
-                      />
+                      >
+                        <Text style={styles.categoryEmoji}>{task.icon}</Text>
+                      </View>
+                    </View>
+                    <Text
+                      style={[styles.inProgressTitle, { color: theme.colors.onSurface }]}
+                      numberOfLines={2}
+                    >
+                      {task.title}
+                    </Text>
+                    <View style={styles.progressBarContainer}>
+                      <View
+                        style={[
+                          styles.progressBar,
+                          { backgroundColor: theme.colors.surfaceVariant },
+                        ]}
+                      >
+                        <View
+                          style={[
+                            styles.progressBarFill,
+                            {
+                              backgroundColor: theme.colors.primary,
+                              width: `${task.progress * 100}%`,
+                            },
+                          ]}
+                        />
+                      </View>
                     </View>
                   </View>
-                </View>
-              ))}
-            </ScrollView>
+                ))}
+              </ScrollView>
+            )}
           </View>
 
           {/* Task Groups Section */}
@@ -378,32 +425,40 @@ export default function HomeScreen() {
                 Task Groups
               </Text>
             </View>
-            {taskGroups.map((group) => (
-              <TouchableOpacity
-                key={group.id}
-                style={[styles.taskGroupCard, { backgroundColor: theme.colors.surface }]}
-              >
-                <View style={[styles.taskGroupIcon, { backgroundColor: group.color + "20" }]}>
-                  <Ionicons name={group.icon as any} size={20} color={group.color} />
-                </View>
-                <View style={styles.taskGroupInfo}>
-                  <Text style={[styles.taskGroupTitle, { color: theme.colors.onSurface }]}>
-                    {group.title}
-                  </Text>
-                  <Text style={[styles.taskGroupCount, { color: theme.colors.onSurfaceVariant }]}>
-                    {group.tasks} Tasks
-                  </Text>
-                </View>
-                <SmallCircularProgress
-                  percentage={group.progress}
-                  size={45}
-                  strokeWidth={4}
-                  progressColor={group.color}
-                  bgColor={group.color + "30"}
-                  textColor={theme.colors.onSurface}
-                />
-              </TouchableOpacity>
-            ))}
+            {taskGroups.length === 0 ? (
+              <View style={[styles.emptyCard, { backgroundColor: theme.colors.surface }]}>
+                <Text style={[styles.emptyCardText, { color: theme.colors.onSurfaceVariant }]}>
+                  Create a task to see your groups here.
+                </Text>
+              </View>
+            ) : (
+              taskGroups.map((group) => (
+                <TouchableOpacity
+                  key={group.id}
+                  style={[styles.taskGroupCard, { backgroundColor: theme.colors.surface }]}
+                >
+                  <View style={[styles.taskGroupIcon, { backgroundColor: group.iconBg }]}>
+                    <Text style={styles.taskGroupEmoji}>{group.icon}</Text>
+                  </View>
+                  <View style={styles.taskGroupInfo}>
+                    <Text style={[styles.taskGroupTitle, { color: theme.colors.onSurface }]}>
+                      {group.title}
+                    </Text>
+                    <Text style={[styles.taskGroupCount, { color: theme.colors.onSurfaceVariant }]}>
+                      {group.tasks} {group.tasks === 1 ? "Task" : "Tasks"}
+                    </Text>
+                  </View>
+                  <SmallCircularProgress
+                    percentage={group.progress}
+                    size={45}
+                    strokeWidth={4}
+                    progressColor={theme.colors.primary}
+                    bgColor={theme.colors.surfaceVariant}
+                    textColor={theme.colors.onSurface}
+                  />
+                </TouchableOpacity>
+              ))
+            )}
           </View>
           
           {/* Bottom spacing for nav */}
@@ -434,6 +489,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 20,
+    marginTop: 10,
   },
   headerLeft: {
     flexDirection: "row",
@@ -445,7 +501,25 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginRight: 12,
   },
-  greeting: {},
+  headerAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+  },
+  avatarPlaceholder: { 
+    width: 48, 
+    height: 48, 
+    borderRadius: 24, 
+    alignItems: 'center',
+    justifyContent: 'center' 
+  },
+  avatarInitials: { 
+    color: '#fff', 
+    fontWeight: '700' 
+  },
+  greeting: {
+    marginLeft: 8,
+  },
   helloText: {
     fontSize: 14,
   },
@@ -538,6 +612,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    marginBottom: 5,
+    marginTop: 1,
   },
   inProgressHeader: {
     flexDirection: "row",
@@ -554,6 +630,9 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
+  },
+  categoryEmoji: {
+    fontSize: 14,
   },
   inProgressTitle: {
     fontSize: 14,
@@ -598,6 +677,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
+  taskGroupEmoji: {
+    fontSize: 20,
+  },
   taskGroupInfo: {
     flex: 1,
   },
@@ -608,5 +690,12 @@ const styles = StyleSheet.create({
   },
   taskGroupCount: {
     fontSize: 12,
+  },
+  emptyCard: {
+    padding: 16,
+    borderRadius: 16,
+  },
+  emptyCardText: {
+    fontSize: 14,
   },
 });
