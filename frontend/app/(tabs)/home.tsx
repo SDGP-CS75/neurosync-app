@@ -506,11 +506,7 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 25,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
+  
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
