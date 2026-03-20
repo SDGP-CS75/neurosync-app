@@ -21,6 +21,7 @@ export default function SettingsScreen() {
   
   // RESPONSIVE SCALING LOGIC
   // Calculates a dynamic scale multiplier based on the device's screen width.
+  // This ensures the UI remains consistent across different iOS and Android devices.
   
   const scale = Math.min(width / BASE_WIDTH, 1.3);
   const horizontalPadding = Math.round(24 * scale);
