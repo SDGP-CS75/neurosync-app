@@ -7,6 +7,7 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
+  Easing,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -16,6 +17,7 @@ import { useRouter } from "expo-router";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useUser } from "../../context/UserContext";
+import { AnimatedCircularProgress } from "react-native-circular-progress";
 
 const { width } = Dimensions.get("window");
 
@@ -136,7 +138,7 @@ function SmallCircularProgress({
   strokeWidth,
   progressColor,
   bgColor = "#E0E0E0",
-  textColor = "#333",
+  textColor = "#be9393",
 }: SmallCircularProgressProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -248,13 +250,20 @@ export default function HomeScreen() {
                   <TouchableOpacity style={styles.chatIcon}>
                     <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
                   </TouchableOpacity>
-                  <CircularProgress
-                    percentage={85}
-                    size={90}
-                    strokeWidth={8}
-                    progressColor="#fff"
-                    bgColor="rgba(255,255,255,0.3)"
-                  />
+                  <AnimatedCircularProgress
+                    style={{ marginRight: 15 }}
+                    size={102}
+                    width={9}
+                    fill={85}
+                    rotation={0}
+                    lineCap="round"
+                    tintColor="#fff"
+                    backgroundColor="#8A78F3"
+                    duration={1200}
+                    easing={Easing.out(Easing.ease)}
+                >
+                    {() => <Text style={styles.progressText}>{85}%</Text>}
+                  </AnimatedCircularProgress>
                 </View>
               </View>
             </LinearGradient>
