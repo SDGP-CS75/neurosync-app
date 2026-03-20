@@ -263,7 +263,20 @@ export default function MoodTracking() {
             </View>
             
             {/* Page background blur (behind content) */}
-            
+            <BlurView
+              intensity={40}
+              tint="light"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                borderRadius: 20,
+                zIndex: -1,
+              }}
+            />
+          </View>
           
             {/* Energy Level */}
 
