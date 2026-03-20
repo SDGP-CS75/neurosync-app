@@ -103,9 +103,7 @@ export default function MoodTracking() {
 
             <View style={{ alignItems: "center", marginTop: 0 }}>
 
-              <Text style={{ fontSize: 16, color: colors.textMuted }}>
-                {dateString} • {timeString}
-              </Text>
+              
 
               <View style={{
                 width: 96,
@@ -346,13 +344,11 @@ export default function MoodTracking() {
               }}
             >
             
-
               <Text style={{ color: colors.onPrimary, textAlign: "center", fontWeight: "700", fontSize: 16 }}>
                 Save Entry
               </Text>
 
             </TouchableOpacity>
-
 
         </ScrollView>
 
