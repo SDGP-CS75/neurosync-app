@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   viewTaskBtn: {
-    backgroundColor: "#fff",
+    backgroundColor: "#3b3838",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
   },
   inProgressScroll: {
     marginHorizontal: -20,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
   },
   inProgressCard: {
     width: width * 0.6,
