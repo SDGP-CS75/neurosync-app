@@ -19,7 +19,9 @@ export default function SettingsScreen() {
   const { width } = useWindowDimensions();
   const activeColor = palette.primary;
   
-  // Responsive scaling
+  // RESPONSIVE SCALING LOGIC
+  // Calculates a dynamic scale multiplier based on the device's screen width.
+  
   const scale = Math.min(width / BASE_WIDTH, 1.3);
   const horizontalPadding = Math.round(24 * scale);
   const cardPadding = Math.round(20 * scale);
