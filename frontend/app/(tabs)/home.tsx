@@ -138,7 +138,7 @@ function SmallCircularProgress({
   strokeWidth,
   progressColor,
   bgColor = "#E0E0E0",
-  textColor = "#be9393",
+  textColor = "#333",
 }: SmallCircularProgressProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
