@@ -490,18 +490,7 @@ const styles = StyleSheet.create({
   todayCardRight: {
     alignItems: "flex-end",
   },
-  chatIcon: {
-    marginBottom: 8,
-    opacity: 0.8,
-  },
-  progressTextContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  progressText: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+
   // In Progress Section Styles
   section: {
     marginBottom: 25,
