@@ -49,7 +49,10 @@ export default function SettingsScreen() {
     }
   };
 
-  // Handle Save Button Press
+  // SECURE LOGOUT FLOW
+  // Triggers a native confirmation modal to prevent accidental logouts.
+  // If confirmed, it clears the auth session, resets local profile state, 
+  // and redirects the user back to the Welcome/Login screen.
   const handleSave = () => {
     Alert.alert(
       "Settings Saved",
