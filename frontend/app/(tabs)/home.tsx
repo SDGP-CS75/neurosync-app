@@ -293,7 +293,7 @@ export default function HomeScreen() {
                     style={{ marginRight: 15 }}
                     size={102}
                     width={9}
-                    fill={85}
+                    fill={todayCompletion}
                     rotation={0}
                     lineCap="round"
                     tintColor="#fff"
@@ -301,7 +301,7 @@ export default function HomeScreen() {
                     duration={1200}
                     easing={Easing.out(Easing.ease)}
                 >
-                    {() => <Text style={styles.progressText}>{85}%</Text>}
+                    {() => <Text style={styles.progressText}>{todayCompletion}%</Text>}
                   </AnimatedCircularProgress>
                 </View>
               </View>
