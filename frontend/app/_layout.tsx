@@ -9,7 +9,7 @@ import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
-import { UserProvider } from "../context/UserContext";
+import { UserProvider, useUser } from "../context/UserContext";
 import { TasksProvider } from "../context/TasksContext";
 import UndoSnackbar from "../components/UndoSnackbar";
 
@@ -93,16 +93,30 @@ function AppShell() {
   );
 }
 
+// Inner component that provides theme with user context
+function ThemeAndUserProviders({ children }: { children: React.ReactNode }) {
+  const { themePreference, saveThemePreference } = useUser();
+  
+  return (
+    <ThemeProvider 
+      initialPaletteName={themePreference}
+      onPaletteChange={saveThemePreference}
+    >
+      {children}
+    </ThemeProvider>
+  );
+}
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <UserProvider>
+      <UserProvider>
+        <ThemeAndUserProviders>
           <TasksProvider>
             <AppShell />
           </TasksProvider>
-        </UserProvider>
-      </ThemeProvider>
+        </ThemeAndUserProviders>
+      </UserProvider>
     </SafeAreaProvider>
   );
 }
