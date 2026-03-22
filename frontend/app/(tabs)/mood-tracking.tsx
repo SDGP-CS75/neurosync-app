@@ -213,7 +213,12 @@ export default function MoodTracking() {
 
 
             {/* Mood Selector (all emojis visible, smaller) */}
-            
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              marginTop: 18,
+              flexWrap: 'nowrap',
+            }}>
               {moods.map((m, index) => {
                 const isSelected = mood === index;
                 return (
