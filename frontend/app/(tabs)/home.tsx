@@ -224,7 +224,7 @@ export default function HomeScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.headerLeft}
               onPress={() => router.push("/(tabs)/settings")}
               activeOpacity={0.7}
@@ -263,14 +263,11 @@ export default function HomeScreen() {
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             style={{ marginBottom: 10 }}
-            // contentContainerStyle={{ paddingHorizontal: 20 }}
+          // contentContainerStyle={{ paddingHorizontal: 20 }}
           >
             {/* Today's Task Card (centered, inset) */}
-            <LinearGradient
-              colors={[theme.colors.primary, theme.colors.secondary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.todayCard, { width: width - 48 }]}
+            <View
+              style={[styles.todayCard, { width: width - 48, backgroundColor: theme.colors.primary }]}
             >
               <View style={styles.todayCardContent}>
                 <View style={styles.todayCardLeft}>
@@ -286,13 +283,10 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.todayCardRight}>
-                  <TouchableOpacity style={styles.chatIcon}>
-                    <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
-                  </TouchableOpacity>
                   <AnimatedCircularProgress
-                    style={{ marginRight: 15 }}
-                    size={102}
-                    width={9}
+                    style={{ marginRight: 10, marginTop: 10 }}
+                    size={115}
+                    width={10}
                     fill={todayCompletion}
                     rotation={0}
                     lineCap="round"
@@ -300,19 +294,16 @@ export default function HomeScreen() {
                     backgroundColor="#8A78F3"
                     duration={1200}
                     easing={Easing.out(Easing.ease)}
-                >
-                    {() => <Text style={styles.progressText}>{todayCompletion}%</Text>}
+                  >
+                    {() => <Text style={[styles.progressText, { color: "#fff", fontSize: 24 }]}>{todayCompletion}%</Text>}
                   </AnimatedCircularProgress>
                 </View>
               </View>
-            </LinearGradient>
+            </View>
 
             {/* Mood Tracking Widget Card (centered, inset) */}
-            <LinearGradient
-              colors={[theme.colors.secondary, theme.colors.primary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.todayCard, { width: width - 48, marginHorizontal: 12 }]}
+            <View
+              style={[styles.todayCard, { width: width - 48, marginHorizontal: 12, backgroundColor: theme.colors.primary }]}
             >
               <View style={styles.todayCardContent}>
                 <View style={styles.todayCardLeft}>
@@ -340,7 +331,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
               </View>
-            </LinearGradient>
+            </View>
           </ScrollView>
 
           {/* In Progress Section */}
@@ -460,7 +451,7 @@ export default function HomeScreen() {
               ))
             )}
           </View>
-          
+
           {/* Bottom spacing for nav */}
           <View style={{ height: 100 }} />
         </ScrollView>
@@ -506,16 +497,16 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
   },
-  avatarPlaceholder: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 24, 
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
-    justifyContent: 'center' 
+    justifyContent: 'center'
   },
-  avatarInitials: { 
-    color: '#fff', 
-    fontWeight: '700' 
+  avatarInitials: {
+    color: '#fff',
+    fontWeight: '700'
   },
   greeting: {
     marginLeft: 8,
