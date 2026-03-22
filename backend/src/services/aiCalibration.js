@@ -8,7 +8,7 @@
  * Each document: { entries: [{ estimated, actual, date }] }
  */
 
-import { getFirestore } from "firebase-admin/firestore";
+import { getFirestore, getDoc, setDoc } from "firebase-admin/firestore";
 
 const MAX_ENTRIES = 20;
 
