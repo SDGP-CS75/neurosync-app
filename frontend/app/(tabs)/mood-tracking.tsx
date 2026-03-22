@@ -42,11 +42,7 @@ export default function MoodTracking() {
 
   const now = new Date();
 
-  const dateString = now.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  });
+  
 
   const timeString = now.toLocaleTimeString(undefined, {
     hour: "2-digit",
