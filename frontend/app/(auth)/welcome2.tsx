@@ -1,5 +1,5 @@
 import React from "react";
-import { Image, StyleSheet, useWindowDimensions } from "react-native";
+import { Image, StyleSheet, useWindowDimensions, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Text } from "react-native-paper";
 import { router } from "expo-router";
@@ -24,6 +24,8 @@ export default function Welcome2() {
   const { theme } = useAppTheme();
 
   const isSmallScreen = width < 375;
+  const isMediumScreen = width >= 375 && width < 768;
+  const isLargeScreen = width >= 768;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -62,36 +64,55 @@ export default function Welcome2() {
         Develop new habits and build lifelong skills
       </Text>
 
-      <Button
-        mode="contained"
-        style={{
-          paddingVertical:   isSmallScreen ? 5 : 7,
-          paddingHorizontal: isSmallScreen ? 5 : 7,
-          width:             "100%",
-          marginTop:         "auto",
-          marginBottom:      isSmallScreen ? 10 : 15,
-          maxWidth:          400,
+      <TouchableOpacity
+        activeOpacity={0.7}
+        style={{ 
+          backgroundColor: '#7A69AD', 
+          paddingVertical: isSmallScreen ? 12 : isMediumScreen ? 15 : 18, 
+          paddingHorizontal: isSmallScreen ? 24 : isMediumScreen ? 32 : 40, 
+          borderRadius: 12, 
+          width: '100%', 
+          marginTop: 'auto',
+          marginBottom: isSmallScreen ? 15 : isMediumScreen ? 20 : 25,
+          maxWidth: isSmallScreen ? 250 : isMediumScreen ? 300 : 350,
+          alignSelf: 'center'
         }}
-        onPress={() => router.push("/(auth)/welcome3")}
+        onPress={() => router.push('/(auth)/welcome3')}
       >
-        Let's Start
-      </Button>
-
-      <Text style={{
-        fontSize:   isSmallScreen ? 14 : 16,
-        color:      theme.colors.textMuted,
-        textAlign:  "center",
-        fontWeight: "bold",
-        marginTop:  10,
-      }}>
-        Already have an account?{" "}
-        <Text
-          onPress={() => router.push("/(auth)/signIn")}
-          style={{ color: theme.colors.primary, fontWeight: "bold" }}
-        >
-          Login
+        <Text style={{ 
+          color: '#ffffff', 
+          fontSize: isSmallScreen ? 14 : isMediumScreen ? 16 : 18, 
+          fontWeight: 'bold', 
+          textAlign: 'center',
+          paddingHorizontal: 10
+        }}>
+          Let's Start 
         </Text>
-      </Text>
+      </TouchableOpacity>
+
+      <View style={{ 
+        flexDirection: 'row', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        marginBottom: isSmallScreen ? 20 : isMediumScreen ? 25 : 30,
+        width: '100%',
+        paddingHorizontal: 20
+      }}>
+        <Text style={{ 
+          fontSize: isSmallScreen ? 12 : isMediumScreen ? 14 : 16,
+          color: '#6E6A7C'
+        }}>
+          Already have an account?{" "}
+          <Text style={{ 
+            color: '#7A69AD', 
+            fontWeight: 'bold',
+            fontSize: isSmallScreen ? 12 : isMediumScreen ? 14 : 16
+          }} 
+          onPress={() => router.push('/(auth)/signIn')}>
+             Login
+          </Text>
+        </Text>
+      </View>
 
     </SafeAreaView>
   );

@@ -95,7 +95,7 @@ export default function WelcomeScreen() {
             fontSize: isSmallScreen ? 12 : isMediumScreen ? 14 : 16,
             color: '#6E6A7C'
           }}>
-            Already have an account? 
+            Already have an account?{" "}
             <Text style={{ 
               color: '#7A69AD', 
               fontWeight: 'bold',
