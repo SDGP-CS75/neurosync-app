@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Text,
   View,
@@ -10,9 +10,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
+import TaskPicker from "../../components/TaskPicker";
+import { Task, useTasks } from "../../context/TasksContext";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -25,6 +27,8 @@ type TimerMode = "focus" | "break";
 export default function FocusTimer() {
   const { theme } = useAppTheme();
   const router = useRouter();
+  const params = useLocalSearchParams();       // ← moved inside component
+  const { tasks } = useTasks();                // ← moved inside component
 
   // Setup state
   const [mode, setMode] = useState<TimerMode>("focus");
@@ -33,6 +37,46 @@ export default function FocusTimer() {
   const [customFocusInput, setCustomFocusInput] = useState("");
   const [customBreakInput, setCustomBreakInput] = useState("");
 
+  // Linked task state
+  const [showTaskPicker, setShowTaskPicker] = useState(false);
+  const [linkedTask, setLinkedTask] = useState<Task | null | undefined>(
+    undefined
+  );
+
+  // Pre-fill linked task from daily plan navigation  ← moved inside component
+  useEffect(() => {
+    const preId = params.preselectedTaskId
+      ? String(params.preselectedTaskId)
+      : null;
+    if (preId) {
+      const found = tasks.find((t) => t.id === preId) ?? null;
+      setLinkedTask(found);
+    }
+  }, []);
+
+  // Auto-set focus duration when a task is selected
+  useEffect(() => {
+    if (linkedTask) {
+      // Calculate total duration from task (check both durationMinutes and totalDurationMinutes)
+      let totalMinutes = linkedTask.durationMinutes || (linkedTask as any).totalDurationMinutes;
+      
+      if (!totalMinutes && linkedTask.subtasks && linkedTask.subtasks.length > 0) {
+        // Sum up all subtask durations
+        totalMinutes = linkedTask.subtasks.reduce((sum, st) => {
+          return sum + (st.durationMinutes || 0);
+        }, 0);
+      }
+      
+      // Only set if we have a valid duration
+      if (totalMinutes && totalMinutes > 0) {
+        // Clamp to reasonable focus session limits (5-180 minutes)
+        const clampedDuration = Math.min(Math.max(totalMinutes, 5), 180);
+        setFocusDuration(clampedDuration);
+        setCustomFocusInput("");
+      }
+    }
+  }, [linkedTask]);
+
   const handleStartTimer = () => {
     router.push({
       pathname: "/focus-timer-counting",
@@ -40,6 +84,8 @@ export default function FocusTimer() {
         mode,
         focusDuration: focusDuration.toString(),
         breakDuration: breakDuration.toString(),
+        taskId: linkedTask?.id ?? "",
+        taskTitle: linkedTask?.title ?? "",
       },
     });
   };
@@ -55,9 +101,7 @@ export default function FocusTimer() {
   };
 
   const handleCustomDurationChange = (text: string) => {
-    // Only allow numbers
     const numericValue = text.replace(/[^0-9]/g, "");
-    
     if (mode === "focus") {
       setCustomFocusInput(numericValue);
       if (numericValue) {
@@ -79,28 +123,107 @@ export default function FocusTimer() {
     return !presets.includes(currentDuration);
   };
 
+  const linkedTaskLabel =
+    linkedTask === undefined
+      ? "Choose a task (optional)"
+      : linkedTask === null
+      ? "Free focus — no task linked"
+      : linkedTask.title;
+
+  const linkedTaskIcon =
+    linkedTask === undefined
+      ? "link-outline"
+      : linkedTask === null
+      ? "infinite-outline"
+      : null;
+
   const styles = createStyles(theme, mode);
 
   return (
     <SafeAreaView style={styles.container}>
+      <TaskPicker
+        visible={showTaskPicker}
+        onClose={() => setShowTaskPicker(false)}
+        onSelect={(task) => setLinkedTask(task)}
+      />
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Focus Timer</Text>
         </View>
 
-        {/* Description */}
         <Text style={styles.description}>
           Set up your focus and break durations, then start your session.
         </Text>
 
-        {/* Mode Toggle */}
+        <View style={styles.workingOnSection}>
+          <Text style={styles.sectionTitle}>Working on</Text>
+          <TouchableOpacity
+            style={styles.workingOnRow}
+            onPress={() => setShowTaskPicker(true)}
+            activeOpacity={0.8}
+          >
+            {linkedTask ? (
+              <View
+                style={[
+                  styles.taskEmojiBadge,
+                  { backgroundColor: linkedTask.iconBg },
+                ]}
+              >
+                <Text style={styles.taskEmoji}>{linkedTask.icon}</Text>
+              </View>
+            ) : (
+              <View style={styles.taskIconWrap}>
+                <Ionicons
+                  name={linkedTaskIcon!}
+                  size={20}
+                  color={
+                    linkedTask === null
+                      ? theme.colors.secondary
+                      : theme.colors.onSurfaceVariant
+                  }
+                />
+              </View>
+            )}
+
+            <Text
+              style={[
+                styles.workingOnLabel,
+                linkedTask !== undefined && linkedTask !== null
+                  ? { color: theme.colors.onSurface, fontWeight: "600" }
+                  : { color: theme.colors.onSurfaceVariant },
+              ]}
+              numberOfLines={1}
+            >
+              {linkedTaskLabel}
+            </Text>
+
+            <Ionicons
+              name="chevron-forward"
+              size={18}
+              color={theme.colors.onSurfaceVariant}
+            />
+          </TouchableOpacity>
+
+          {linkedTask !== undefined && (
+            <TouchableOpacity
+              style={styles.clearTaskBtn}
+              onPress={() => setLinkedTask(undefined)}
+            >
+              <Text style={styles.clearTaskText}>Clear</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <View style={styles.modeContainer}>
           <TouchableOpacity
-            style={[styles.modeButton, mode === "focus" && styles.modeButtonActive]}
+            style={[
+              styles.modeButton,
+              mode === "focus" && styles.modeButtonActive,
+            ]}
             onPress={() => setMode("focus")}
           >
             <Ionicons
@@ -108,16 +231,29 @@ export default function FocusTimer() {
               size={24}
               color={mode === "focus" ? "#fff" : theme.colors.onSurface}
             />
-            <Text style={[styles.modeText, mode === "focus" && styles.modeTextActive]}>
+            <Text
+              style={[
+                styles.modeText,
+                mode === "focus" && styles.modeTextActive,
+              ]}
+            >
               Focus
             </Text>
-            <Text style={[styles.modeDuration, mode === "focus" && styles.modeDurationActive]}>
+            <Text
+              style={[
+                styles.modeDuration,
+                mode === "focus" && styles.modeDurationActive,
+              ]}
+            >
               {focusDuration} min
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
-            style={[styles.modeButton, mode === "break" && styles.modeButtonActive]}
+            style={[
+              styles.modeButton,
+              mode === "break" && styles.modeButtonActive,
+            ]}
             onPress={() => setMode("break")}
           >
             <Ionicons
@@ -125,64 +261,82 @@ export default function FocusTimer() {
               size={24}
               color={mode === "break" ? "#fff" : theme.colors.onSurface}
             />
-            <Text style={[styles.modeText, mode === "break" && styles.modeTextActive]}>
+            <Text
+              style={[
+                styles.modeText,
+                mode === "break" && styles.modeTextActive,
+              ]}
+            >
               Break
             </Text>
-            <Text style={[styles.modeDuration, mode === "break" && styles.modeDurationActive]}>
+            <Text
+              style={[
+                styles.modeDuration,
+                mode === "break" && styles.modeDurationActive,
+              ]}
+            >
               {breakDuration} min
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Duration Selection */}
         <View style={styles.durationSection}>
           <Text style={styles.sectionTitle}>
             {mode === "focus" ? "Focus Duration" : "Break Duration"}
           </Text>
-          <ScrollView 
-            horizontal 
+          <ScrollView
+            horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.presetsScrollContent}
           >
-            {(mode === "focus" ? FOCUS_PRESETS : BREAK_PRESETS).map((duration) => (
-              <TouchableOpacity
-                key={duration}
-                style={[
-                  styles.presetButton,
-                  (mode === "focus" ? focusDuration : breakDuration) === duration &&
-                    !isCustomValue() &&
-                    styles.presetButtonActive,
-                ]}
-                onPress={() => handleDurationChange(duration)}
-              >
-                <Text
+            {(mode === "focus" ? FOCUS_PRESETS : BREAK_PRESETS).map(
+              (duration) => (
+                <TouchableOpacity
+                  key={duration}
                   style={[
-                    styles.presetText,
-                    (mode === "focus" ? focusDuration : breakDuration) === duration &&
+                    styles.presetButton,
+                    (mode === "focus" ? focusDuration : breakDuration) ===
+                      duration &&
                       !isCustomValue() &&
-                      styles.presetTextActive,
+                      styles.presetButtonActive,
                   ]}
+                  onPress={() => handleDurationChange(duration)}
                 >
-                  {duration}
-                </Text>
-                <Text
-                  style={[
-                    styles.presetUnit,
-                    (mode === "focus" ? focusDuration : breakDuration) === duration &&
-                      !isCustomValue() &&
-                      styles.presetTextActive,
-                  ]}
-                >
-                  min
-                </Text>
-              </TouchableOpacity>
-            ))}
+                  <Text
+                    style={[
+                      styles.presetText,
+                      (mode === "focus" ? focusDuration : breakDuration) ===
+                        duration &&
+                        !isCustomValue() &&
+                        styles.presetTextActive,
+                    ]}
+                  >
+                    {duration}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.presetUnit,
+                      (mode === "focus" ? focusDuration : breakDuration) ===
+                        duration &&
+                        !isCustomValue() &&
+                        styles.presetTextActive,
+                    ]}
+                  >
+                    min
+                  </Text>
+                </TouchableOpacity>
+              )
+            )}
           </ScrollView>
-          
-          {/* Custom Duration Input */}
+
           <View style={styles.customInputContainer}>
             <Text style={styles.customInputLabel}>Or set custom time:</Text>
-            <View style={[styles.customInputWrapper, isCustomValue() && styles.customInputWrapperActive]}>
+            <View
+              style={[
+                styles.customInputWrapper,
+                isCustomValue() && styles.customInputWrapperActive,
+              ]}
+            >
               <TextInput
                 style={styles.customInput}
                 placeholder={mode === "focus" ? "1-180" : "1-60"}
@@ -197,7 +351,6 @@ export default function FocusTimer() {
           </View>
         </View>
 
-        {/* Session Preview */}
         <View style={styles.previewSection}>
           <Text style={styles.sectionTitle}>Session Preview</Text>
           <View style={styles.previewCard}>
@@ -217,19 +370,19 @@ export default function FocusTimer() {
               <View style={styles.previewItem}>
                 <Ionicons name="time" size={20} color={theme.colors.onSurfaceVariant} />
                 <Text style={styles.previewLabel}>Total</Text>
-                <Text style={styles.previewValue}>{focusDuration + breakDuration} min</Text>
+                <Text style={styles.previewValue}>
+                  {focusDuration + breakDuration} min
+                </Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* Start Button */}
         <TouchableOpacity style={styles.startButton} onPress={handleStartTimer}>
           <Ionicons name="play" size={24} color="#fff" />
           <Text style={styles.startButtonText}>Start Focus Session</Text>
         </TouchableOpacity>
 
-        {/* Tips */}
         <View style={styles.tipsSection}>
           <Text style={styles.tipsTitle}>💡 Tips for better focus</Text>
           <Text style={styles.tipText}>• Put your phone on Do Not Disturb</Text>
@@ -245,14 +398,8 @@ export default function FocusTimer() {
 
 const createStyles = (theme: any, mode: TimerMode) =>
   StyleSheet.create({
-    container: {
-      flex: 1,
-      // backgroundColor: theme.colors.background,
-    },
-    scrollContent: {
-      flexGrow: 1,
-      paddingBottom: 80,
-    },
+    container: { flex: 1 },
+    scrollContent: { flexGrow: 1, paddingBottom: 80 },
     header: {
       flexDirection: "row",
       justifyContent: "center",
@@ -275,6 +422,44 @@ const createStyles = (theme: any, mode: TimerMode) =>
       marginBottom: 12,
       textAlign: "center",
     },
+    workingOnSection: { paddingHorizontal: 24, marginBottom: 16 },
+    workingOnRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: theme.colors.surface,
+      borderRadius: 14,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      gap: 10,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 3,
+      elevation: 2,
+    },
+    taskEmojiBadge: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    taskEmoji: { fontSize: 18 },
+    taskIconWrap: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      backgroundColor: theme.colors.background,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    workingOnLabel: { flex: 1, fontSize: 14 },
+    clearTaskBtn: { alignSelf: "flex-end", marginTop: 6, paddingHorizontal: 4 },
+    clearTaskText: {
+      fontSize: 12,
+      color: theme.colors.onSurfaceVariant,
+      textDecorationLine: "underline",
+    },
     modeContainer: {
       flexDirection: "row",
       paddingHorizontal: 24,
@@ -295,27 +480,14 @@ const createStyles = (theme: any, mode: TimerMode) =>
       elevation: 3,
     },
     modeButtonActive: {
-      backgroundColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
+      backgroundColor:
+        mode === "focus" ? theme.colors.primary : theme.colors.secondary,
     },
-    modeText: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: theme.colors.onSurface,
-    },
-    modeTextActive: {
-      color: "#fff",
-    },
-    modeDuration: {
-      fontSize: 12,
-      color: theme.colors.onSurfaceVariant,
-    },
-    modeDurationActive: {
-      color: "rgba(255,255,255,0.8)",
-    },
-    durationSection: {
-      marginTop: 12,
-      marginBottom: 4,
-    },
+    modeText: { fontSize: 16, fontWeight: "600", color: theme.colors.onSurface },
+    modeTextActive: { color: "#fff" },
+    modeDuration: { fontSize: 12, color: theme.colors.onSurfaceVariant },
+    modeDurationActive: { color: "rgba(255,255,255,0.8)" },
+    durationSection: { marginTop: 12, marginBottom: 4 },
     sectionTitle: {
       fontSize: 16,
       fontWeight: "600",
@@ -323,11 +495,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       marginBottom: 10,
       paddingHorizontal: 24,
     },
-    presetsScrollContent: {
-      paddingHorizontal: 24,
-      paddingVertical: 10,
-      gap: 10,
-    },
+    presetsScrollContent: { paddingHorizontal: 24, paddingVertical: 10, gap: 10 },
     presetButton: {
       paddingHorizontal: 18,
       paddingVertical: 14,
@@ -342,20 +510,12 @@ const createStyles = (theme: any, mode: TimerMode) =>
       elevation: 2,
     },
     presetButtonActive: {
-      backgroundColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
+      backgroundColor:
+        mode === "focus" ? theme.colors.primary : theme.colors.secondary,
     },
-    presetText: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: theme.colors.onSurface,
-    },
-    presetUnit: {
-      fontSize: 12,
-      color: theme.colors.onSurfaceVariant,
-    },
-    presetTextActive: {
-      color: "#fff",
-    },
+    presetText: { fontSize: 18, fontWeight: "bold", color: theme.colors.onSurface },
+    presetUnit: { fontSize: 12, color: theme.colors.onSurfaceVariant },
+    presetTextActive: { color: "#fff" },
     customInputContainer: {
       flexDirection: "row",
       alignItems: "center",
@@ -363,10 +523,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       marginTop: 10,
       paddingHorizontal: 24,
     },
-    customInputLabel: {
-      fontSize: 14,
-      color: theme.colors.onSurfaceVariant,
-    },
+    customInputLabel: { fontSize: 14, color: theme.colors.onSurfaceVariant },
     customInputWrapper: {
       flexDirection: "row",
       alignItems: "center",
@@ -379,7 +536,8 @@ const createStyles = (theme: any, mode: TimerMode) =>
       borderColor: "transparent",
     },
     customInputWrapperActive: {
-      borderColor: mode === "focus" ? theme.colors.primary : theme.colors.secondary,
+      borderColor:
+        mode === "focus" ? theme.colors.primary : theme.colors.secondary,
     },
     customInput: {
       fontSize: 16,
@@ -388,15 +546,8 @@ const createStyles = (theme: any, mode: TimerMode) =>
       minWidth: 50,
       textAlign: "center",
     },
-    customInputUnit: {
-      fontSize: 14,
-      color: theme.colors.onSurfaceVariant,
-    },
-    previewSection: {
-      paddingHorizontal: 24,
-      marginTop: 16,
-      marginBottom: 8,
-    },
+    customInputUnit: { fontSize: 14, color: theme.colors.onSurfaceVariant },
+    previewSection: { paddingHorizontal: 24, marginTop: 16, marginBottom: 8 },
     previewCard: {
       backgroundColor: theme.colors.surface,
       borderRadius: 16,
@@ -412,24 +563,10 @@ const createStyles = (theme: any, mode: TimerMode) =>
       justifyContent: "space-around",
       alignItems: "center",
     },
-    previewItem: {
-      alignItems: "center",
-      gap: 6,
-    },
-    previewLabel: {
-      fontSize: 12,
-      color: theme.colors.onSurfaceVariant,
-    },
-    previewValue: {
-      fontSize: 16,
-      fontWeight: "600",
-      color: theme.colors.onSurface,
-    },
-    previewDivider: {
-      width: 1,
-      height: 40,
-      backgroundColor: theme.colors.background,
-    },
+    previewItem: { alignItems: "center", gap: 6 },
+    previewLabel: { fontSize: 12, color: theme.colors.onSurfaceVariant },
+    previewValue: { fontSize: 16, fontWeight: "600", color: theme.colors.onSurface },
+    previewDivider: { width: 1, height: 40, backgroundColor: theme.colors.background },
     startButton: {
       flexDirection: "row",
       alignItems: "center",
@@ -446,11 +583,7 @@ const createStyles = (theme: any, mode: TimerMode) =>
       shadowRadius: 8,
       elevation: 6,
     },
-    startButtonText: {
-      fontSize: 18,
-      fontWeight: "bold",
-      color: "#fff",
-    },
+    startButtonText: { fontSize: 18, fontWeight: "bold", color: "#fff" },
     tipsSection: {
       paddingHorizontal: 24,
       marginTop: 20,

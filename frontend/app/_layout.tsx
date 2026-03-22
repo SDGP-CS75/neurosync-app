@@ -1,21 +1,37 @@
 /**
  * app/_layout.tsx  (root layout)
- *
- * Place ThemeContext.tsx in:  app/context/ThemeContext.tsx
- * Place theme.ts in:          app/constants/theme.ts
  */
 
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ImageBackground, StyleSheet, View } from "react-native";
+import { ImageBackground, StyleSheet, View, Platform } from "react-native";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
 import { UserProvider } from "../context/UserContext";
 import { TasksProvider } from "../context/TasksContext";
+import UndoSnackbar from "../components/UndoSnackbar";
 
-// Inner component so it can read from ThemeContext
+// Clear localStorage on web to prevent Firebase token refresh errors
+// This runs before React renders to ensure clean auth state
+if (Platform.OS === "web" && typeof window !== "undefined") {
+  // Check if we're not in a server-side rendering context
+  try {
+    // Clear any corrupted Firebase auth tokens that cause 400 errors
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith("firebase:")) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+  } catch (e) {
+    // Ignore localStorage errors
+  }
+}
+
 function AppShell() {
   const { theme } = useAppTheme();
 
@@ -49,14 +65,34 @@ function AppShell() {
                 contentStyle: { backgroundColor: "transparent" },
               }}
             />
+
+            {/* ── Modal screens ── */}
+            <Stack.Screen
+              name="templates"
+              options={{
+                presentation: "modal",
+                animation: "slide_from_bottom",
+                contentStyle: { backgroundColor: "transparent" },
+              }}
+            />
+            <Stack.Screen
+              name="daily-plan"
+              options={{
+                presentation: "modal",
+                animation: "slide_from_bottom",
+                contentStyle: { backgroundColor: "transparent" },
+              }}
+            />
           </Stack>
+
+          {/* Global undo snackbar — renders above all screens */}
+          <UndoSnackbar />
         </View>
       </ImageBackground>
     </PaperProvider>
   );
 }
 
-// Root wraps everything in SafeAreaProvider + ThemeProvider + UserProvider + TasksProvider
 export default function RootLayout() {
   return (
     <SafeAreaProvider>

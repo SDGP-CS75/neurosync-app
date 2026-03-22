@@ -13,6 +13,22 @@ const firebaseConfig = {
   measurementId:     process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+// Clear any Firebase auth tokens from localStorage on web
+// This prevents 400 errors from securetoken.googleapis.com when tokens are invalid/expired
+if (Platform.OS === "web" && typeof window !== "undefined") {
+  try {
+    const firebaseLocalKey = "firebase:authUser:" + firebaseConfig.apiKey + ":[" + firebaseConfig.projectId + "]";
+    const stored = localStorage.getItem(firebaseLocalKey);
+    if (stored) {
+      // Clear any stored token to force fresh authentication
+      // This prevents the 400 Bad Request error when trying to refresh invalid tokens
+      localStorage.removeItem(firebaseLocalKey);
+    }
+  } catch (e) {
+    // Ignore errors reading localStorage
+  }
+}
+
 const app = initializeApp(firebaseConfig);
 
 let auth: ReturnType<typeof getAuth>;

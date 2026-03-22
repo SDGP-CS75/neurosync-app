@@ -26,6 +26,10 @@ export interface SubTask {
   isAdding: boolean;
   isGenarated: boolean;
   isDone: boolean;
+  dependsOn?: string[];
+  notes?: string;
+  order?: number;
+  durationMinutes?: number;
 }
 
 export interface Task {
@@ -42,6 +46,10 @@ export interface Task {
   dateKey: string;
   subtasks?: SubTask[];
   isSynced: boolean;
+  sessionTime?: number;
+  templateId?: string;
+  linkedSessionIds?: string[];
+  durationMinutes?: number;
 }
 
 type TasksContextType = {
@@ -51,8 +59,13 @@ type TasksContextType = {
   removeTask: (id: string) => void;
   toggleSubtaskDone: (taskId: string, subtaskId: string) => void;
   toggleTaskStatus: (taskId: string) => void;
+  reorderSubtasks: (taskId: string, newOrder: SubTask[]) => void;
+  addSubtaskNote: (taskId: string, subtaskId: string, note: string) => void;
+  logFocusSession: (taskId: string, minutes: number, sessionId: string) => void;
+  undoDelete: (task: Task) => void;
   isLoading: boolean;
   userId: string | null;
+  lastDeleted: Task | null;
 };
 
 const TasksContext = createContext<TasksContextType | null>(null);
@@ -96,8 +109,10 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastDeleted, setLastDeleted] = useState<Task | null>(null);
   const deletedTaskIdsRef = useRef<Set<string>>(new Set());
   const hasHydratedFirebaseRef = useRef<string | null>(null);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -223,7 +238,11 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!userId || isLoading) return;
     const needsInitialMerge = hasHydratedFirebaseRef.current !== userId;
-    if (!needsInitialMerge && tasks.every((task) => task.isSynced) && deletedTaskIdsRef.current.size === 0) {
+    if (
+      !needsInitialMerge &&
+      tasks.every((task) => task.isSynced) &&
+      deletedTaskIdsRef.current.size === 0
+    ) {
       return;
     }
 
@@ -275,10 +294,16 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     return () => unsub();
   }, [mergeTasksFromFirebase, syncDeletedTasksToFirebase]);
 
+  // ── Existing methods ──────────────────────────────────────────────────────
+
+  // Counter to ensure unique IDs even when created in same millisecond
+  const idCounterRef = useRef(0);
+
   const addTask = useCallback((task: Omit<Task, "id">) => {
+    idCounterRef.current += 1;
     const newTask: Task = {
       ...task,
-      id: String(Date.now()),
+      id: `${Date.now()}_${idCounterRef.current}_${Math.random().toString(36).slice(2, 7)}`,
       isSynced: false,
     };
 
@@ -294,8 +319,46 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const removeTask = useCallback((id: string) => {
-    deletedTaskIdsRef.current.add(id);
-    setTasks((prev) => prev.filter((task) => task.id !== id));
+    // Save the task for potential undo before removing
+    setTasks((prev) => {
+      const taskToDelete = prev.find((t) => t.id === id);
+      if (taskToDelete) {
+        setLastDeleted(taskToDelete);
+
+        // Clear any existing undo timer
+        if (undoTimerRef.current) {
+          clearTimeout(undoTimerRef.current);
+        }
+
+        // After 5 seconds, commit the delete to Firestore and clear lastDeleted
+        undoTimerRef.current = setTimeout(() => {
+          deletedTaskIdsRef.current.add(id);
+          setLastDeleted(null);
+        }, 5000);
+      }
+
+      return prev.filter((task) => task.id !== id);
+    });
+  }, []);
+
+  const undoDelete = useCallback((task: Task) => {
+    // Cancel the pending Firestore delete
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = null;
+    }
+
+    // Remove from the deleted set in case it was already added
+    deletedTaskIdsRef.current.delete(task.id);
+
+    // Restore the task to the top of state, mark unsynced so it re-syncs
+    setTasks((prev) => {
+      // Guard against duplicates if undo fires twice
+      if (prev.find((t) => t.id === task.id)) return prev;
+      return [{ ...task, isSynced: false }, ...prev];
+    });
+
+    setLastDeleted(null);
   }, []);
 
   const toggleSubtaskDone = useCallback((taskId: string, subtaskId: string) => {
@@ -353,6 +416,86 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  // ── New methods ───────────────────────────────────────────────────────────
+
+  const reorderSubtasks = useCallback(
+    (taskId: string, newOrder: SubTask[]) => {
+      setTasks((prev) =>
+        prev.map((task) => {
+          if (task.id !== taskId) return task;
+
+          // Stamp each subtask with its new order index
+          const reordered = newOrder.map((st, index) => ({
+            ...st,
+            order: index,
+          }));
+
+          return {
+            ...task,
+            subtasks: reordered,
+            isSynced: false,
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const addSubtaskNote = useCallback(
+    (taskId: string, subtaskId: string, note: string) => {
+      setTasks((prev) =>
+        prev.map((task) => {
+          if (task.id !== taskId || !task.subtasks) return task;
+
+          return {
+            ...task,
+            isSynced: false,
+            subtasks: task.subtasks.map((subtask) =>
+              subtask.id === subtaskId
+                ? { ...subtask, notes: note.trim() || undefined }
+                : subtask
+            ),
+          };
+        })
+      );
+    },
+    []
+  );
+
+  const logFocusSession = useCallback(
+    (taskId: string, minutes: number, sessionId: string) => {
+      setTasks((prev) =>
+        prev.map((task) => {
+          if (task.id !== taskId) return task;
+
+          const currentTime = task.sessionTime ?? 0;
+          const currentSessions = task.linkedSessionIds ?? [];
+
+          // Guard against duplicate session ids
+          if (currentSessions.includes(sessionId)) return task;
+
+          return {
+            ...task,
+            sessionTime: currentTime + minutes,
+            linkedSessionIds: [...currentSessions, sessionId],
+            isSynced: false,
+          };
+        })
+      );
+    },
+    []
+  );
+
+  // ── Cleanup on unmount ────────────────────────────────────────────────────
+
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) {
+        clearTimeout(undoTimerRef.current);
+      }
+    };
+  }, []);
+
   return (
     <TasksContext.Provider
       value={{
@@ -362,8 +505,13 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         removeTask,
         toggleSubtaskDone,
         toggleTaskStatus,
+        reorderSubtasks,
+        addSubtaskNote,
+        logFocusSession,
+        undoDelete,
         isLoading,
         userId,
+        lastDeleted,
       }}
     >
       {children}
