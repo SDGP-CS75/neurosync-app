@@ -296,12 +296,12 @@ export default function HomeScreen() {
                     fill={todayCompletion}
                     rotation={0}
                     lineCap="round"
-                    tintColor="#fff"
-                    backgroundColor="#8A78F3"
+                    tintColor={theme.colors.onPrimary}
+                    backgroundColor={theme.colors.secondary}
                     duration={1200}
                     easing={Easing.out(Easing.ease)}
                 >
-                    {() => <Text style={styles.progressText}>{todayCompletion}%</Text>}
+                    {() => <Text style={[styles.progressText, { color: theme.colors.onPrimary }]}>{todayCompletion}%</Text>}
                   </AnimatedCircularProgress>
                 </View>
               </View>
@@ -349,8 +349,8 @@ export default function HomeScreen() {
               <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                 In Progress
               </Text>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{inProgressTasks.length}</Text>
+              <View style={[styles.badge, { backgroundColor: theme.colors.primary }]}>
+                <Text style={[styles.badgeText, { color: theme.colors.onPrimary }]}>{inProgressTasks.length}</Text>
               </View>
             </View>
             {inProgressTasks.length === 0 ? (
@@ -590,7 +590,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   badge: {
-    backgroundColor: "#5838b5",
     borderRadius: 10,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -610,9 +609,9 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 16,
     marginRight: 15,
-    shadowColor: "#000",
+    shadowColor: "#999999",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 3,
     marginBottom: 5,
@@ -666,9 +665,9 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 16,
     marginBottom: 12,
-    shadowColor: "#000",
+    shadowColor: "#999999",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 3,
   },
