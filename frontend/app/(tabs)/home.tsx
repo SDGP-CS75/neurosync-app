@@ -281,11 +281,8 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.todayCardRight}>
-                  <TouchableOpacity style={styles.chatIcon}>
-                    <Ionicons name="chatbubble-ellipses" size={20} color={theme.colors.onPrimary} />
-                  </TouchableOpacity>
                   <AnimatedCircularProgress
-                    style={{ marginRight: 10, marginTop: 10 }}
+                    style={{ marginRight: 10, marginTop: 12 }}
                     size={115}
                     width={10}
                     fill={todayCompletion}
@@ -295,7 +292,7 @@ export default function HomeScreen() {
                     backgroundColor={theme.colors.secondary}
                     duration={1200}
                     easing={Easing.out(Easing.ease)}
-                >
+                  >
                     {() => <Text style={[styles.progressText, { color: theme.colors.onPrimary }]}>{todayCompletion}%</Text>}
                   </AnimatedCircularProgress>
                 </View>
@@ -355,55 +352,53 @@ export default function HomeScreen() {
                 showsHorizontalScrollIndicator={false}
                 style={styles.inProgressScroll}
               >
-                {inProgressTasks.map((task) => (
-                  <View
-                    key={task.id}
-                    style={[styles.inProgressCard, { backgroundColor: theme.colors.surface }]}
-                  >
-                    <View style={styles.inProgressHeader}>
+                {inProgressTasks.map((task, idx) => {
+                  const IN_PROGRESS_BG = ["#E8F0F6", "#F6EBE5", "#F2F0F9", "#EBFBF5"];
+                  const IN_PROGRESS_BAR = ["#3B82F6", "#EA580C", "#8B5CF6", "#10B981"];
+                  const bgColor = IN_PROGRESS_BG[idx % IN_PROGRESS_BG.length];
+                  const barColor = IN_PROGRESS_BAR[idx % IN_PROGRESS_BAR.length];
+
+                  return (
+                    <View
+                      key={task.id}
+                      style={[styles.inProgressCard, { backgroundColor: bgColor }]}
+                    >
                       <Text
                         style={[
                           styles.inProgressCategory,
-                          { color: theme.colors.onSurfaceVariant },
+                          { color: "#6B7280" },
                         ]}
+                        numberOfLines={1}
                       >
                         {task.category}
                       </Text>
-                      <View
-                        style={[
-                          styles.categoryIcon,
-                          { backgroundColor: task.iconBg },
-                        ]}
+                      <Text
+                        style={[styles.inProgressTitle, { color: "#111827" }]}
+                        numberOfLines={2}
                       >
-                        <Text style={styles.categoryEmoji}>{task.icon}</Text>
-                      </View>
-                    </View>
-                    <Text
-                      style={[styles.inProgressTitle, { color: theme.colors.onSurface }]}
-                      numberOfLines={2}
-                    >
-                      {task.title}
-                    </Text>
-                    <View style={styles.progressBarContainer}>
-                      <View
-                        style={[
-                          styles.progressBar,
-                          { backgroundColor: theme.colors.surfaceVariant },
-                        ]}
-                      >
+                        {task.title}
+                      </Text>
+                      <View style={styles.progressBarContainer}>
                         <View
                           style={[
-                            styles.progressBarFill,
-                            {
-                              backgroundColor: theme.colors.primary,
-                              width: `${task.progress * 100}%`,
-                            },
+                            styles.progressBar,
+                            { backgroundColor: "rgba(255,255,255,0.6)" },
                           ]}
-                        />
+                        >
+                          <View
+                            style={[
+                              styles.progressBarFill,
+                              {
+                                backgroundColor: barColor,
+                                width: `${task.progress * 100}%`,
+                              },
+                            ]}
+                          />
+                        </View>
                       </View>
                     </View>
-                  </View>
-                ))}
+                  );
+                })}
               </ScrollView>
             )}
           </View>
@@ -422,32 +417,37 @@ export default function HomeScreen() {
                 </Text>
               </View>
             ) : (
-              taskGroups.map((group) => (
-                <TouchableOpacity
-                  key={group.id}
-                  style={[styles.taskGroupCard, { backgroundColor: theme.colors.surface }]}
-                >
-                  <View style={[styles.taskGroupIcon, { backgroundColor: group.iconBg }]}>
-                    <Text style={styles.taskGroupEmoji}>{group.icon}</Text>
-                  </View>
-                  <View style={styles.taskGroupInfo}>
-                    <Text style={[styles.taskGroupTitle, { color: theme.colors.onSurface }]}>
-                      {group.title}
-                    </Text>
-                    <Text style={[styles.taskGroupCount, { color: theme.colors.onSurfaceVariant }]}>
-                      {group.tasks} {group.tasks === 1 ? "Task" : "Tasks"}
-                    </Text>
-                  </View>
-                  <SmallCircularProgress
-                    percentage={group.progress}
-                    size={45}
-                    strokeWidth={4}
-                    progressColor={theme.colors.primary}
-                    bgColor={theme.colors.surfaceVariant}
-                    textColor={theme.colors.onSurface}
-                  />
-                </TouchableOpacity>
-              ))
+              taskGroups.map((group, idx) => {
+                const PROGRESS_COLORS = ["#E84088", "#7B37F4", "#EA580C", "#3B82F6", "#10B981"];
+                const ringColor = PROGRESS_COLORS[idx % PROGRESS_COLORS.length];
+
+                return (
+                  <TouchableOpacity
+                    key={group.id}
+                    style={[styles.taskGroupCard, { backgroundColor: "#FFFFFF" }]}
+                  >
+                    <View style={[styles.taskGroupIcon, { backgroundColor: group.iconBg }]}>
+                      <Text style={styles.taskGroupEmoji}>{group.icon}</Text>
+                    </View>
+                    <View style={styles.taskGroupInfo}>
+                      <Text style={[styles.taskGroupTitle, { color: "#111827" }]}>
+                        {group.title}
+                      </Text>
+                      <Text style={[styles.taskGroupCount, { color: "#6B7280" }]}>
+                        {group.tasks} {group.tasks === 1 ? "Task" : "Tasks"}
+                      </Text>
+                    </View>
+                    <SmallCircularProgress
+                      percentage={group.progress}
+                      size={40}
+                      strokeWidth={4}
+                      progressColor={ringColor}
+                      bgColor="#F3F4F6"
+                      textColor="#545454ff"
+                    />
+                  </TouchableOpacity>
+                );
+              })
             )}
           </View>
 
@@ -541,8 +541,8 @@ const styles = StyleSheet.create({
   },
   viewTaskBtn: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
     alignSelf: "flex-start",
   },
   viewTaskText: {
@@ -593,76 +593,60 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   inProgressCard: {
-    width: width * 0.6,
-    padding: 15,
-    borderRadius: 16,
-    marginRight: 15,
-    shadowColor: "#999999",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 3,
+    width: 170,
+    padding: 16,
+    borderRadius: 22,
+    marginRight: 16,
     marginBottom: 5,
     marginTop: 1,
   },
-  inProgressHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
   inProgressCategory: {
-    fontSize: 12,
-  },
-  categoryIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  categoryEmoji: {
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: "500",
+    marginBottom: 6,
   },
   inProgressTitle: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     marginBottom: 12,
     lineHeight: 20,
+    minHeight: 40,
   },
   progressBarContainer: {
-    marginTop: 5,
+    marginTop: 0,
   },
   progressBar: {
     height: 6,
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: "hidden",
   },
   progressBarFill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: 4,
   },
   // Task Groups Section Styles
   smallProgressText: {
-    fontSize: 10,
-    fontWeight: "bold",
+    fontSize: 12,
+    fontWeight: "600",
   },
   taskGroupCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
+    padding: 12,
     borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: "#999999",
+    marginBottom: 10,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
+    shadowOpacity: 0.03,
+    shadowRadius: 10,
     elevation: 3,
+    borderColor: "#F9FAFB",
+    borderWidth: 1,
   },
   taskGroupIcon: {
-    width: 45,
-    height: 45,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
@@ -674,12 +658,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   taskGroupTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 4,
+    fontSize: 15,
+    fontWeight: "700",
+    marginBottom: 2,
   },
   taskGroupCount: {
     fontSize: 12,
+    fontWeight: "500",
   },
   emptyCard: {
     padding: 16,

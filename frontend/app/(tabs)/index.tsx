@@ -112,44 +112,45 @@ export default function DashboardScreen() {
           <InProgressCard
             title="Office Project"
             subtitle="Grocery shopping app design"
-            icon={<Ionicons name="briefcase-outline" size={24 * scale} color="#8B5CF6" />}
-            bgColor="bg-purple-100"
+            bgColor="bg-[#E8F0F6]"
             progress={0.7}
-            progressColor="#8B5CF6"
+            progressColor="#3B82F6"
           />
           <InProgressCard
             title="Personal Project"
             subtitle="Uber Eats redesign challenge"
-            icon={<Ionicons name="person-outline" size={24 * scale} color="#F97316" />}
-            bgColor="bg-orange-100"
+            bgColor="bg-[#F6EBE5]"
             progress={0.5}
-            progressColor="#F97316"
+            progressColor="#EA580C"
           />
         </ScrollView>
 
         {/* Task Groups Section */}
-        <SectionTitle title="Task Groups" count={4} />
+        <SectionTitle title="Task Groups" count={5} />
         <View style={styles.taskGroupsContainer}>
           <TaskGroupCard
             title="Office Project"
             tasks={23}
             progress={70}
-            icon={<Ionicons name="briefcase-outline" size={24 * scale} color="#EC4899" />}
-            iconBgColor="bg-pink-100"
+            icon={<Ionicons name="briefcase" size={24 * scale} color="#4B5563" />}
+            iconBgColor="bg-[#FCEEF5]"
+            progressColor="#E84088"
           />
           <TaskGroupCard
             title="Office Project"
             tasks={30}
             progress={70}
-            icon={<MaterialCommunityIcons name="briefcase-clock-outline" size={24 * scale} color="#8B5CF6" />}
-            iconBgColor="bg-purple-100"
+            icon={<Ionicons name="lock-closed" size={24 * scale} color="#4B5563" />}
+            iconBgColor="bg-[#ECEEFA]"
+            progressColor="#7B37F4"
           />
           <TaskGroupCard
             title="Daily Study"
-            tasks={30}
+            tasks={50}
             progress={87}
-            icon={<Ionicons name="book-outline" size={24 * scale} color="#F59E0B" />}
-            iconBgColor="bg-orange-100"
+            icon={<Ionicons name="book" size={24 * scale} color="#4B5563" />}
+            iconBgColor="bg-[#FDF1DC]"
+            progressColor="#EA580C"
           />
         </View>
       </ScrollView>
