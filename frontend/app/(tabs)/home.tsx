@@ -224,7 +224,7 @@ export default function HomeScreen() {
         >
           {/* Header */}
           <View style={styles.header}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.headerLeft}
               onPress={() => router.push("/(tabs)/settings")}
               activeOpacity={0.7}
@@ -263,7 +263,7 @@ export default function HomeScreen() {
             pagingEnabled
             showsHorizontalScrollIndicator={false}
             style={{ marginBottom: 10 }}
-            // contentContainerStyle={{ paddingHorizontal: 20 }}
+          // contentContainerStyle={{ paddingHorizontal: 20 }}
           >
             {/* Today's Task Card (centered, inset) */}
             <View style={[styles.todayCard, { width: width - 48, backgroundColor: theme.colors.primary }]}>
@@ -285,9 +285,9 @@ export default function HomeScreen() {
                     <Ionicons name="chatbubble-ellipses" size={20} color={theme.colors.onPrimary} />
                   </TouchableOpacity>
                   <AnimatedCircularProgress
-                    style={{ marginRight: 15 }}
-                    size={102}
-                    width={9}
+                    style={{ marginRight: 10, marginTop: 10 }}
+                    size={115}
+                    width={10}
                     fill={todayCompletion}
                     rotation={0}
                     lineCap="round"
@@ -450,7 +450,7 @@ export default function HomeScreen() {
               ))
             )}
           </View>
-          
+
           {/* Bottom spacing for nav */}
           <View style={{ height: 100 }} />
         </ScrollView>
@@ -496,16 +496,16 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 25,
   },
-  avatarPlaceholder: { 
-    width: 48, 
-    height: 48, 
-    borderRadius: 24, 
+  avatarPlaceholder: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
-    justifyContent: 'center' 
+    justifyContent: 'center'
   },
-  avatarInitials: { 
-    color: '#fff', 
-    fontWeight: '700' 
+  avatarInitials: {
+    color: '#fff',
+    fontWeight: '700'
   },
   greeting: {
     marginLeft: 8,
