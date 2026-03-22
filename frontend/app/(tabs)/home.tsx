@@ -10,7 +10,7 @@ import {
   Easing,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
+
 import Svg, { Circle, G } from "react-native-svg";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -234,7 +234,7 @@ export default function HomeScreen() {
                   <Image source={{ uri: profile.profileImage }} style={styles.headerAvatar} />
                 ) : (
                   <View style={[styles.avatarPlaceholder, { backgroundColor: theme.colors.primary }]}>
-                    <Text style={styles.avatarInitials}>{displayInitials}</Text>
+                    <Text style={[styles.avatarInitials, { color: theme.colors.onPrimary }]}>{displayInitials}</Text>
                   </View>
                 )}
               </View>
@@ -266,28 +266,23 @@ export default function HomeScreen() {
             // contentContainerStyle={{ paddingHorizontal: 20 }}
           >
             {/* Today's Task Card (centered, inset) */}
-            <LinearGradient
-              colors={[theme.colors.primary, theme.colors.secondary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.todayCard, { width: width - 48 }]}
-            >
+            <View style={[styles.todayCard, { width: width - 48, backgroundColor: theme.colors.primary }]}>
               <View style={styles.todayCardContent}>
                 <View style={styles.todayCardLeft}>
-                  <Text style={styles.todayCardTitle}>
+                  <Text style={[styles.todayCardTitle, { color: theme.colors.onPrimary }]}>
                     {todayTasks.length === 0
                       ? "No tasks planned\nyet for today"
                       : todayCompletion === 100
                         ? "Today's tasks are\nall completed!"
                         : `${remainingToday} task${remainingToday === 1 ? "" : "s"} left\nto finish today`}
                   </Text>
-                  <TouchableOpacity style={styles.viewTaskBtn} onPress={() => router.push('/(tabs)/todo-list' as any)}>
+                  <TouchableOpacity style={[styles.viewTaskBtn, { backgroundColor: theme.colors.onPrimary }]} onPress={() => router.push('/(tabs)/todo-list' as any)}>
                     <Text style={[styles.viewTaskText, { color: theme.colors.primary }]}>View Task</Text>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.todayCardRight}>
                   <TouchableOpacity style={styles.chatIcon}>
-                    <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
+                    <Ionicons name="chatbubble-ellipses" size={20} color={theme.colors.onPrimary} />
                   </TouchableOpacity>
                   <AnimatedCircularProgress
                     style={{ marginRight: 15 }}
@@ -305,23 +300,18 @@ export default function HomeScreen() {
                   </AnimatedCircularProgress>
                 </View>
               </View>
-            </LinearGradient>
+            </View>
 
             {/* Mood Tracking Widget Card (centered, inset) */}
-            <LinearGradient
-              colors={[theme.colors.secondary, theme.colors.primary]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={[styles.todayCard, { width: width - 48, marginHorizontal: 12 }]}
-            >
+            <View style={[styles.todayCard, { width: width - 48, marginHorizontal: 12, backgroundColor: theme.colors.primary }]}>
               <View style={styles.todayCardContent}>
                 <View style={styles.todayCardLeft}>
-                  <Text style={[styles.todayCardTitle, { color: '#fff' }]}>Mood Check-in</Text>
-                  <Text style={{ color: 'rgba(255,255,255,0.9)', marginTop: 8 }}>
+                  <Text style={[styles.todayCardTitle, { color: theme.colors.onPrimary }]}>Mood Check-in</Text>
+                  <Text style={{ color: theme.colors.onPrimary, opacity: 0.9, marginTop: 8, marginRight: 10, marginBottom: 5 }}>
                     Quick mood snapshot to help track how you feel.
                   </Text>
                   <TouchableOpacity
-                    style={[styles.viewTaskBtn, { marginTop: 12 }]}
+                    style={[styles.viewTaskBtn, { backgroundColor: theme.colors.onPrimary, marginTop: 12 }]}
                     onPress={() => router.push('/(tabs)/mood-analysis' as any)}
                   >
                     <Text style={[styles.viewTaskText, { color: theme.colors.primary }]}>Your Mood Analysis</Text>
@@ -340,7 +330,7 @@ export default function HomeScreen() {
                   </View>
                 </View>
               </View>
-            </LinearGradient>
+            </View>
           </ScrollView>
 
           {/* In Progress Section */}
@@ -546,12 +536,10 @@ const styles = StyleSheet.create({
   todayCardTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#fff",
     lineHeight: 26,
     marginBottom: 15,
   },
   viewTaskBtn: {
-    backgroundColor: "#ffffff",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 20,
