@@ -306,16 +306,7 @@ export default function MoodTracking() {
 
                 <View style={{ flexDirection: "row", marginTop: 10 }}>
                   {[...Array(10)].map((_, index) => (
-                    <View
-                      key={index}
-                      style={{
-                        flex: 1,
-                        height: 6,
-                        marginRight: index === 9 ? 0 : 4,
-                        borderRadius: 4,
-                        backgroundColor: index < energyLevel ? colors.primary : colors.outline
-                      }}
-                    />
+                    
                   ))}
                 </View>
 
