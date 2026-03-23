@@ -9,8 +9,8 @@ The mobile application frontend for the NeuroSync productivity app, built with R
 - **Expo Router** - File-based routing
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Utility-first CSS framework
-- **Supabase** - Backend services
 - **Firebase** - Authentication and database
+- **React Native Paper** - UI components
 
 ## Project Structure
 
@@ -23,53 +23,84 @@ frontend/
 │   │   ├── signUp.tsx
 │   │   ├── welcome.tsx
 │   │   ├── welcome2.tsx
-│   │   └── welcome3.tsx
+│   │   ├── welcome3.tsx
+│   │   └── forgotPassword.tsx
 │   ├── (tabs)/              # Tab-based routes
 │   │   ├── _layout.tsx
 │   │   ├── index.tsx
+│   │   ├── home.tsx
 │   │   ├── daily-routine.tsx
 │   │   ├── focus-timer.tsx
+│   │   ├── focus-timer-counting.tsx
+│   │   ├── todo-list.tsx
+│   │   ├── add-task.tsx
+│   │   ├── calendar.tsx
+│   │   ├── mood-tracking.tsx
+│   │   ├── mood-analysis.tsx
+│   │   ├── session-history.tsx
 │   │   ├── profile.tsx
-│   │   ├── settings.tsx
-│   │   └── todo-list.tsx
-│   ├── _layout.tsx          # Root layout
-│   └── index.tsx            # Home page
+│   │   └── settings.tsx
+│   ├── dashboard/
+│   │   └── index.tsx
+│   ├── templates.tsx
+│   ├── daily-plan.tsx
+│   ├── _layout.tsx
+│   └── index.tsx
 ├── assets/                  # Static assets
 │   ├── bg.png
+│   ├── image.png
 │   ├── welcome1.png
-│   └── welcome/
-│       ├── welcome2.png
-│       └── welcome3.png
+│   ├── welcome/
+│   │   ├── welcome2.png
+│   │   └── welcome3.png
+│   └── lottie/
+│       └── generating.json
 ├── components/              # Reusable UI components
-│   ├── Button.tsx
-│   ├── Card.tsx
-│   └── Input.tsx
+│   ├── AddTaskModal.tsx
+│   ├── BottomNavBar.tsx
+│   ├── BreakActivityModal.tsx
+│   ├── DependencyBadge.tsx
+│   ├── InProgressCard.tsx
+│   ├── InputDialog.tsx
+│   ├── Nav.tsx
+│   ├── SectionTitle.tsx
+│   ├── SparkleLoader.tsx
+│   ├── SubtaskNoteModal.tsx
+│   ├── TaskGroupCard.tsx
+│   ├── TaskPicker.tsx
+│   ├── ThemePicker.tsx
+│   └── UndoSnackbar.tsx
 ├── constants/               # App constants
+│   ├── api.ts
 │   └── theme.ts
 ├── context/                 # React Context providers
-│   ├── AuthContext.tsx
-│   └── ThemeContext.tsx
-├── hooks/                   # Custom React hooks
-│   ├── useAuth.ts
-│   ├── useTheme.ts
-│   └── useTimer.ts
+│   ├── TasksContext.tsx
+│   ├── ThemeContext.tsx
+│   └── UserContext.tsx
 ├── services/                # API services
 │   ├── auth.ts
+│   ├── calibration.ts
+│   ├── firebase.ts
 │   ├── routines.ts
-│   ├── supabase.ts
-│   └── tasks.ts
+│   ├── sessionStorage.ts
+│   ├── tasks.ts
+│   └── templateStorage.ts
 ├── types/                   # TypeScript type definitions
-│   └── index.ts
-├── .env.example             # Environment variables template
+│   ├── index.ts
+│   └── react-native-paper.d.ts
+├── images/                  # Image assets
+│   ├── bgimg.png
+│   └── welcome1.png
+├── .env.example
 ├── .gitignore
-├── app.json                 # Expo configuration
-├── babel.config.js          # Babel configuration
+├── app.json
+├── babel.config.js
 ├── env.d.ts
-├── eslint.config.js         # ESLint configuration
+├── eslint.config.js
 ├── package-lock.json
 ├── package.json
-├── tailwind.config.js       # Tailwind configuration
-├── tsconfig.json            # TypeScript configuration
+├── tailwind.config.js
+├── tsconfig.json
 └── README.md
 ```
 
@@ -96,9 +127,7 @@ cp .env.example .env
 
 3. Configure your environment variables in `.env`:
 ```env
-EXPO_PUBLIC_API_URL=http://localhost:3000/api
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+EXPO_PUBLIC_API_URL=http://localhost:3000
 EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
 EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
@@ -122,7 +151,7 @@ This will start the Expo development server. You can then:
 
 **Build for web:**
 ```bash
-npm run build:web
+npm run web
 ```
 
 **Lint code:**
@@ -132,7 +161,7 @@ npm run lint
 
 **Type check:**
 ```bash
-npm run typecheck
+npx tsc --noEmit
 ```
 
 ## Features
@@ -141,6 +170,7 @@ npm run typecheck
 - User registration and login
 - Secure session management
 - Password recovery
+- Onboarding flow (Welcome screens)
 
 ### Daily Routine
 - Create and manage daily routines
@@ -151,16 +181,35 @@ npm run typecheck
 - Pomodoro-style timer
 - Customizable work/break intervals
 - Session tracking and statistics
+- Break activity suggestions
 
 ### Todo List
 - Create, edit, and delete tasks
 - Task prioritization
 - Due date management
 - Task completion tracking
+- Task dependencies
+- Subtasks with notes
+
+### Calendar
+- Calendar view for scheduling
+- Daily plan view
+- Task visualization
+
+### Mood Tracking
+- Track daily moods
+- Mood analytics and trends
+- AI-powered mood analysis
+
+### Session History
+- Focus session history
+- Statistics and progress tracking
+- Performance analytics
 
 ### Profile
 - User profile management
 - Settings customization
+- Theme selection
 - Statistics and progress tracking
 
 ## Navigation
@@ -173,10 +222,13 @@ welcome → welcome2 → welcome3 → signIn / signUp
 ```
 
 ### Tab Navigation
-- Home
+- Home (Dashboard)
 - Daily Routine
 - Focus Timer
 - Todo List
+- Calendar
+- Mood Tracking
+- Session History
 - Profile
 - Settings
 
@@ -185,8 +237,6 @@ welcome → welcome2 → welcome3 → signIn / signUp
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `EXPO_PUBLIC_API_URL` | Backend API URL | Yes |
-| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
 | `EXPO_PUBLIC_FIREBASE_API_KEY` | Firebase API key | Yes |
 | `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase auth domain | Yes |
 | `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | Firebase project ID | Yes |
@@ -206,14 +256,14 @@ welcome → welcome2 → welcome3 → signIn / signUp
 
 Create reusable UI components in `components/` following the existing pattern.
 
-### Using Custom Hooks
+### Using Context
 
-Custom hooks are available in `hooks/`:
-- `useAuth()` - Authentication state and methods
-- `useTheme()` - Theme context
-- `useTimer()` - Timer functionality
+The app uses React Context for state management:
+- `UserContext` - User authentication and profile
+- `ThemeContext` - Theme customization
+- `TasksContext` - Task management
 
-## Styling
+### Styling
 
 The app uses a theme-based approach defined in `constants/theme.ts`. All colors, spacing, and typography should be referenced from the theme constants. Tailwind CSS is also configured for utility-first styling.
 

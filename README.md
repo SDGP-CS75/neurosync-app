@@ -8,7 +8,10 @@ A productivity application with AI-powered features, built with React Native (Ex
 - **Focus Timer** - Pomodoro-style timer with customizable intervals
 - **Todo List** - Task management with prioritization and due dates
 - **AI-Powered Suggestions** - Smart recommendations for routines and tasks
-- **User Authentication** - Secure sign-up and login with Firebase/Supabase
+- **Mood Tracking** - Track and analyze daily moods
+- **Calendar Integration** - Calendar view for scheduling and planning
+- **Session History** - Track focus session history and statistics
+- **User Authentication** - Secure sign-up and login with Firebase
 - **Profile & Settings** - Personalized user experience with theme customization
 
 ## 📁 Project Structure
@@ -19,96 +22,120 @@ neurosync-app/
 │   ├── src/
 │   │   ├── config/         # Configuration files
 │   │   │   └── firebase-adminsdk.json
-│   │   ├── controllers/     # Request handlers
-│   │   │   ├── routineController.js
-│   │   │   ├── taskController.js
+│   │   ├── controllers/    # Request handlers
+│   │   │   ├── aiController.js
 │   │   │   └── userController.js
-│   │   ├── middleware/      # Custom middleware
+│   │   ├── middleware/     # Custom middleware
 │   │   │   ├── auth.js
 │   │   │   └── errorHandler.js
-│   │   ├── routes/          # API routes
-│   │   │   ├── routines.js
-│   │   │   ├── tasks.js
+│   │   ├── routes/         # API routes
+│   │   │   ├── ai.js
 │   │   │   └── users.js
-│   │   ├── services/        # Business logic
-│   │   │   ├── aiService.js
-│   │   │   └── supabase.js
+│   │   ├── services/       # Business logic
+│   │   │   └── aiCalibration.js
 │   │   ├── types/          # TypeScript types
 │   │   │   └── index.js
 │   │   ├── utils/          # Utility functions
-│   │       └── validators.js
-│   │── server.js           # Entry point
-│   ├── .env.example        # Environment variables template
+│   │   │   └── validators.js
+│   │   └── server.js       # Entry point
+│   ├── .env.example
 │   ├── .gitignore
 │   ├── package-lock.json
 │   ├── package.json
 │   └── README.md
 │
-├── frontend/                # React Native/Expo mobile app
-│   ├── app/                 # Expo Router pages
-│   │   ├── (auth)/         # Authentication routes
+├── frontend/               # React Native/Expo mobile app
+│   ├── app/               # Expo Router pages
+│   │   ├── (auth)/       # Authentication routes
 │   │   │   ├── _layout.tsx
 │   │   │   ├── signIn.tsx
 │   │   │   ├── signUp.tsx
 │   │   │   ├── welcome.tsx
 │   │   │   ├── welcome2.tsx
-│   │   │   └── welcome3.tsx
-│   │   ├── (tabs)/         # Tab-based routes
+│   │   │   ├── welcome3.tsx
+│   │   │   └── forgotPassword.tsx
+│   │   ├── (tabs)/       # Tab-based routes
 │   │   │   ├── _layout.tsx
 │   │   │   ├── index.tsx
+│   │   │   ├── home.tsx
 │   │   │   ├── daily-routine.tsx
 │   │   │   ├── focus-timer.tsx
-│   │   │   ├── home.tsx
+│   │   │   ├── focus-timer-counting.tsx
+│   │   │   ├── todo-list.tsx
+│   │   │   ├── add-task.tsx
+│   │   │   ├── calendar.tsx
+│   │   │   ├── mood-tracking.tsx
+│   │   │   ├── mood-analysis.tsx
+│   │   │   ├── session-history.tsx
 │   │   │   ├── profile.tsx
-│   │   │   ├── settings.tsx
-│   │   │   └── todo-list.tsx
-│   │   ├── _layout.tsx    # Root layout
-│   │   └── index.tsx      # Home page
-│   ├── assets/             # Static assets
+│   │   │   └── settings.tsx
+│   │   ├── dashboard/
+│   │   │   └── index.tsx
+│   │   ├── templates.tsx
+│   │   ├── daily-plan.tsx
+│   │   ├── _layout.tsx
+│   │   └── index.tsx
+│   ├── assets/            # Static assets
 │   │   ├── bg.png
+│   │   ├── image.png
 │   │   ├── welcome1.png
-│   │   └── welcome/
-│   │       ├── welcome2.png
-│   │       └── welcome3.png
-│   ├── components/         # Reusable UI components
+│   │   ├── welcome/
+│   │   │   ├── welcome2.png
+│   │   │   └── welcome3.png
+│   │   └── lottie/
+│   │       └── generating.json
+│   ├── components/        # Reusable UI components
 │   │   ├── AddTaskModal.tsx
+│   │   ├── BottomNavBar.tsx
+│   │   ├── BreakActivityModal.tsx
+│   │   ├── DependencyBadge.tsx
+│   │   ├── InProgressCard.tsx
+│   │   ├── InputDialog.tsx
 │   │   ├── Nav.tsx
-│   │   └── ThemePicker.tsx
-│   ├── constants/          # App constants
+│   │   ├── SectionTitle.tsx
+│   │   ├── SparkleLoader.tsx
+│   │   ├── SubtaskNoteModal.tsx
+│   │   ├── TaskGroupCard.tsx
+│   │   ├── TaskPicker.tsx
+│   │   ├── ThemePicker.tsx
+│   │   └── UndoSnackbar.tsx
+│   ├── constants/        # App constants
+│   │   ├── api.ts
 │   │   └── theme.ts
-│   ├── context/           # React Context providers
-│   │   ├── AuthContext.tsx
-│   │   └── ThemeContext.tsx
-│   ├── hooks/              # Custom React hooks
-│   │   ├── useAuth.ts
-│   │   ├── useTheme.ts
-│   │   └── useTimer.ts
-│   ├── images/             # Image assets
-│   │   ├── bgimg.png
-│   │   └── welcome1.png
-│   ├── services/           # API services
+│   ├── context/          # React Context providers
+│   │   ├── TasksContext.tsx
+│   │   ├── ThemeContext.tsx
+│   │   └── UserContext.tsx
+│   ├── services/        # API services
 │   │   ├── auth.ts
+│   │   ├── calibration.ts
 │   │   ├── firebase.ts
 │   │   ├── routines.ts
-│   │   └── tasks.ts
-│   ├── types/              # TypeScript type definitions
+│   │   ├── sessionStorage.ts
+│   │   ├── tasks.ts
+│   │   └── templateStorage.ts
+│   ├── types/            # TypeScript type definitions
 │   │   └── index.ts
-│   ├── .env.example        # Environment variables template
+│   ├── images/           # Image assets
+│   │   ├── bgimg.png
+│   │   └── welcome1.png
+│   ├── .env.example
 │   ├── .gitignore
-│   ├── app.json            # Expo configuration
-│   ├── babel.config.js     # Babel configuration
+│   ├── app.json
+│   ├── babel.config.js
 │   ├── env.d.ts
-│   ├── eslint.config.js    # ESLint configuration
+│   ├── eslint.config.js
 │   ├── package-lock.json
 │   ├── package.json
-│   ├── tailwind.config.js  # Tailwind configuration
-│   ├── tsconfig.json      # TypeScript configuration
+│   ├── tailwind.config.js
+│   ├── tsconfig.json
 │   └── README.md
 │
 ├── .gitignore
-├── package-lock.json
-├── package.json            # Root package.json for running both services
-└── README.md
+├── CHANGELOG.md
+├── package.json
+├── README.md
+└── tsconfig.json
 ```
 
 ## 🛠️ Tech Stack
@@ -116,7 +143,8 @@ neurosync-app/
 ### Backend
 - **Node.js** - JavaScript runtime
 - **Express.js** - Web framework
-- **Supabase** - Database and authentication
+- **Firebase Admin SDK** - Authentication and database
+- **OpenAI** - AI-powered features
 - **CORS** - Cross-origin resource sharing
 - **dotenv** - Environment variable management
 
@@ -126,8 +154,8 @@ neurosync-app/
 - **Expo Router** - File-based routing
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Utility-first CSS framework
-- **Supabase** - Backend services
 - **Firebase** - Authentication and database
+- **React Native Paper** - UI components
 
 ## 📋 Prerequisites
 
@@ -175,11 +203,10 @@ Configure your environment variables in `backend/.env`:
 ```env
 PORT=3000
 NODE_ENV=development
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+FIREBASE_PROJECT_ID=your_firebase_project_id
+FIREBASE_PRIVATE_KEY=your_firebase_private_key
+FIREBASE_CLIENT_EMAIL=your_firebase_client_email
 OPENAI_API_KEY=your_openai_api_key
-JWT_SECRET=your_jwt_secret_key_here
 CORS_ORIGIN=http://localhost:19006
 ```
 
@@ -194,9 +221,7 @@ cp frontend/.env.example frontend/.env
 Configure your environment variables in `frontend/.env`:
 
 ```env
-EXPO_PUBLIC_API_URL=http://localhost:3000/api
-EXPO_PUBLIC_SUPABASE_URL=your_supabase_project_url
-EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+EXPO_PUBLIC_API_URL=http://localhost:3000
 EXPO_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
 EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=your_firebase_auth_domain
 EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_firebase_project_id
@@ -219,14 +244,6 @@ This will start:
 - Backend server on `http://localhost:3000`
 - Expo development server (accessible via QR code or web)
 
-#### Production Mode
-
-Run both services in production mode:
-
-```bash
-npm run start:all
-```
-
 #### Run Services Individually
 
 **Backend only:**
@@ -245,13 +262,13 @@ npm run dev      # Start Expo development server
 ## 📱 Running on Mobile Device
 
 1. Install the **Expo Go** app on your mobile device (iOS/Android)
-2. Run `npm run dev` in the project root
+2. Run `npm run dev` in the frontend directory
 3. Scan the QR code displayed in the terminal with Expo Go
 4. The app will load on your device
 
 ## 🌐 Running on Web
 
-1. Run `npm run dev` in the project root
+1. Run `npm run dev` in the frontend directory
 2. Press `w` in the terminal to open in a web browser
 3. Or navigate to `http://localhost:19006`
 
@@ -261,10 +278,8 @@ For detailed API documentation, see [`backend/README.md`](backend/README.md)
 
 ### Main Endpoints
 
-- **Authentication**: `/api/auth/*`
-- **Users**: `/api/users/*`
-- **Tasks**: `/api/tasks/*`
-- **Routines**: `/api/routines/*`
+- **AI**: `/api/ai/*` - AI-powered suggestions and calibration
+- **Users**: `/api/users/*` - User management
 
 ## 🎨 Frontend Features
 
@@ -277,14 +292,24 @@ For detailed frontend documentation, see [`frontend/README.md`](frontend/README.
 | Welcome | `(auth)/welcome` | Onboarding landing page |
 | Welcome 2 | `(auth)/welcome2` | Onboarding step 2 |
 | Welcome 3 | `(auth)/welcome3` | Onboarding step 3 |
+| Forgot Password | `(auth)/forgotPassword` | Password recovery |
 | Sign In | `(auth)/signIn` | User sign in |
 | Sign Up | `(auth)/signUp` | User registration |
 | Home | `(tabs)/home` | Dashboard |
 | Daily Routine | `(tabs)/daily-routine` | Routine management |
 | Focus Timer | `(tabs)/focus-timer` | Pomodoro timer |
+| Focus Timer Counting | `(tabs)/focus-timer-counting` | Active timer session |
 | Todo List | `(tabs)/todo-list` | Task management |
+| Add Task | `(tabs)/add-task` | Add new task |
+| Calendar | `(tabs)/calendar` | Calendar view |
+| Mood Tracking | `(tabs)/mood-tracking` | Mood tracking |
+| Mood Analysis | `(tabs)/mood-analysis` | Mood analytics |
+| Session History | `(tabs)/session-history` | Focus session history |
 | Profile | `(tabs)/profile` | User profile |
 | Settings | `(tabs)/settings` | App settings |
+| Dashboard | `dashboard/` | Dashboard view |
+| Templates | `templates.tsx` | Task templates |
+| Daily Plan | `daily-plan.tsx` | Daily planning |
 
 ## 🔧 Development
 
@@ -308,11 +333,10 @@ For detailed frontend documentation, see [`frontend/README.md`](frontend/README.
 |----------|-------------|----------|
 | `PORT` | Server port | Yes |
 | `NODE_ENV` | Environment (development/production) | Yes |
-| `SUPABASE_URL` | Supabase project URL | Yes |
-| `SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Yes |
+| `FIREBASE_PROJECT_ID` | Firebase project ID | Yes |
+| `FIREBASE_PRIVATE_KEY` | Firebase private key | Yes |
+| `FIREBASE_CLIENT_EMAIL` | Firebase client email | Yes |
 | `OPENAI_API_KEY` | OpenAI API key for AI features | Optional |
-| `JWT_SECRET` | Secret key for JWT tokens | Yes |
 | `CORS_ORIGIN` | Allowed CORS origin | Yes |
 
 ### Frontend Variables
@@ -320,8 +344,6 @@ For detailed frontend documentation, see [`frontend/README.md`](frontend/README.
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `EXPO_PUBLIC_API_URL` | Backend API URL | Yes |
-| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL | Yes |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
 | `EXPO_PUBLIC_FIREBASE_API_KEY` | Firebase API key | Yes |
 | `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase auth domain | Yes |
 | `EXPO_PUBLIC_FIREBASE_PROJECT_ID` | Firebase project ID | Yes |
@@ -348,5 +370,5 @@ ISC
 ## 🙏 Acknowledgments
 
 - Expo team for the amazing development platform
-- Supabase for the backend services
 - Firebase for authentication and database solutions
+- OpenAI for AI capabilities
