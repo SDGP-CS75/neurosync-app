@@ -97,8 +97,6 @@ export default function MoodTracking() {
             paddingHorizontal: 0,
           }}
         >
-
-
             {/* Header */}
 
             <View style={{ alignItems: "center", marginTop: 0 }}>
@@ -346,13 +344,11 @@ export default function MoodTracking() {
               }}
             >
             
-
               <Text style={{ color: colors.onPrimary, textAlign: "center", fontWeight: "700", fontSize: 16 }}>
                 Save Entry
               </Text>
 
             </TouchableOpacity>
-
 
         </ScrollView>
 
