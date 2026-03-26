@@ -183,9 +183,8 @@ const cardStyles = StyleSheet.create({
   card: {
     borderRadius: 16,
     marginBottom: 10,
-    boxShadow: '0px 1px 3px 0px rgba(0,0,0,0.07)',
-    elevation: 2,
-    overflow: "hidden",
+     boxShadow: '0px 1px 3px 0px rgba(0,0,0,0.07)',
+     overflow: "hidden",
   },
   topRow: {
     flexDirection: "row",

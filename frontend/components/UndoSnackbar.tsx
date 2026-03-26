@@ -55,17 +55,18 @@ export default function UndoSnackbar() {
 
   const s = styles(theme);
 
-  const containerStyle = [
-    s.container,
-    { transform: [{ translateY: slideAnim }] },
-  ];
+   const containerStyle = [
+     s.container,
+     { transform: [{ translateY: slideAnim }] },
+     { pointerEvents: isVisible ? "auto" : "none" },
+   ];
 
-  if (!isVisible) {
-    containerStyle.push({ display: "none" } as any);
-  }
+   if (!isVisible) {
+     containerStyle.push({ display: "none" } as any);
+   }
 
-  return (
-    <Animated.View style={containerStyle} pointerEvents={isVisible ? "auto" : "none"}>
+   return (
+     <Animated.View style={StyleSheet.flatten(containerStyle as any)}>
       {/* Main row */}
       <View style={s.row}>
         <View style={s.textWrap}>
