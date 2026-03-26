@@ -38,7 +38,7 @@ export default function DashboardScreen() {
     greetingContainer: { marginLeft: 12 * scale },
     greetingText: { color: '#6B7280' },
     userNameText: { fontWeight: 'bold', color: '#1F2937' },
-    notificationBtn: { backgroundColor: 'white', padding: 8 * scale, borderRadius: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 2 },
+    notificationBtn: { backgroundColor: 'white', padding: 8 * scale, borderRadius: 20, boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', elevation: 2 },
     heroCard: { backgroundColor: '#8B5CF6', borderRadius: 24 * scale, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 * scale },
     heroContent: { flex: 1, paddingRight: 16 * scale },
     heroTitle: { color: 'white', fontWeight: 'bold', marginBottom: 16 * scale, lineHeight: 28 * scale },

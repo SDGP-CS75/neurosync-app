@@ -113,10 +113,7 @@ export default function MoodTracking() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginTop: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.06,
-                shadowRadius: 12,
+                boxShadow: '0px 6px 12px rgba(0, 0, 0, 0.06)',
                 elevation: 6,
               }}>
                 <Text style={{ fontSize: 48 }}>{currentMood.emoji}</Text>
