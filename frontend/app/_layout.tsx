@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { ImageBackground, StyleSheet, View, Platform } from "react-native";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
 import { UserProvider, useUser } from "../context/UserContext";
@@ -109,15 +110,17 @@ function ThemeAndUserProviders({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <UserProvider>
-        <ThemeAndUserProviders>
-          <TasksProvider>
-            <AppShell />
-          </TasksProvider>
-        </ThemeAndUserProviders>
-      </UserProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <UserProvider>
+          <ThemeAndUserProviders>
+            <TasksProvider>
+              <AppShell />
+            </TasksProvider>
+          </ThemeAndUserProviders>
+        </UserProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 

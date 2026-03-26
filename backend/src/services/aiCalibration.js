@@ -8,7 +8,7 @@
  * Each document: { entries: [{ estimated, actual, date }] }
  */
 
-import { getFirestore, getDoc, setDoc } from "firebase-admin/firestore";
+import { getFirestore } from "firebase-admin/firestore";
 
 const MAX_ENTRIES = 20;
 
@@ -113,7 +113,7 @@ async function logActualDuration(
       .doc(userId)
       .collection("calibration")
       .doc(category);
-    const snap = await getDoc(ref);
+    const snap = await ref.get();
     const existing = snap.exists() ? snap.data().entries ?? [] : [];
 
     const updated = [
@@ -126,7 +126,7 @@ async function logActualDuration(
       },
     ];
 
-    await setDoc(ref, { entries: updated });
+    await ref.set({ entries: updated });
   } catch (e) {
     console.warn("logActualDuration failed:", e);
   }

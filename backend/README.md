@@ -6,7 +6,8 @@ The backend server for the NeuroSync productivity application, built with Node.j
 
 - **Node.js** - JavaScript runtime
 - **Express.js** - Web framework
-- **Supabase** - Database and authentication
+- **Firebase Admin SDK** - Authentication and database
+- **OpenAI** - AI-powered features
 - **CORS** - Cross-origin resource sharing
 - **dotenv** - Environment variable management
 
@@ -15,26 +16,25 @@ The backend server for the NeuroSync productivity application, built with Node.j
 ```
 backend/
 ├── src/
-│   ├── controllers/        # Request handlers
-│   │   ├── routineController.js
-│   │   ├── taskController.js
+│   ├── config/
+│   │   └── sdgp-cs75-firebase-adminsdk-fbsvc-5684359436.json
+│   ├── controllers/
+│   │   ├── aiController.js
 │   │   └── userController.js
-│   ├── middleware/         # Custom middleware
+│   ├── middleware/
 │   │   ├── auth.js
 │   │   └── errorHandler.js
-│   ├── routes/            # API routes
-│   │   ├── routines.js
-│   │   ├── tasks.js
+│   ├── routes/
+│   │   ├── ai.js
 │   │   └── users.js
-│   ├── services/           # Business logic
-│   │   ├── aiService.js
-│   │   └── supabase.js
-│   ├── types/             # TypeScript types
+│   ├── services/
+│   │   └── aiCalibration.js
+│   ├── types/
 │   │   └── index.js
-│   ├── utils/             # Utility functions
+│   ├── utils/
 │   │   └── validators.js
-│   └── server.js          # Entry point
-├── .env.example           # Environment variables template
+│   └── server.js
+├── .env.example
 ├── .gitignore
 ├── package-lock.json
 ├── package.json
@@ -64,11 +64,10 @@ cp .env.example .env
 ```env
 PORT=3000
 NODE_ENV=development
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+FIREBASE_PROJECT_ID=your_firebase_project_id
+FIREBASE_PRIVATE_KEY=your_firebase_private_key
+FIREBASE_CLIENT_EMAIL=your_firebase_client_email
 OPENAI_API_KEY=your_openai_api_key
-JWT_SECRET=your_jwt_secret_key_here
 CORS_ORIGIN=http://localhost:19006
 ```
 
@@ -88,34 +87,22 @@ The server will start on `http://localhost:3000` by default.
 
 ## API Endpoints
 
-### Authentication
+### AI
 | Method | Endpoint | Description |
 |--------|---------|------------|
-| POST | `/api/auth/register` | Register a new user |
-| POST | `/api/auth/login` | Login user |
-| POST | `/api/auth/logout` | Logout user |
+| POST | `/api/ai/generate-suggestions` | Generate AI-powered suggestions |
+| POST | `/api/ai/calibrate` | Calibrate AI based on user preferences |
+| POST | `/api/ai/analyze-mood` | Analyze user mood patterns |
+| POST | `/api/ai/generate-daily-plan` | Generate daily plan suggestions |
 
 ### Users
 | Method | Endpoint | Description |
 |--------|---------|------------|
+| POST | `/api/users/register` | Register a new user |
+| POST | `/api/users/login` | Login user |
 | GET | `/api/users/:id` | Get user profile |
 | PUT | `/api/users/:id` | Update user profile |
-
-### Tasks
-| Method | Endpoint | Description |
-|--------|---------|------------|
-| GET | `/api/tasks` | Get all tasks |
-| POST | `/api/tasks` | Create a new task |
-| PUT | `/api/tasks/:id` | Update a task |
-| DELETE | `/api/tasks/:id` | Delete a task |
-
-### Routines
-| Method | Endpoint | Description |
-|--------|---------|------------|
-| GET | `/api/routines` | Get all routines |
-| POST | `/api/routines` | Create a new routine |
-| PUT | `/api/routines/:id` | Update a routine |
-| DELETE | `/api/routines/:id` | Delete a routine |
+| DELETE | `/api/users/:id` | Delete user |
 
 ## Development
 
@@ -156,11 +143,10 @@ Create service files in `src/services/` for business logic that interacts with e
 |----------|-------------|----------|
 | `PORT` | Server port | Yes |
 | `NODE_ENV` | Environment (development/production) | Yes |
-| `SUPABASE_URL` | Supabase project URL | Yes |
-| `SUPABASE_ANON_KEY` | Supabase anonymous key | Yes |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Yes |
+| `FIREBASE_PROJECT_ID` | Firebase project ID | Yes |
+| `FIREBASE_PRIVATE_KEY` | Firebase private key | Yes |
+| `FIREBASE_CLIENT_EMAIL` | Firebase client email | Yes |
 | `OPENAI_API_KEY` | OpenAI API key for AI features | Optional |
-| `JWT_SECRET` | Secret key for JWT tokens | Yes |
 | `CORS_ORIGIN` | Allowed CORS origin | Yes |
 
 ## License

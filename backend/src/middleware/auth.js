@@ -1,6 +1,13 @@
 import admin from 'firebase-admin';
 
 export const authenticate = async (req, res, next) => {
+  // Skip auth for development testing
+  const testMode = process.env.NODE_ENV === 'development' && process.env.SKIP_AUTH === 'true';
+  if (testMode) {
+    req.user = { uid: 'test-user-123' };
+    return next();
+  }
+
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
 

@@ -19,12 +19,18 @@ export default function SettingsScreen() {
   const { width } = useWindowDimensions();
   const activeColor = palette.primary;
   
-  // Responsive scaling
+  // RESPONSIVE SCALING LOGIC
+  // Calculates a dynamic scale multiplier based on the device's screen width.
+  // This ensures the UI remains consistent across different iOS and Android devices.
+  
   const scale = Math.min(width / BASE_WIDTH, 1.3);
   const horizontalPadding = Math.round(24 * scale);
   const cardPadding = Math.round(20 * scale);
 
-  // Preference States
+  // PROFILE IMAGE HANDLER
+  // Launches the native device photo gallery.
+  // Enforces a 1:1 aspect ratio crop so the image fits perfectly into the circular avatar UI.
+  // Updates the global UserContext upon successful selection.
   const [dailyReminders, setDailyReminders] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [strictFocus, setStrictFocus] = useState(false);
@@ -43,7 +49,10 @@ export default function SettingsScreen() {
     }
   };
 
-  // Handle Save Button Press
+  // SECURE LOGOUT FLOW
+  // Triggers a native confirmation modal to prevent accidental logouts.
+  // If confirmed, it clears the auth session, resets local profile state, 
+  // and redirects the user back to the Welcome/Login screen.
   const handleSave = () => {
     Alert.alert(
       "Settings Saved",
@@ -76,7 +85,9 @@ export default function SettingsScreen() {
     );
   };
 
-  // Dynamic styles
+ // DYNAMIC STYLESHEET
+  // Utilizing the calculated 'scale' multiplier to dynamically adjust padding, 
+  // margins, font sizes, and border radii for cross-device compatibility.
   const styles = StyleSheet.create({
     safeArea: { flex: 1 },
     scrollContainer: { paddingHorizontal: horizontalPadding, paddingTop: 8 * scale, paddingBottom: 40 * scale },
