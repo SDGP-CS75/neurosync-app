@@ -6,6 +6,8 @@ node_modules/
 dist/
 web-build/
 expo-env.d.ts
+/.expo-shared/
+/.expo-internal/
 
 # Native
 .kotlin/
@@ -18,6 +20,7 @@ expo-env.d.ts
 
 # Metro
 .metro-health-check*
+/.metro/
 
 # Debug
 npm-debug.*
@@ -28,32 +31,25 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# Local environment files
-.env*.local
+# Environment variables
+.env
+.env.local
+.env.*.local
 
 # TypeScript
 *.tsbuildinfo
+/.tsbuildinfo
 
 # Generated native folders
 /ios
 /android
 
-# Expo specific
-/.expo-shared/
-/.expo-internal/
-
 # React Native
 /.vscode-react-native/
-
-# Metro bundler
-/.metro/
 
 # Yarn
 /.yarn/
 /.pnp.js
-
-# TypeScript cache
-/.tsbuildinfo
 
 # ESLint
 /.eslintcache
@@ -83,6 +79,8 @@ build/
 # Temporary files
 *.tmp
 *.temp
+tmp/
+temp/
 
 # Cache directories
 .cache/
@@ -103,30 +101,10 @@ __pycache__/
 *.tar.gz
 *.rar
 
-# System files
-.DS_Store
-Thumbs.db
-
-# Temporary directories
-tmp/
-temp/
-
-# Logs
-*.log
-logs/
-
-# Environment files
-.env
-.env.local
-.env.*.local
-
 # Package files
 *.jar
 *.war
 *.ear
-*.zip
-*.tar.gz
-*.rar
 
 # Crash logs
 hs_err_pid*

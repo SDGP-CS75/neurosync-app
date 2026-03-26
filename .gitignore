@@ -30,3 +30,45 @@ coverage/
 # Build
 dist/
 build/
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Cache directories
+.cache/
+__pycache__/
+
+# Database files
+*.db
+*.sqlite
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+
+# Firebase admin SDK credentials (SENSITIVE!)
+**/firebase-adminsdk*.json
+**/*firebase-adminsdk*.json
+
+# Expo
+.expo/
+
+# TypeScript
+*.tsbuildinfo
+
+# Metro
+.metro-health-check*
+
+# Yarn
+.yarn/
+.pnp.js
+
+# ESLint
+.eslintcache
+
+# Prettier
+.prettierignore
