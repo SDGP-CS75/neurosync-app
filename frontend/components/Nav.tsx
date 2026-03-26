@@ -202,8 +202,7 @@ export default function CustomNavBar() {
 
   return (
     <View
-      style={[styles.container, { height: NAV_HEIGHT + safeBottom }]}
-      pointerEvents="box-none"
+      style={[styles.container, { height: NAV_HEIGHT + safeBottom }, { pointerEvents: "box-none" }]}
     >
       {/* ── SVG bar ── */}
       <View style={{ width, height: NAV_HEIGHT }}>
@@ -288,9 +287,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position:       "absolute",
-    shadowOffset:   { width: 0, height: 6 },
-    shadowOpacity:  0.45,
-    shadowRadius:   12,
+    boxShadow:      "0px 6px 12px rgba(0, 0, 0, 0.45)",
     elevation:      12,
   },
 });

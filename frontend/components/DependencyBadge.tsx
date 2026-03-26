@@ -60,7 +60,6 @@ export default function DependencyBadge({
               s.tooltipBox,
               {
                 backgroundColor: theme.colors.surface,
-                shadowColor: "#000",
               },
             ]}
             onStartShouldSetResponder={() => true}
