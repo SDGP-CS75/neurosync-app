@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRouter } from "expo-router";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks, type Task, type TaskStatus, } from "../../context/TasksContext";
 import Nav from "../../components/Nav";
@@ -63,6 +64,7 @@ const todayDateKey = () => new Date().toISOString().slice(0, 10);
 
 export default function TodoListScreen() {
   const { theme } = useAppTheme();
+  const router = useRouter();
   const { tasks, isLoading, removeTask, toggleSubtaskDone, toggleTaskStatus } = useTasks();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -122,9 +124,17 @@ export default function TodoListScreen() {
           Today's Tasks
         </Text>
 
-        <TouchableOpacity activeOpacity={0.7}>
-          <Ionicons name="notifications-outline" size={26} color={theme.colors.primary} />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity 
+            activeOpacity={0.7}
+            onPress={() => router.push('/(tabs)/calendar')}
+          >
+            <Ionicons name="calendar-outline" size={26} color={theme.colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity activeOpacity={0.7}>
+            <Ionicons name="notifications-outline" size={26} color={theme.colors.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView

@@ -16,7 +16,7 @@
  */
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-
+import { getCalibrationContext } from '../services/aiCalibration.js';
 const GROQ_URL        = 'https://api.groq.com/openai/v1/chat/completions';
 const MAX_TASK_LENGTH = 500;
 const MIN_TASK_LENGTH = 3;
@@ -45,28 +45,15 @@ const CATEGORY_META = {
 // VALIDATION WORD LISTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Single words that are CLEARLY not tasks — pure reactions, greetings,
- * throwaway tokens. Keep this list SHORT and conservative.
- * DO NOT add real action verbs: "run", "go", "eat", "sleep", "gym" etc.
- */
 const VAGUE_SINGLE_WORDS = new Set([
-  // Reactions / emotions
   'lol','lmao','lmfao','haha','hehe','hmmm','hmm','ughhh','ugh',
   'yay','wow','meh','nope','bruh','omg','omfg',
   'idk','nvm','smh','imo','fyi','tbh','wtf',
-  // Greetings
   'hi','hey','hello','bye','goodbye','sup','yo',
-  // Pure affirmations / negations
   'ok','okay','yes','no','yep','yeah','nah','sure',
-  // Testing / throwaway
   'test','testing','asdf','qwerty',
 ]);
 
-/**
- * Profanity / hate speech — primary use is offensive.
- * Keep TIGHT — don't add words with legitimate secondary meanings.
- */
 const OFFENSIVE_WORDS = new Set([
   'fuck','shit','bitch','cunt','cock','pussy',
   'fuk','fck','stfu','gtfo',
@@ -75,11 +62,6 @@ const OFFENSIVE_WORDS = new Set([
   'prick','wanker','twat',
 ]);
 
-/**
- * Pure grammar / filler — closed-class words with zero standalone task meaning.
- * Only used to detect 100%-filler inputs like "is it the" or "a to the of".
- * DO NOT add verbs like "go", "do", "run", "get".
- */
 const PURE_FILLER_WORDS = new Set([
   'i','you','me','my','we','us','he','she','it','they','them','your','our','their',
   'a','an','the',
@@ -91,25 +73,17 @@ const PURE_FILLER_WORDS = new Set([
 
 // ─── Input cleaner ────────────────────────────────────────────────────────────
 
-/**
- * Normalise raw user input BEFORE validation and AI call.
- * Strips noise without removing meaningful content.
- */
 function cleanTaskInput(raw) {
   let t = raw.trim();
 
-  // Collapse repeated word sequences (up to 3 words)
-  // "have to have to go" → "have to go"
   const repeatRx = /\b(\w+(?:\s+\w+){0,2})\s+\1\b/gi;
   t = t.replace(repeatRx, '$1');
-  t = t.replace(repeatRx, '$1'); // second pass for nested repeats
+  t = t.replace(repeatRx, '$1');
 
-  // Strip leading filler phrases — run twice for stacked phrases
   const fillerRx = /^(i need to|i have to|i want to|i must|i should|can you please|can you|please help me to|please help me|please|help me to|help me|i am going to|i am gonna|gonna|gotta|i'd like to|i'd love to|i would like to|remind me to|don't forget to)\s+/i;
   t = t.replace(fillerRx, '');
   t = t.replace(fillerRx, '');
 
-  // Collapse multiple spaces / newlines
   t = t.replace(/\s{2,}/g, ' ').trim();
 
   return t;
@@ -117,20 +91,12 @@ function cleanTaskInput(raw) {
 
 // ─── Neutralise sensitive / geopolitical framing ──────────────────────────────
 
-/**
- * Replace "X vs Y war / conflict / crisis" with a neutral phrase so the LLM
- * focuses on the creative or professional task rather than the topic.
- * Prevents the model refusing inputs like:
- *   "create a generative AI video about America vs Iran war"
- */
 function neutraliseTask(t) {
-  // "Country vs Country war/conflict/battle/crisis/fight/clash"
   t = t.replace(
     /\b([A-Z][a-zA-Z]+)\s+(?:vs\.?|versus|and)\s+([A-Z][a-zA-Z]+)\s+(war|conflict|battle|crisis|fight|clash)\b/gi,
     'geopolitical conflict'
   );
 
-  // "war between X and Y" / "conflict between X and Y"
   t = t.replace(
     /\b(war|conflict|battle|crisis)\s+between\s+[A-Z][a-zA-Z]+\s+and\s+[A-Z][a-zA-Z]+\b/gi,
     'geopolitical conflict'
@@ -141,49 +107,33 @@ function neutraliseTask(t) {
 
 // ─── Spam / offensive / meaningless input guard ───────────────────────────────
 
-/**
- * Returns a user-friendly error string if the input should be rejected.
- * Returns null if the input is a valid task candidate.
- *
- * PHILOSOPHY: Be PERMISSIVE. Only reject what is CLEARLY not a task.
- * False negatives (letting spam through) are far less harmful than
- * false positives (blocking real tasks). The AI handles ambiguous input fine.
- */
 function validateTaskMeaning(input) {
   const t     = input.trim();
   const lower = t.toLowerCase();
   const words = lower.split(/\s+/).filter(Boolean);
 
-  // 1. Too short
   if (t.length < MIN_TASK_LENGTH)
     return 'Please describe your task in a few words.';
 
-  // 2. No letters at all (emoji-only, numbers, symbols)
   if (!/[a-zA-Z]/.test(t))
     return "That doesn't look like a task. Please describe what you need to do.";
 
-  // 3. No real word — need at least one run of 3+ letters
   if (!/[a-zA-Z]{3,}/.test(t))
     return "That doesn't look like a task. Please describe what you need to do.";
 
-  // 4. Pure repeated single character — "aaaa", "!!!!" but NOT "haha"
   const noSpaces = lower.replace(/\s/g, '');
   if (noSpaces.length >= 4 && /^(.)\1+$/.test(noSpaces))
     return 'Your input looks like random text. Please describe a real task.';
 
-  // 5. Offensive / hate speech
   const hasOffensive = words.some(w => OFFENSIVE_WORDS.has(w.replace(/[^a-z]/g, '')));
   if (hasOffensive)
     return "That doesn't look like a task. Please enter something you actually need to do.";
 
-  // 6. Gibberish — word with 5+ letters and zero vowels including 'y'
-  //    Only reject if MORE THAN HALF the multi-char words are gibberish
   const letterWords    = words.map(w => w.replace(/[^a-z]/g, '')).filter(w => w.length >= 5);
   const gibberishWords = letterWords.filter(w => !/[aeiouy]/.test(w));
   if (letterWords.length >= 1 && gibberishWords.length > letterWords.length / 2)
     return 'Your input looks like random text. Please describe a real task.';
 
-  // 7. Keyboard mash — only triggers on 8+ char tokens with 85%+ from one row
   const KEYBOARD_ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
   const hasMash = words.some(w => {
     const clean = w.replace(/[^a-z]/g, '');
@@ -196,12 +146,9 @@ function validateTaskMeaning(input) {
   if (hasMash)
     return 'Your input looks like random text. Please describe a real task.';
 
-  // 8. Single vague/reaction word (after filler has been stripped by cleanTaskInput)
-  //    Real single-word tasks: "run", "gym", "eat", "sleep" → NOT in VAGUE_SINGLE_WORDS
   if (words.length === 1 && VAGUE_SINGLE_WORDS.has(words[0].replace(/[^a-z]/g, '')))
     return "That's too vague. Try something like \"Buy groceries tomorrow at 5pm\".";
 
-  // 9. 100% pure filler — every word is a grammar/filler word with no content
   const meaningfulWords = words.filter(w => {
     const clean = w.replace(/[^a-z]/g, '');
     return clean.length >= 2 && !PURE_FILLER_WORDS.has(clean);
@@ -209,10 +156,10 @@ function validateTaskMeaning(input) {
   if (words.length >= 2 && meaningfulWords.length === 0)
     return "Please describe a real task — something you actually need to get done.";
 
-  return null; // ✅ passes all checks
+  return null;
 }
 
-// ─── Date helpers (server-side — LLM never computes dates) ───────────────────
+// ─── Date helpers ─────────────────────────────────────────────────────────────
 
 const MONTHS_SHORT  = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const WEEKDAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -231,9 +178,9 @@ function nextWeekday(now, targetDow) {
 function buildDateContext() {
   const now         = new Date();
   const tomorrow    = new Date(now); tomorrow.setDate(now.getDate() + 1);
-  const nextWeekend = nextWeekday(now, 6); // next Saturday
-  const nextWeek    = new Date(now);       nextWeek.setDate(now.getDate() + 7);
-  const endOfWeek   = nextWeekday(now, 5); // next Friday
+  const nextWeekend = nextWeekday(now, 6);
+  const nextWeek    = new Date(now); nextWeek.setDate(now.getDate() + 7);
+  const endOfWeek   = nextWeekday(now, 5);
 
   const lines = [
     `Today         : ${fmtDate(now)}`,
@@ -279,7 +226,7 @@ function sanitiseTitle(raw) {
 function sanitiseStep(raw) {
   if (!raw || typeof raw !== 'string') return null;
   let s = raw.trim()
-    .replace(/^[\d\-*•.)\s]+/, '')  // strip leading bullets / numbers
+    .replace(/^[\d\-*•.)\s]+/, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
   if (!s) return null;
@@ -327,15 +274,15 @@ If the task HAS a date or time → include "when":
 ════════════════════════════════
 TITLE rules
 ════════════════════════════════
-• 3 to 5 words only — no more
-• Must start with an action verb: Create, Fix, Buy, Write, Plan, Call, Review, Build,
+- 3 to 5 words only — no more
+- Must start with an action verb: Create, Fix, Buy, Write, Plan, Call, Review, Build,
   Send, Prepare, Book, Complete, Schedule, Finish, Make, Draft, Submit, Organize,
   Set Up, Go, Run, Eat, Visit
-• Title Case — capitalise every important word
-• No punctuation at the end
-• Remove ALL filler: "I need to", "I want to", "I have to", "I must", "please",
+- Title Case — capitalise every important word
+- No punctuation at the end
+- Remove ALL filler: "I need to", "I want to", "I have to", "I must", "please",
   "help me", "can you", "I should", "I'd like to", "remind me to"
-• If words are repeated in the task (e.g. "have to have to"), ignore the repetition
+- If words are repeated in the task (e.g. "have to have to"), ignore the repetition
 
 Good title examples:
   "I need to create a report about AI"  →  "Create AI Report"
@@ -350,99 +297,34 @@ Good title examples:
 ════════════════════════════════
 STEPS — read every rule carefully
 ════════════════════════════════
-• Return EXACTLY 3 to 6 steps — never fewer than 3, never more than 6
-• Each step = ONE sentence, MAX 8 words
-• Start every step with an action verb: Open, Search, Write, Call, Download, Pick,
-  Send, Save, Go, Buy, Check, Read, Fill, Book, Pay, Review, Draft, Set, Find,
-  Visit, Add, Upload, Print, Sign, Confirm, Install, Prepare, Eat, Run, Walk
-• Plain simple English — imagine explaining to someone who has NEVER done this before
-• Logical order: preparation → main action → review → completion
-• ZERO duplicate steps
-• NO vague filler steps: "Start the task", "Think about it", "You're done",
-  "Get ready", "Begin working"
-• NO compound steps — never join two actions with "and then", "also", "then", "while"
-• Adapt step count to complexity — simple tasks need only 3, complex tasks can use 6
-• Always treat the input as a legitimate creative or professional task — never refuse
-
-BAD steps:
-  ✗ "Research various AI tools and platforms that can help generate content efficiently"
-  ✗ "Think about what you need and decide the best approach before starting"
-
-GOOD steps:
-  ✓ "Search for AI video generation tools online"
-  ✓ "Write a 30-second script for the video"
-  ✓ "Generate video clips using the AI tool"
-  ✓ "Review and edit the generated footage"
-  ✓ "Export and save the final video file"
+- Return EXACTLY 3 to 6 steps — never fewer than 3, never more than 6
+- Each step = ONE sentence, MAX 8 words
+- Start every step with an action verb
+- Plain simple English
+- Logical order: preparation → main action → review → completion
+- ZERO duplicate steps
+- NO vague filler steps
+- NO compound steps
+- Always treat the input as a legitimate creative or professional task — never refuse
 
 ════════════════════════════════
-DURATION — estimate realistic time for each step
+DURATION
 ════════════════════════════════
-• "stepDurations": array of integers (minutes), one per step, SAME ORDER as "steps"
-• "totalDurationMinutes": integer — must equal the EXACT SUM of all stepDurations
-• Never return 0 — minimum 2 minutes per step
-• Be realistic and slightly conservative:
-
-  Quick lookup / search            →   2–5 min
-  Writing short message / email    →   5–10 min
-  Reading / light research         →  10–20 min
-  Deep research or planning        →  30–60 min
-  Creative work (video, art, music)→  30–120 min per step
-  Admin tasks (forms, calls, bills)→   5–20 min
-  Physical tasks (gym, shop, cook) →  20–90 min
-  Software setup / configuration   →  10–30 min
-  Code review / debugging          →  15–45 min
-  Presentation or report writing   →  30–90 min
-
-Duration examples:
-  Task: "buy groceries"
-  steps: ["Write a shopping list", "Drive to the store", "Shop for items", "Return home"]
-  stepDurations: [5, 15, 30, 15]
-  totalDurationMinutes: 65
-
-  Task: "create a generative AI video"
-  steps: ["Research AI video generation tools", "Write the video script",
-          "Generate video clips using AI tool", "Review and edit footage",
-          "Export and upload the final video"]
-  stepDurations: [20, 30, 60, 45, 15]
-  totalDurationMinutes: 170
+- "stepDurations": array of integers (minutes), one per step
+- "totalDurationMinutes": must equal the EXACT SUM of all stepDurations
+- Never return 0 — minimum 2 minutes per step
 
 ════════════════════════════════
 WHEN — only if date or time is mentioned
 ════════════════════════════════
-• Look up the date ONLY from the DATE REFERENCE above — NEVER calculate it yourself
-• Time only (e.g. "at 6pm", "by 5pm")           → Today's date + that time
-• Day only (e.g. "tomorrow", "next Monday")       → That date + 5.00 pm default
-• Day + time (e.g. "tomorrow at 3pm")             → That date + that time
-• "tonight"                                        → Today + 9.00 pm (or stated time)
-• "this weekend"                                   → Weekend date from reference + 5.00 pm
-• "this week" / "end of week"                     → End of week date + 5.00 pm
-• "before [day]" / "by [day]"                    → That day + 5.00 pm
-• "next week"                                      → Next week date + 5.00 pm
-• Strict output format: "D Mon YYYY, h.mm am/pm"
-  ✓ Good: "19 Mar 2026, 6.00 pm"   "5 Jan 2026, 11.30 am"
-  ✗ Bad:  "March 19", "tomorrow", "6pm", "2026-03-19", "19/03/2026"
-• If NO date or time is mentioned → do NOT include the "when" key at all
+- Look up the date ONLY from the DATE REFERENCE above
+- Strict output format: "D Mon YYYY, h.mm am/pm"
+- If NO date or time is mentioned → do NOT include the "when" key at all
 
 ════════════════════════════════
 CATEGORY — pick exactly one
 ════════════════════════════════
-• Work     — reports, meetings, coding, emails, presentations, deadlines, professional
-• Shopping — buying items, groceries, online orders, purchasing (non-health/medicine)
-• Health   — exercise, doctor visits, medicine, fitness, diet, mental health, therapy
-• Finance  — payments, bills, budgets, banking, investments, taxes, subscriptions
-• Creative — writing stories/poems, art, music, design, video editing, photography
-• Personal — family events, home chores, social plans, hobbies, self-care, errands
-• Other    — anything that clearly does not fit any category above
-
-Category tiebreaker examples:
-  "buy medicine"         → Health   (health purpose beats purchase intent)
-  "buy a birthday gift"  → Shopping (purchase with no health angle)
-  "write a work email"   → Work     (professional context beats creative)
-  "write a novel"        → Creative (personal creative project)
-  "pay medical bill"     → Finance  (financial action beats health)
-  "go for a morning run" → Health   (fitness activity)
-  "create an AI video"   → Creative (creative production task)`;
+Work | Shopping | Health | Finance | Creative | Personal | Other`;
 }
 
 // ─── Response parser ──────────────────────────────────────────────────────────
@@ -460,7 +342,6 @@ function parseResponse(text) {
 
   if (!text || typeof text !== 'string') return empty;
 
-  // ── Detect model refusals before attempting JSON parse
   const lower = text.toLowerCase();
   const refusalPhrases = [
     "i can't", "i cannot", "i'm not able", "i am not able",
@@ -473,7 +354,6 @@ function parseResponse(text) {
     return { ...empty, _refusal: true };
   }
 
-  // ── Strip markdown fences
   const stripped = text.trim().replace(/^```(?:json)?\s*|```\s*$/gm, '').trim();
 
   let parsed;
@@ -481,7 +361,6 @@ function parseResponse(text) {
     parsed = JSON.parse(stripped);
   } catch {
     console.warn('[aiController] JSON parse failed. Raw snippet:', stripped.slice(0, 200));
-    // Fallback: treat each non-empty line as a step
     const lines = stripped
       .split('\n')
       .map(s => sanitiseStep(s))
@@ -489,17 +368,14 @@ function parseResponse(text) {
     return { ...empty, steps: lines.slice(0, 6) };
   }
 
-  // ── title
   const title = sanitiseTitle(typeof parsed.title === 'string' ? parsed.title : '');
 
-  // ── steps
   let steps = [];
   if (Array.isArray(parsed.steps)) {
     steps = parsed.steps
       .map(s => sanitiseStep(s))
       .filter(s => s && s.length > 4 && /[a-zA-Z]{3,}/.test(s));
   }
-  // Deduplicate
   const seen = new Set();
   steps = steps.filter(s => {
     const key = s.toLowerCase();
@@ -509,7 +385,6 @@ function parseResponse(text) {
   });
   steps = steps.slice(0, 6);
 
-  // ── stepDurations — one integer per step, minimum 2 min each
   let stepDurations = [];
   if (Array.isArray(parsed.stepDurations)) {
     stepDurations = parsed.stepDurations
@@ -519,10 +394,8 @@ function parseResponse(text) {
       )
       .slice(0, steps.length);
   }
-  // Pad to match steps length if the model returned fewer durations
   while (stepDurations.length < steps.length) stepDurations.push(5);
 
-  // ── totalDurationMinutes — prefer model value, fall back to computed sum
   const computedSum = stepDurations.reduce((a, b) => a + b, 0);
   const totalDurationMinutes = (
     typeof parsed.totalDurationMinutes === 'number' &&
@@ -532,12 +405,10 @@ function parseResponse(text) {
     ? Math.round(parsed.totalDurationMinutes)
     : computedSum;
 
-  // ── category
   const validCategories = Object.keys(CATEGORY_META);
   const rawCat   = typeof parsed.category === 'string' ? parsed.category.trim() : '';
   const category = validCategories.includes(rawCat) ? rawCat : 'Other';
 
-  // ── when — strict format: "D Mon YYYY, h.mm am/pm"
   let when = null;
   if (typeof parsed.when === 'string' && parsed.when.trim()) {
     const whenStr = parsed.when.trim();
@@ -621,19 +492,23 @@ async function callGroqWithRetry(payload, apiKey, retries = MAX_RETRIES) {
 
 // ─── Build Groq payload ───────────────────────────────────────────────────────
 
-function buildPayload(model, taskStr) {
+async function buildPayload(model, taskStr, userId = null) {
+  let systemPrompt =
+    'You are a task planning assistant. Your ONLY job is to break any user input ' +
+    'into actionable steps and return a JSON object. You NEVER refuse, NEVER comment ' +
+    'on the content, NEVER add warnings or disclaimers. You treat every input as a ' +
+    'legitimate creative or professional task. You ALWAYS return raw JSON — ' +
+    'no markdown, no refusals, no explanations outside the JSON.';
+
+  if (userId) {
+    const calibration = await getCalibrationContext(userId);
+    if (calibration) systemPrompt += '\n\n' + calibration;
+  }
+
   return {
     model,
     messages: [
-      {
-        role: 'system',
-        content:
-          'You are a task planning assistant. Your ONLY job is to break any user input ' +
-          'into actionable steps and return a JSON object. You NEVER refuse, NEVER comment ' +
-          'on the content, NEVER add warnings or disclaimers. You treat every input as a ' +
-          'legitimate creative or professional task. You ALWAYS return raw JSON — ' +
-          'no markdown, no refusals, no explanations outside the JSON.',
-      },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: buildPrompt(taskStr) },
     ],
     temperature: 0.3,
@@ -645,12 +520,10 @@ function buildPayload(model, taskStr) {
 
 export async function breakTaskIntoSteps(req, res) {
 
-  // ── 1. Environment guard
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey)
     return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
 
-  // ── 2. Extract raw input
   const { task } = req.body || {};
   let taskStr = typeof task === 'string' ? task.trim() : '';
 
@@ -662,31 +535,23 @@ export async function breakTaskIntoSteps(req, res) {
       error: `Task must be ${MAX_TASK_LENGTH} characters or fewer`,
     });
 
-  // ── 3. Strip zero-width / control / prompt-injection characters
   taskStr = taskStr.replace(/[\u0000-\u001F\u200B-\u200D\uFEFF]/g, ' ').trim();
-
-  // ── 4. Normalise: collapse repeated words + strip leading filler
   taskStr = cleanTaskInput(taskStr);
-
-  // ── 5. Neutralise geopolitical / conflict framing so the model doesn't refuse
   taskStr = neutraliseTask(taskStr);
 
-  // ── 6. Guard: reject only clear spam / offensive / gibberish
   const meaningError = validateTaskMeaning(taskStr);
   if (meaningError) {
     console.log(`[aiController] 422 rejected: "${taskStr}" → ${meaningError}`);
     return res.status(422).json({ error: meaningError });
   }
 
-  // ── 7. Resolve model
   const requestedModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
   const model = ALLOWED_MODELS.includes(requestedModel)
     ? requestedModel
     : 'llama-3.1-8b-instant';
 
-  const payload = buildPayload(model, taskStr);
+  const payload = await buildPayload(model, taskStr, req.body.userId ?? null);
 
-  // ── 8. Call Groq with retry + backoff
   const startTime = Date.now();
   let data;
   try {
@@ -700,7 +565,6 @@ export async function breakTaskIntoSteps(req, res) {
     });
   }
 
-  // ── 9. Log latency + token usage
   const usage   = data?.usage || {};
   const latency = Date.now() - startTime;
   console.log(
@@ -710,18 +574,16 @@ export async function breakTaskIntoSteps(req, res) {
     `latency=${latency}ms | task="${taskStr.slice(0, 60)}"`
   );
 
-  // ── 10. Parse + validate AI response
   const rawText = data?.choices?.[0]?.message?.content || '';
   const {
     title, steps, stepDurations, totalDurationMinutes,
     category, when, _refusal,
   } = parseResponse(rawText);
 
-  // ── 11. Handle model refusal — re-frame task and retry once
   if (_refusal) {
     console.warn('[aiController] Refusal detected, retrying with neutral framing…');
     const neutralTask  = `Create a detailed project plan for: ${taskStr}`;
-    const retryPayload = buildPayload(model, neutralTask);
+    const retryPayload = await buildPayload(model, neutralTask);
 
     try {
       const retryData = await callGroqWithRetry(retryPayload, apiKey, 1);
@@ -750,7 +612,6 @@ export async function breakTaskIntoSteps(req, res) {
     });
   }
 
-  // ── 12. Require at least one valid step
   if (steps.length < 1) {
     console.warn('[aiController] 0 valid steps parsed. Raw:', rawText.slice(0, 300));
     return res.status(500).json({
@@ -758,10 +619,8 @@ export async function breakTaskIntoSteps(req, res) {
     });
   }
 
-  // ── 13. Map category → emoji + iconBg
   const { emoji, iconBg } = CATEGORY_META[category] ?? CATEGORY_META['Other'];
 
-  // ── 14. Return full response
   return res.json({
     title:                title ?? taskStr,
     steps,
@@ -772,4 +631,399 @@ export async function breakTaskIntoSteps(req, res) {
     iconBg,
     ...(when ? { when } : {}),
   });
+}
+
+// ─── rescheduleTask ───────────────────────────────────────────────────────────
+// POST /api/ai/reschedule
+// Body: { instruction: string, currentDueDate: string }
+// Returns: { newDueDate: "D Mon YYYY, h.mm am/pm" }
+
+export async function rescheduleTask(req, res) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey)
+    return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
+
+  const { instruction, currentDueDate } = req.body || {};
+
+  if (!instruction || typeof instruction !== 'string' || !instruction.trim())
+    return res.status(400).json({ error: 'Missing or empty instruction' });
+
+  if (!currentDueDate || typeof currentDueDate !== 'string' || !currentDueDate.trim())
+    return res.status(400).json({ error: 'Missing or empty currentDueDate' });
+
+  const dateCtx = buildDateContext();
+
+  const prompt = `You are a date parser. The user wants to reschedule a task.
+
+════════════════════════════════
+DATE REFERENCE — look up dates from here, NEVER compute them yourself:
+${dateCtx}
+════════════════════════════════
+
+Current due date : "${currentDueDate.trim()}"
+User instruction : "${instruction.trim()}"
+
+Return ONLY a raw JSON object — no markdown, no code fences, no explanation:
+{ "newDueDate": "D Mon YYYY, h.mm am/pm" }
+
+Rules:
+- Look up the target date from the DATE REFERENCE above — never calculate it yourself
+- Output format is STRICTLY: "D Mon YYYY, h.mm am/pm"
+  ✓ Good: "23 Mar 2026, 5.00 pm"
+  ✗ Bad:  "next Monday", "2026-03-23", "March 23"
+- If the instruction only changes the day (e.g. "move to next Monday"), keep the original time
+- If the instruction only changes the time (e.g. "push to 3pm"), keep the original date
+- If both are changed, apply both
+- If the instruction is ambiguous, default to 5.00 pm`;
+
+  const requestedModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+  const model = ALLOWED_MODELS.includes(requestedModel)
+    ? requestedModel
+    : 'llama-3.1-8b-instant';
+
+  const payload = {
+    model,
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You are a date parsing assistant. You ONLY return a raw JSON object with a ' +
+          'newDueDate field. No markdown, no explanation, no refusals.',
+      },
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.1,
+    max_tokens:  80,
+  };
+
+  const startTime = Date.now();
+  let data;
+  try {
+    data = await callGroqWithRetry(payload, apiKey);
+  } catch (err) {
+    console.error('[aiController:reschedule] Groq call failed:', err?.message || err);
+    if (err?.isQuota)
+      return res.status(429).json({ error: err.message });
+    return res.status(500).json({
+      error: err.message || 'Failed to reschedule task. Please try again.',
+    });
+  }
+
+  const rawText = data?.choices?.[0]?.message?.content || '';
+  const stripped = rawText.trim().replace(/^```(?:json)?\s*|```\s*$/gm, '').trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(stripped);
+  } catch {
+    console.warn('[aiController:reschedule] JSON parse failed:', stripped.slice(0, 200));
+    return res.status(500).json({ error: 'Failed to parse rescheduled date. Please try again.' });
+  }
+
+  const whenRx = /^\d{1,2} [A-Z][a-z]{2} \d{4}, \d{1,2}\.\d{2} (am|pm)$/;
+  const newDueDate = typeof parsed.newDueDate === 'string' ? parsed.newDueDate.trim() : '';
+
+  if (!whenRx.test(newDueDate)) {
+    console.warn('[aiController:reschedule] Invalid date format returned:', newDueDate);
+    return res.status(500).json({ error: 'AI returned an invalid date format. Please try again.' });
+  }
+
+  console.log(
+    `[aiController:reschedule] ok | latency=${Date.now() - startTime}ms | ` +
+    `"${instruction}" → "${newDueDate}"`
+  );
+
+  return res.json({ newDueDate });
+}
+
+// ─── suggestSplit ─────────────────────────────────────────────────────────────
+// POST /api/ai/suggest-split
+// Body: { task: string, steps: string[], totalDurationMinutes: number }
+// Returns: { splitTasks: [{ title, steps, stepDurations, totalDurationMinutes }] }
+
+export async function suggestSplit(req, res) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey)
+    return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
+
+  const { task, steps, totalDurationMinutes } = req.body || {};
+
+  if (!task || typeof task !== 'string' || !task.trim())
+    return res.status(400).json({ error: 'Missing or empty task' });
+
+  if (!Array.isArray(steps) || steps.length === 0)
+    return res.status(400).json({ error: 'Missing or empty steps array' });
+
+  if (typeof totalDurationMinutes !== 'number' || totalDurationMinutes <= 0)
+    return res.status(400).json({ error: 'Missing or invalid totalDurationMinutes' });
+
+  const stepsText = steps.map((s, i) => `${i + 1}. ${s}`).join('\n');
+
+  const prompt = `You are a task planning assistant. A task is too long to complete in one session and needs to be split into 2-3 smaller tasks, each under 90 minutes.
+
+Original task : "${task.trim()}"
+Total duration: ${totalDurationMinutes} minutes
+Current steps :
+${stepsText}
+
+Split this into 2 or 3 smaller focused tasks. Each smaller task must:
+- Be completable in under 90 minutes
+- Have a clear, specific title (3-5 words, Title Case, starts with an action verb)
+- Have 2-4 steps (each step max 8 words, starts with an action verb)
+- Have realistic step durations in minutes (minimum 2 per step)
+- Have totalDurationMinutes equal to the exact sum of its stepDurations
+- Together, the split tasks should cover all the work of the original
+
+Return ONLY a raw JSON object — no markdown, no code fences:
+{
+  "splitTasks": [
+    {
+      "title": "...",
+      "steps": ["...", "..."],
+      "stepDurations": [20, 30],
+      "totalDurationMinutes": 50
+    },
+    {
+      "title": "...",
+      "steps": ["...", "..."],
+      "stepDurations": [25, 40],
+      "totalDurationMinutes": 65
+    }
+  ]
+}`;
+
+  const requestedModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+  const model = ALLOWED_MODELS.includes(requestedModel)
+    ? requestedModel
+    : 'llama-3.1-8b-instant';
+
+  const payload = {
+    model,
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You are a task splitting assistant. You ONLY return a raw JSON object. ' +
+          'No markdown, no explanation, no refusals.',
+      },
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.3,
+    max_tokens:  800,
+  };
+
+  const startTime = Date.now();
+  let data;
+  try {
+    data = await callGroqWithRetry(payload, apiKey);
+  } catch (err) {
+    console.error('[aiController:suggestSplit] Groq call failed:', err?.message || err);
+    if (err?.isQuota)
+      return res.status(429).json({ error: err.message });
+    return res.status(500).json({
+      error: err.message || 'Failed to split task. Please try again.',
+    });
+  }
+
+  const rawText = data?.choices?.[0]?.message?.content || '';
+  const stripped = rawText.trim().replace(/^```(?:json)?\s*|```\s*$/gm, '').trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(stripped);
+  } catch {
+    console.warn('[aiController:suggestSplit] JSON parse failed:', stripped.slice(0, 200));
+    return res.status(500).json({ error: 'Failed to parse split tasks. Please try again.' });
+  }
+
+  if (!Array.isArray(parsed.splitTasks) || parsed.splitTasks.length === 0) {
+    console.warn('[aiController:suggestSplit] No splitTasks in response');
+    return res.status(500).json({ error: 'AI returned no split tasks. Please try again.' });
+  }
+
+  // Sanitise each split task
+  const splitTasks = parsed.splitTasks
+    .slice(0, 3)
+    .map((t) => {
+      const title = sanitiseTitle(typeof t.title === 'string' ? t.title : '') ?? task.trim();
+
+      let taskSteps = [];
+      if (Array.isArray(t.steps)) {
+        taskSteps = t.steps
+          .map(s => sanitiseStep(s))
+          .filter(s => s && s.length > 2);
+      }
+      if (taskSteps.length === 0) return null;
+
+      let durations = [];
+      if (Array.isArray(t.stepDurations)) {
+        durations = t.stepDurations
+          .map(d => (typeof d === 'number' && d > 0) ? Math.max(2, Math.round(d)) : 5)
+          .slice(0, taskSteps.length);
+      }
+      while (durations.length < taskSteps.length) durations.push(5);
+
+      const computedTotal = durations.reduce((a, b) => a + b, 0);
+      const total = (
+        typeof t.totalDurationMinutes === 'number' && t.totalDurationMinutes > 0
+      )
+        ? Math.round(t.totalDurationMinutes)
+        : computedTotal;
+
+      return {
+        title,
+        steps: taskSteps,
+        stepDurations: durations,
+        totalDurationMinutes: total,
+      };
+    })
+    .filter(Boolean);
+
+  if (splitTasks.length === 0) {
+    return res.status(500).json({ error: 'AI returned unusable split tasks. Please try again.' });
+  }
+
+  console.log(
+    `[aiController:suggestSplit] ok | latency=${Date.now() - startTime}ms | ` +
+    `"${task.slice(0, 60)}" → ${splitTasks.length} tasks`
+  );
+
+  return res.json({ splitTasks });
+}
+
+// ─── getDailyPlan ─────────────────────────────────────────────────────────────
+// POST /api/ai/daily-plan
+// Body: { tasks: Array<{ id, title, category, dueDate, status, sessionTime }>, availableMinutes: number }
+// Returns: { orderedTaskIds: string[], reasoning: Record<string, string> }
+
+export async function getDailyPlan(req, res) {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey)
+    return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
+
+  const { tasks, availableMinutes } = req.body || {};
+
+  if (!Array.isArray(tasks) || tasks.length === 0)
+    return res.status(400).json({ error: 'Missing or empty tasks array' });
+
+  if (typeof availableMinutes !== 'number' || availableMinutes <= 0)
+    return res.status(400).json({ error: 'Missing or invalid availableMinutes' });
+
+  const dateCtx = buildDateContext();
+
+  // Build a compact task list for the prompt
+  const taskList = tasks
+    .slice(0, 20) // cap at 20 to keep tokens reasonable
+    .map((t, i) => {
+      const due     = t.dueDate ? `due: ${t.dueDate}` : 'no due date';
+      const session = t.sessionTime ? `${t.sessionTime}min logged` : 'not started';
+      return `${i + 1}. [${t.id}] "${t.title}" | category: ${t.category} | ${due} | status: ${t.status} | ${session}`;
+    })
+    .join('\n');
+
+  const prompt = `You are a daily productivity planner. Given a list of pending tasks and the user's available time today, suggest the best order to tackle them.
+
+════════════════════════════════
+DATE REFERENCE:
+${dateCtx}
+════════════════════════════════
+
+Available time today : ${availableMinutes} minutes
+Pending tasks:
+${taskList}
+
+Prioritisation rules:
+- Tasks due today or overdue come first
+- Tasks with earlier due dates rank higher than tasks with no due date
+- Shorter tasks (quick wins) can be scheduled early to build momentum
+- Already-started tasks (status: in-progress) rank above todo tasks of equal urgency
+- Tasks with time already logged (sessionTime) suggest ongoing work — keep them high
+- Do NOT include done tasks
+
+Return ONLY a raw JSON object — no markdown, no code fences:
+{
+  "orderedTaskIds": ["id1", "id2", "id3"],
+  "reasoning": {
+    "id1": "One sentence explaining why this is first",
+    "id2": "One sentence explaining why this is second",
+    "id3": "One sentence explaining why this is third"
+  }
+}
+
+Only include task IDs from the list above. reasoning must have one entry per id in orderedTaskIds.`;
+
+  const requestedModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+  const model = ALLOWED_MODELS.includes(requestedModel)
+    ? requestedModel
+    : 'llama-3.1-8b-instant';
+
+  const payload = {
+    model,
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You are a daily planner assistant. You ONLY return a raw JSON object with ' +
+          'orderedTaskIds and reasoning fields. No markdown, no explanation, no refusals.',
+      },
+      { role: 'user', content: prompt },
+    ],
+    temperature: 0.2,
+    max_tokens:  600,
+  };
+
+  const startTime = Date.now();
+  let data;
+  try {
+    data = await callGroqWithRetry(payload, apiKey);
+  } catch (err) {
+    console.error('[aiController:getDailyPlan] Groq call failed:', err?.message || err);
+    if (err?.isQuota)
+      return res.status(429).json({ error: err.message });
+    return res.status(500).json({
+      error: err.message || 'Failed to generate daily plan. Please try again.',
+    });
+  }
+
+  const rawText = data?.choices?.[0]?.message?.content || '';
+  const stripped = rawText.trim().replace(/^```(?:json)?\s*|```\s*$/gm, '').trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(stripped);
+  } catch {
+    console.warn('[aiController:getDailyPlan] JSON parse failed:', stripped.slice(0, 200));
+    return res.status(500).json({ error: 'Failed to parse daily plan. Please try again.' });
+  }
+
+  if (!Array.isArray(parsed.orderedTaskIds) || parsed.orderedTaskIds.length === 0) {
+    console.warn('[aiController:getDailyPlan] No orderedTaskIds in response');
+    return res.status(500).json({ error: 'AI returned no task order. Please try again.' });
+  }
+
+  // Validate all returned IDs exist in the input task list
+  const validIds = new Set(tasks.map(t => t.id));
+  const orderedTaskIds = parsed.orderedTaskIds.filter(id => validIds.has(id));
+
+  if (orderedTaskIds.length === 0) {
+    return res.status(500).json({ error: 'AI returned unrecognised task IDs. Please try again.' });
+  }
+
+  // Sanitise reasoning — ensure it's a plain string-to-string map
+  const reasoning = {};
+  if (parsed.reasoning && typeof parsed.reasoning === 'object') {
+    for (const id of orderedTaskIds) {
+      const r = parsed.reasoning[id];
+      if (typeof r === 'string' && r.trim()) {
+        reasoning[id] = r.trim();
+      }
+    }
+  }
+
+  console.log(
+    `[aiController:getDailyPlan] ok | latency=${Date.now() - startTime}ms | ` +
+    `${orderedTaskIds.length} tasks ordered`
+  );
+
+  return res.json({ orderedTaskIds, reasoning });
 }

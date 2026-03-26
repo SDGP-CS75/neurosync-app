@@ -200,6 +200,19 @@ export default function SettingsScreen() {
         <Text style={[styles.sectionSubtitle, { color: activeColor, marginTop: 10 * scale }]}>PREFERENCES</Text>
         <View style={styles.card}>
           
+          <TouchableOpacity 
+            style={styles.settingRow}
+            onPress={() => router.push('/(tabs)/session-history')}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconWrapper, { backgroundColor: activeColor + '15' }]}>
+                <Ionicons name="time" size={16 * scale} color={activeColor} />
+              </View>
+              <Text style={styles.settingText}>Session History</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18 * scale} color="#9CA3AF" />
+          </TouchableOpacity>
+
           <View style={styles.settingRow}>
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: activeColor + '15' }]}>

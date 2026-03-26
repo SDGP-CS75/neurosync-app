@@ -9,21 +9,16 @@ export default function TabsLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    console.log('[TabsLayout] Checking authentication status...');
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      const isAuth = !!user;
-      console.log('[TabsLayout] Auth state changed:', isAuth ? 'User authenticated' : 'User not authenticated');
-      setIsAuthenticated(isAuth);
+      setIsAuthenticated(!!user);
       setIsCheckingAuth(false);
     });
-
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (!isCheckingAuth && !isAuthenticated) {
-      console.log('[TabsLayout] User not authenticated, redirecting to auth...');
       router.replace('/(auth)/welcome');
     }
   }, [isCheckingAuth, isAuthenticated]);
@@ -36,26 +31,31 @@ export default function TabsLayout() {
     );
   }
 
-  if (!isAuthenticated) {
-    return null;
-  }
+  if (!isAuthenticated) return null;
 
   return (
-    <Stack 
-      screenOptions={{ 
-        headerShown: false, 
+    <Stack
+      screenOptions={{
+        headerShown: false,
         contentStyle: { backgroundColor: 'transparent' },
-        animation: 'fade'
+        animation: 'fade',
       }}
     >
-      {/* 1. This sets your Dashboard as the main starting screen */}
-      <Stack.Screen name="index" /> 
-      
-
-
-      {/* 3. Keeping your original home screen just in case you need it later */}
+      {/* ── Existing screens ── */}
+      <Stack.Screen name="index" />
       <Stack.Screen name="home" />
       <Stack.Screen name="mood-tracking" />
+      <Stack.Screen name="todo-list" />
+
+      {/* ── New full screens (navigate to with router.push) ── */}
+      <Stack.Screen
+        name="session-history"
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name="calendar"
+        options={{ animation: 'slide_from_right' }}
+      />
     </Stack>
   );
 }

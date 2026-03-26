@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { onAuthStateChanged, getAuth } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { onAuthStateChanged, getAuth, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 
 interface UserProfile {
@@ -9,6 +9,7 @@ interface UserProfile {
   age: string;
   about: string;
   profileImage: string;
+  themeName?: string;
 }
 
 interface UserContextType {
@@ -17,6 +18,8 @@ interface UserContextType {
   setProfileImage: (uri: string) => void;
   resetProfile: () => void;
   isLoading: boolean;
+  saveThemePreference: (themeName: string) => Promise<void>;
+  themePreference: UserThemePreference;
 }
 
 // Default empty profile - should be replaced with actual user data after authentication
@@ -26,32 +29,49 @@ const defaultProfile: UserProfile = {
   age: '',
   about: '',
   profileImage: '',
+  themeName: undefined,
 };
+
+// Type for theme preference that can be passed to ThemeContext
+export type UserThemePreference = string | null;
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [isLoading, setIsLoading] = useState(true);
+  const [themePreference, setThemePreference] = useState<UserThemePreference>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Load user profile from Firestore when auth state changes
+  // Also track userId for saving theme preferences
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // Update userId state
+      setUserId(user?.uid ?? null);
       if (user) {
         try {
+          // Check if the token is valid by forcing a refresh
+          // This helps catch auth errors early before they cause issues
+          await user.getIdTokenResult(true);
+          
           // Fetch user profile from Firestore
           const userDocRef = doc(db, 'users', user.uid);
           const userDocSnap = await getDoc(userDocRef);
           
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
+            const themeName = userData.themeName || undefined;
             setProfile({
               name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
               email: userData.email || user.email || '',
               profileImage: userData.photoURL || '',
               about: userData.about || '',
               age: userData.age || '',
+              themeName: themeName,
             });
+            // Set theme preference for ThemeContext
+            setThemePreference(themeName || null);
           } else {
             // If no profile exists in Firestore, at least use auth data
             setProfile({
@@ -60,22 +80,36 @@ export function UserProvider({ children }: { children: ReactNode }) {
               profileImage: user.photoURL || '',
               about: '',
               age: '',
+              themeName: undefined,
+            });
+            setThemePreference(null);
+          }
+        } catch (error: any) {
+          console.error('Error loading user profile or auth token:', error);
+          
+          // If token refresh fails (400 error from securetoken.googleapis.com),
+          // sign out the user to clear the invalid refresh token
+          if (error?.code === 'auth/invalid-refresh-token' || 
+              error?.message?.includes('INVALID_REFRESH_TOKEN') ||
+              error?.message?.includes('securetoken')) {
+            console.log('Invalid refresh token detected, signing out...');
+            await signOut(auth);
+            setProfile(defaultProfile);
+          } else {
+            // Fallback to auth data for other errors
+            setProfile({
+              name: user.displayName || '',
+              email: user.email || '',
+              profileImage: user.photoURL || '',
+              about: '',
+              age: '',
             });
           }
-        } catch (error) {
-          console.error('Error loading user profile:', error);
-          // Fallback to auth data
-          setProfile({
-            name: user.displayName || '',
-            email: user.email || '',
-            profileImage: user.photoURL || '',
-            about: '',
-            age: '',
-          });
         }
       } else {
         // User is logged out
         setProfile(defaultProfile);
+        setThemePreference(null);
       }
       setIsLoading(false);
     });
@@ -93,10 +127,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const resetProfile = () => {
     setProfile(defaultProfile);
+    setThemePreference(null);
   };
 
+  // Save theme preference to Firestore
+  const saveThemePreference = useCallback(async (themeName: string) => {
+    if (!userId) return;
+    
+    try {
+      const userDocRef = doc(db, 'users', userId);
+      await setDoc(userDocRef, { themeName }, { merge: true });
+      setThemePreference(themeName);
+      setProfile(prev => ({ ...prev, themeName }));
+    } catch (error) {
+      console.error('Error saving theme preference:', error);
+    }
+  }, [userId]);
+
   return (
-    <UserContext.Provider value={{ profile, updateProfile, setProfileImage, resetProfile, isLoading }}>
+    <UserContext.Provider value={{ profile, updateProfile, setProfileImage, resetProfile, isLoading, saveThemePreference, themePreference }}>
       {children}
     </UserContext.Provider>
   );

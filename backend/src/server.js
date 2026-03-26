@@ -16,7 +16,6 @@ const serviceAccount = JSON.parse(
   fs.readFileSync(new URL('./config/sdgp-cs75-firebase-adminsdk-fbsvc-5684359436.json', import.meta.url))
 );
 
-
 dotenv.config();
 
 admin.initializeApp({
