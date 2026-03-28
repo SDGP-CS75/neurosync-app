@@ -45,7 +45,7 @@ export default function UndoSnackbar() {
       // Slide out
       Animated.timing(slideAnim, {
         toValue: 500,
-        duration: 250,
+        duration: 170,
         useNativeDriver: true,
       }).start();
     }

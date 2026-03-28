@@ -174,13 +174,13 @@ export default function HomeScreen() {
       Animated.parallel([
         Animated.timing(headerFade, {
           toValue: 1,
-          duration: 300,
+          duration: 170,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(headerSlide, {
           toValue: 0,
-          duration: 300,
+          duration: 170,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -188,15 +188,15 @@ export default function HomeScreen() {
       Animated.parallel([
         Animated.timing(cardsFade, {
           toValue: 1,
-          duration: 300,
-          delay: 50,
+          duration: 170,
+          delay: 20,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(cardsSlide, {
           toValue: 0,
-          duration: 300,
-          delay: 50,
+          duration: 170,
+          delay: 20,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -204,15 +204,15 @@ export default function HomeScreen() {
       Animated.parallel([
         Animated.timing(sectionsFade, {
           toValue: 1,
-          duration: 300,
-          delay: 50,
+          duration: 170,
+          delay: 20,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(sectionsSlide, {
           toValue: 0,
-          duration: 300,
-          delay: 50,
+          duration: 170,
+          delay: 20,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),

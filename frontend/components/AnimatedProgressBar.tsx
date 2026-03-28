@@ -35,7 +35,7 @@ export default function AnimatedProgressBar({
   progressColor,
   showPercentage = false,
   animated = true,
-  duration = 500,
+  duration = 170,
   style,
   borderRadius,
 }: AnimatedProgressBarProps) {

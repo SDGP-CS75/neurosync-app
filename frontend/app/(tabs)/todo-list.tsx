@@ -4,7 +4,7 @@
  * Daily tasks screen with date picker, filters, and task cards.
  */
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   useWindowDimensions,
   Platform,
   Alert,
+  Animated,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -21,6 +22,9 @@ import { useRouter } from "expo-router";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks, type Task, type TaskStatus, } from "../../context/TasksContext";
 import Nav from "../../components/Nav";
+import AnimatedTaskCard from "../../components/AnimatedTaskCard";
+
+import { Easings } from "../../utils/animations";
 
 interface DateItem {
   dateKey: string;
@@ -79,6 +83,90 @@ export default function TodoListScreen() {
 
   const [selectedDate, setSelectedDate] = useState<string>(todayDateKey());
   const [filter, setFilter] = useState<"all" | TaskStatus>("all");
+  
+  // Animation values for entrance
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const dateRowFade = useRef(new Animated.Value(0)).current;
+  const dateRowSlide = useRef(new Animated.Value(20)).current;
+  const filterFade = useRef(new Animated.Value(0)).current;
+  const filterSlide = useRef(new Animated.Value(20)).current;
+  const taskListFade = useRef(new Animated.Value(0)).current;
+  const taskListSlide = useRef(new Animated.Value(30)).current;
+  
+  // Animation values for date cards
+  const dateCardScales = useRef<Animated.Value[]>([]).current;
+  
+  // Animation values for filter pills
+  const filterPillScales = useRef<Animated.Value[]>([]).current;
+  
+  // Entrance animations
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerFade, {
+          toValue: 1,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerSlide, {
+          toValue: 0,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(dateRowFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(dateRowSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(filterFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(filterSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(taskListFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(taskListSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   const isSmallScreen = width < 375;
   const cardPadding   = isSmallScreen ? 14 : 18;
@@ -113,9 +201,65 @@ export default function TodoListScreen() {
     }
   };
 
+  // Date card press handlers
+  const handleDateCardPressIn = (index: number) => {
+    if (!dateCardScales[index]) {
+      dateCardScales[index] = new Animated.Value(1);
+    }
+    Animated.spring(dateCardScales[index], {
+      toValue: 0.95,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handleDateCardPressOut = (index: number) => {
+    if (dateCardScales[index]) {
+      Animated.spring(dateCardScales[index], {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 50,
+        bounciness: 4,
+      }).start();
+    }
+  };
+
+  // Filter pill press handlers
+  const handleFilterPillPressIn = (index: number) => {
+    if (!filterPillScales[index]) {
+      filterPillScales[index] = new Animated.Value(1);
+    }
+    Animated.spring(filterPillScales[index], {
+      toValue: 0.95,
+      useNativeDriver: true,
+      speed: 50,
+      bounciness: 4,
+    }).start();
+  };
+
+  const handleFilterPillPressOut = (index: number) => {
+    if (filterPillScales[index]) {
+      Animated.spring(filterPillScales[index], {
+        toValue: 1,
+        useNativeDriver: true,
+        speed: 50,
+        bounciness: 4,
+      }).start();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+      <Animated.View 
+        style={[
+          styles.header,
+          {
+            opacity: headerFade,
+            transform: [{ translateY: headerSlide }],
+          },
+        ]}
+      >
         <TouchableOpacity activeOpacity={0.7}>
           <Ionicons name="chevron-back" size={28} color={theme.colors.text} />
         </TouchableOpacity>
@@ -135,7 +279,7 @@ export default function TodoListScreen() {
             <Ionicons name="notifications-outline" size={26} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
 
       <ScrollView
         style={styles.scroll}
@@ -144,53 +288,76 @@ export default function TodoListScreen() {
           paddingBottom: bottomPadding,
         }}
       >
-        <View style={styles.dateRow}>
-          {dateItems.map((date) => {
+        <Animated.View 
+          style={[
+            styles.dateRow,
+            {
+              opacity: dateRowFade,
+              transform: [{ translateY: dateRowSlide }],
+            },
+          ]}
+        >
+          {dateItems.map((date, index) => {
             const isSelected = date.dateKey === selectedDate;
+            const scaleAnim = dateCardScales[index] || new Animated.Value(1);
             return (
-              <TouchableOpacity
+              <Animated.View
                 key={date.dateKey}
-                onPress={() => setSelectedDate(date.dateKey)}
-                activeOpacity={0.8}
-                style={[
-                  styles.dateCard,
-                  {
-                    backgroundColor: isSelected
-                      ? theme.colors.primary
-                      : theme.colors.surface,
-                  },
-                ]}
+                style={{ flex: 1, transform: [{ scale: scaleAnim }] }}
               >
-                <Text
+                <TouchableOpacity
+                  onPress={() => setSelectedDate(date.dateKey)}
+                  onPressIn={() => handleDateCardPressIn(index)}
+                  onPressOut={() => handleDateCardPressOut(index)}
+                  activeOpacity={1}
                   style={[
-                    styles.dateMonth,
-                    { color: isSelected ? "#FFF" : theme.colors.textMuted },
+                    styles.dateCard,
+                    {
+                      backgroundColor: isSelected
+                        ? theme.colors.primary
+                        : theme.colors.surface,
+                    },
                   ]}
                 >
-                  {date.month}
-                </Text>
-                <Text
-                  style={[
-                    styles.dateDay,
-                    { color: isSelected ? "#FFF" : theme.colors.text },
-                  ]}
-                >
-                  {date.day}
-                </Text>
-                <Text
-                  style={[
-                    styles.dateWeekday,
-                    { color: isSelected ? "#FFF" : theme.colors.textMuted },
-                  ]}
-                >
-                  {date.weekday}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.dateMonth,
+                      { color: isSelected ? "#FFF" : theme.colors.textMuted },
+                    ]}
+                  >
+                    {date.month}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dateDay,
+                      { color: isSelected ? "#FFF" : theme.colors.text },
+                    ]}
+                  >
+                    {date.day}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.dateWeekday,
+                      { color: isSelected ? "#FFF" : theme.colors.textMuted },
+                    ]}
+                  >
+                    {date.weekday}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
             );
           })}
-        </View>
+        </Animated.View>
 
-        <View style={styles.filterRowWrap}>
+        <Animated.View 
+          style={[
+            styles.filterRowWrap,
+            {
+              opacity: filterFade,
+              transform: [{ translateY: filterSlide }],
+            },
+          ]}
+        >
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -202,35 +369,42 @@ export default function TodoListScreen() {
             { key: "todo", label: "To do" },
             { key: "in-progress", label: "In Progress" },
             { key: "done", label: "Completed" },
-          ].map((item) => {
+          ].map((item, index) => {
             const isActive = filter === item.key;
+            const scaleAnim = filterPillScales[index] || new Animated.Value(1);
             return (
-              <TouchableOpacity
+              <Animated.View
                 key={item.key}
-                onPress={() => setFilter(item.key as any)}
-                activeOpacity={0.8}
-                style={[
-                  styles.filterPill,
-                  {
-                    backgroundColor: isActive
-                      ? theme.colors.primary
-                      : theme.colors.surface,
-                  },
-                ]}
+                style={{ transform: [{ scale: scaleAnim }] }}
               >
-                <Text
+                <TouchableOpacity
+                  onPress={() => setFilter(item.key as any)}
+                  onPressIn={() => handleFilterPillPressIn(index)}
+                  onPressOut={() => handleFilterPillPressOut(index)}
+                  activeOpacity={1}
                   style={[
-                    styles.filterText,
-                    { color: isActive ? "#FFF" : theme.colors.primary },
+                    styles.filterPill,
+                    {
+                      backgroundColor: isActive
+                        ? theme.colors.primary
+                        : theme.colors.surface,
+                    },
                   ]}
                 >
-                  {item.label}
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.filterText,
+                      { color: isActive ? "#FFF" : theme.colors.primary },
+                    ]}
+                  >
+                    {item.label}
+                  </Text>
+                </TouchableOpacity>
+              </Animated.View>
             );
           })}
           </ScrollView>
-        </View>
+        </Animated.View>
 
         <View style={styles.taskList}>
           {!isLoading && filteredTasks.length === 0 ? (
@@ -240,7 +414,7 @@ export default function TodoListScreen() {
               </Text>
             </View>
           ) : null}
-          {filteredTasks.map((task) => {
+          {filteredTasks.map((task, index) => {
             const statusConfig = getStatusConfig(task.status);
 
             const handleDelete = () => {
@@ -259,15 +433,18 @@ export default function TodoListScreen() {
             };
 
             return (
-              <View
+              <AnimatedTaskCard
                 key={task.id}
-                style={[
+                index={index}
+                delay={300}
+                onPress={() => toggleTaskStatus(task.id)}
+                style={StyleSheet.flatten([
                   styles.taskCard,
                   {
                     backgroundColor: theme.colors.surface,
                     padding: cardPadding,
                   },
-                ]}
+                ])}
               >
                 <View style={styles.taskHeader}>
                   <Text style={[styles.taskCategory, { color: theme.colors.textMuted }]}>
@@ -354,7 +531,7 @@ export default function TodoListScreen() {
                     </View>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </AnimatedTaskCard>
             );
           })}
         </View>

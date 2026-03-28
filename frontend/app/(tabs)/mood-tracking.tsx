@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Dimensions, Modal, Pressable, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Dimensions, Modal, Pressable, StyleSheet, Animated } from "react-native";
 import { useState, useRef, useEffect } from "react";
 import { BlurView } from 'expo-blur';
 import Slider from "@react-native-community/slider";
@@ -6,11 +6,16 @@ import { useTheme } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Nav from "../../components/Nav";
+import { useFadeIn, useSlideUp } from "../../utils/animations";
 
 export default function MoodTracking() {
 
   const { colors } = useTheme() as any;
   const insets = useSafeAreaInsets();
+  
+  // Animation hooks
+  const fadeAnim = useFadeIn(300, 100);
+  const { slideAnim } = useSlideUp(400, 200);
 
   // compute bottom padding to avoid overlap with bottom navigation
   // keep minimal extra space so nav remains fixed at the bottom like on home
@@ -87,7 +92,7 @@ export default function MoodTracking() {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <View style={{ flex: 1 }}>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
@@ -337,7 +342,7 @@ export default function MoodTracking() {
 
         </ScrollView>
 
-      </View>
+      </Animated.View>
 
       {/* place Nav as a direct child of SafeAreaView so it stays fixed to the bottom */}
       <Nav />

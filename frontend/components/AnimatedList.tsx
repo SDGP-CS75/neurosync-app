@@ -28,7 +28,7 @@ export default function AnimatedList<T>({
   data,
   renderItem,
   staggerDelay = 40,
-  animationDuration = 250,
+  animationDuration = 170,
   containerStyle,
   itemStyle,
   ...flatListProps

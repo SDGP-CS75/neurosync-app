@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, Image, TouchableOpacity, useWindowDimensions, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, ScrollView, Image, TouchableOpacity, useWindowDimensions, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import CircularProgress from 'react-native-circular-progress-indicator';
@@ -19,6 +19,16 @@ export default function DashboardScreen() {
   const { profile } = useUser();
   const { width } = useWindowDimensions();
   
+  // Animation values
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const heroFade = useRef(new Animated.Value(0)).current;
+  const heroSlide = useRef(new Animated.Value(30)).current;
+  const inProgressFade = useRef(new Animated.Value(0)).current;
+  const inProgressSlide = useRef(new Animated.Value(30)).current;
+  const taskGroupsFade = useRef(new Animated.Value(0)).current;
+  const taskGroupsSlide = useRef(new Animated.Value(30)).current;
+  
   // Responsive scaling
   const scale = Math.min(width / BASE_WIDTH, 1.3);
   const horizontalPadding = Math.round(20 * scale);
@@ -27,6 +37,66 @@ export default function DashboardScreen() {
   const cardPadding = Math.round(24 * scale);
   const titleFontSize = Math.round(20 * scale);
   const subtitleFontSize = Math.round(14 * scale);
+
+  // Entrance animations
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerFade, {
+          toValue: 1,
+          duration: 170,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerSlide, {
+          toValue: 0,
+          duration: 170,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(heroFade, {
+          toValue: 1,
+          duration: 170,
+          delay: 20,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroSlide, {
+          toValue: 0,
+          duration: 170,
+          delay: 20,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(inProgressFade, {
+          toValue: 1,
+          duration: 170,
+          delay: 20,
+          useNativeDriver: true,
+        }),
+        Animated.timing(inProgressSlide, {
+          toValue: 0,
+          duration: 170,
+          delay: 20,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(taskGroupsFade, {
+          toValue: 1,
+          duration: 170,
+          delay: 20,
+          useNativeDriver: true,
+        }),
+        Animated.timing(taskGroupsSlide, {
+          toValue: 0,
+          duration: 170,
+          delay: 20,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   // Styles
   const styles = StyleSheet.create({
@@ -55,7 +125,7 @@ export default function DashboardScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, { paddingHorizontal: horizontalPadding }]} showsVerticalScrollIndicator={false}>
         
         {/* Header - Clickable routing to Profile */}
-        <View style={styles.header}>
+        <Animated.View style={[styles.header, { opacity: headerFade, transform: [{ translateY: headerSlide }] }]}>
           <TouchableOpacity 
             style={styles.headerLeft}
             onPress={() => router.push('/settings')}
@@ -75,10 +145,10 @@ export default function DashboardScreen() {
           <TouchableOpacity style={styles.notificationBtn}>
             <Ionicons name="notifications-outline" size={24 * scale} color="black" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         {/* Hero Card */}
-        <View style={[styles.heroCard, { padding: cardPadding }]}>
+        <Animated.View style={[styles.heroCard, { padding: cardPadding, opacity: heroFade, transform: [{ translateY: heroSlide }] }]}>
           <View style={styles.heroContent}>
             <Text style={[styles.heroTitle, { fontSize: titleFontSize }]}>
               Your today's task{'\n'}almost done!
@@ -104,32 +174,34 @@ export default function DashboardScreen() {
               titleStyle={{ fontWeight: 'bold', fontSize: 14 * scale }}
             />
           </View>
-        </View>
+        </Animated.View>
 
         {/* In Progress Section */}
-        <SectionTitle title="In Progress" count={6} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inProgressScroll}>
-          <InProgressCard
-            title="Office Project"
-            subtitle="Grocery shopping app design"
-            icon={<Ionicons name="briefcase-outline" size={24 * scale} color="#8B5CF6" />}
-            bgColor="bg-purple-100"
-            progress={0.7}
-            progressColor="#8B5CF6"
-          />
-          <InProgressCard
-            title="Personal Project"
-            subtitle="Uber Eats redesign challenge"
-            icon={<Ionicons name="person-outline" size={24 * scale} color="#F97316" />}
-            bgColor="bg-orange-100"
-            progress={0.5}
-            progressColor="#F97316"
-          />
-        </ScrollView>
+        <Animated.View style={{ opacity: inProgressFade, transform: [{ translateY: inProgressSlide }] }}>
+          <SectionTitle title="In Progress" count={6} />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.inProgressScroll}>
+            <InProgressCard
+              title="Office Project"
+              subtitle="Grocery shopping app design"
+              icon={<Ionicons name="briefcase-outline" size={24 * scale} color="#8B5CF6" />}
+              bgColor="bg-purple-100"
+              progress={0.7}
+              progressColor="#8B5CF6"
+            />
+            <InProgressCard
+              title="Personal Project"
+              subtitle="Uber Eats redesign challenge"
+              icon={<Ionicons name="person-outline" size={24 * scale} color="#F97316" />}
+              bgColor="bg-orange-100"
+              progress={0.5}
+              progressColor="#F97316"
+            />
+          </ScrollView>
+        </Animated.View>
 
         {/* Task Groups Section */}
-        <SectionTitle title="Task Groups" count={4} />
-        <View style={styles.taskGroupsContainer}>
+        <Animated.View style={[styles.taskGroupsContainer, { opacity: taskGroupsFade, transform: [{ translateY: taskGroupsSlide }] }]}>
+          <SectionTitle title="Task Groups" count={4} />
           <TaskGroupCard
             title="Office Project"
             tasks={23}
@@ -151,7 +223,7 @@ export default function DashboardScreen() {
             icon={<Ionicons name="book-outline" size={24 * scale} color="#F59E0B" />}
             iconBgColor="bg-orange-100"
           />
-        </View>
+        </Animated.View>
       </ScrollView>
 
       {/* Bottom Navigation Bar */}

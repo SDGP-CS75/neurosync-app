@@ -55,13 +55,13 @@ export default function AnimatedCard({
         Animated.parallel([
           Animated.timing(opacityAnim, {
             toValue: 1,
-            duration: 250,
+            duration: 170,
             easing: Easings.easeOut,
             useNativeDriver: true,
           }),
           Animated.timing(translateYAnim, {
             toValue: 0,
-            duration: 250,
+            duration: 170,
             easing: Easings.easeOut,
             useNativeDriver: true,
           }),

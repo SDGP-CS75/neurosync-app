@@ -55,6 +55,7 @@ export const Easings = {
 
 /**
  * Pre-configured animation settings for common use cases
+ * All animations use consistent timing for uniform feel across pages
  */
 export const AnimationPresets = {
   // Button press animation
@@ -66,35 +67,35 @@ export const AnimationPresets = {
   
   // Card entrance animation
   cardEntrance: {
-    duration: 250,
+    duration: 170,
     easing: Easings.easeOut,
     useNativeDriver: true,
   },
   
   // Page transition
   pageTransition: {
-    duration: 300,
+    duration: 170,
     easing: Easings.decelerate,
     useNativeDriver: true,
   },
   
   // Modal animation
   modal: {
-    duration: 250,
+    duration: 170,
     easing: Easings.easeOut,
     useNativeDriver: true,
   },
   
   // List item stagger
   listItem: {
-    duration: 200,
+    duration: 170,
     easing: Easings.easeOut,
     useNativeDriver: true,
   },
   
   // Progress animation
   progress: {
-    duration: 500,
+    duration: 170,
     easing: Easings.easeInOut,
     useNativeDriver: false, // width changes can't use native driver
   },
@@ -148,17 +149,28 @@ export function usePressAnimation(scaleValue: number = 0.95) {
 /**
  * Hook for fade-in animations
  */
-export function useFadeIn(duration: number = 250, delay: number = 0) {
+export function useFadeIn(duration: number = 170, delay: number = 0) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const reduceMotionRef = useRef(false);
+  
+  useEffect(() => {
+    shouldReduceMotion().then(enabled => {
+      reduceMotionRef.current = enabled;
+    });
+  }, []);
   
   useEffect(() => {
     const timeout = setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration,
-        easing: Easings.easeOut,
-        useNativeDriver: true,
-      }).start();
+      if (reduceMotionRef.current) {
+        fadeAnim.setValue(1);
+      } else {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }).start();
+      }
     }, delay);
     
     return () => clearTimeout(timeout);
@@ -170,26 +182,38 @@ export function useFadeIn(duration: number = 250, delay: number = 0) {
 /**
  * Hook for slide-up animations
  */
-export function useSlideUp(duration: number = 250, delay: number = 0, distance: number = 20) {
+export function useSlideUp(duration: number = 170, delay: number = 0, distance: number = 20) {
   const slideAnim = useRef(new Animated.Value(distance)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const reduceMotionRef = useRef(false);
+  
+  useEffect(() => {
+    shouldReduceMotion().then(enabled => {
+      reduceMotionRef.current = enabled;
+    });
+  }, []);
   
   useEffect(() => {
     const timeout = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(slideAnim, {
-          toValue: 0,
-          duration,
-          easing: Easings.easeOut,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration,
-          easing: Easings.easeOut,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (reduceMotionRef.current) {
+        slideAnim.setValue(0);
+        fadeAnim.setValue(1);
+      } else {
+        Animated.parallel([
+          Animated.timing(slideAnim, {
+            toValue: 0,
+            duration,
+            easing: Easings.easeOut,
+            useNativeDriver: true,
+          }),
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration,
+            easing: Easings.easeOut,
+            useNativeDriver: true,
+          }),
+        ]).start();
+      }
     }, delay);
     
     return () => clearTimeout(timeout);
@@ -208,28 +232,42 @@ export function useStaggerAnimation(itemCount: number, staggerDelay: number = 40
       translateY: new Animated.Value(20),
     }))
   ).current;
+  const reduceMotionRef = useRef(false);
   
   useEffect(() => {
-    const staggeredAnimations = animations.map((anim, index) =>
-      Animated.parallel([
-        Animated.timing(anim.opacity, {
-          toValue: 1,
-          duration: 300,
-          delay: index * staggerDelay,
-          easing: Easings.easeOut,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim.translateY, {
-          toValue: 0,
-          duration: 300,
-          delay: index * staggerDelay,
-          easing: Easings.easeOut,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-    
-    Animated.stagger(staggerDelay, staggeredAnimations).start();
+    shouldReduceMotion().then(enabled => {
+      reduceMotionRef.current = enabled;
+    });
+  }, []);
+  
+  useEffect(() => {
+    if (reduceMotionRef.current) {
+      animations.forEach(anim => {
+        anim.opacity.setValue(1);
+        anim.translateY.setValue(0);
+      });
+    } else {
+      const staggeredAnimations = animations.map((anim, index) =>
+        Animated.parallel([
+          Animated.timing(anim.opacity, {
+            toValue: 1,
+            duration: 170,
+            delay: index * staggerDelay,
+            easing: Easings.easeOut,
+            useNativeDriver: true,
+          }),
+          Animated.timing(anim.translateY, {
+            toValue: 0,
+            duration: 170,
+            delay: index * staggerDelay,
+            easing: Easings.easeOut,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      
+      Animated.stagger(staggerDelay, staggeredAnimations).start();
+    }
   }, [animations, staggerDelay]);
   
   return animations;
@@ -300,16 +338,27 @@ export function useShakeAnimation() {
 /**
  * Hook for progress animation with spring physics
  */
-export function useProgressAnimation(targetValue: number, duration: number = 500) {
+export function useProgressAnimation(targetValue: number, duration: number = 170) {
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const reduceMotionRef = useRef(false);
   
   useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: targetValue,
-      duration,
-      easing: Easings.easeInOut,
-      useNativeDriver: false,
-    }).start();
+    shouldReduceMotion().then(enabled => {
+      reduceMotionRef.current = enabled;
+    });
+  }, []);
+  
+  useEffect(() => {
+    if (reduceMotionRef.current) {
+      progressAnim.setValue(targetValue);
+    } else {
+      Animated.timing(progressAnim, {
+        toValue: targetValue,
+        duration,
+        easing: Easings.easeInOut,
+        useNativeDriver: false,
+      }).start();
+    }
   }, [progressAnim, targetValue, duration]);
   
   return progressAnim;
@@ -375,7 +424,7 @@ export function createSpringConfig(
  * Create a timing animation config
  */
 export function createTimingConfig(
-  duration: number = 300,
+  duration: number = 200,
   easing: (value: number) => number = Easings.easeOut,
   useNativeDriver: boolean = true
 ) {
@@ -449,14 +498,14 @@ export function createCardEntranceAnimation(
   return Animated.parallel([
     Animated.timing(opacityAnim, {
       toValue: 1,
-      duration: 300,
+      duration: 170,
       delay,
       easing: Easings.easeOut,
       useNativeDriver: true,
     }),
     Animated.timing(translateYAnim, {
       toValue: 0,
-      duration: 300,
+      duration: 170,
       delay,
       easing: Easings.easeOut,
       useNativeDriver: true,
@@ -473,7 +522,7 @@ export function createModalSlideAnimation(
 ) {
   return Animated.timing(translateYAnim, {
     toValue: show ? 0 : 1000,
-    duration: 300,
+    duration: 170,
     easing: show ? Easings.easeOut : Easings.easeIn,
     useNativeDriver: true,
   });
@@ -485,7 +534,7 @@ export function createModalSlideAnimation(
 export function createFadeTransition(
   opacityAnim: Animated.Value,
   show: boolean,
-  duration: number = 200
+  duration: number = 150
 ) {
   return Animated.timing(opacityAnim, {
     toValue: show ? 1 : 0,
@@ -501,7 +550,7 @@ export function createFadeTransition(
 export function createScaleTransition(
   scaleAnim: Animated.Value,
   show: boolean,
-  duration: number = 200
+  duration: number = 150
 ) {
   return Animated.spring(scaleAnim, {
     toValue: show ? 1 : 0.9,

@@ -38,7 +38,7 @@ export default function AnimatedModal({
   children,
   style,
   backdropOpacity = 0.5,
-  animationDuration = 250,
+  animationDuration = 170,
   position = 'bottom',
   avoidKeyboard = true,
 }: AnimatedModalProps) {

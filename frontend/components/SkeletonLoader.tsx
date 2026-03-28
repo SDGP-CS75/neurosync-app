@@ -40,13 +40,13 @@ export default function SkeletonLoader({
     const shimmer = Animated.sequence([
       Animated.timing(shimmerAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 170,
         easing: Easings.easeInOut,
         useNativeDriver: true,
       }),
       Animated.timing(shimmerAnim, {
         toValue: 0,
-        duration: 800,
+        duration: 170,
         easing: Easings.easeInOut,
         useNativeDriver: true,
       }),

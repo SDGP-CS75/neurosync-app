@@ -24,6 +24,7 @@ import {
   Modal,
   ActivityIndicator,
   TextInput as RNTextInput,
+  Animated,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useLocalSearchParams } from "expo-router";
@@ -43,6 +44,7 @@ import SparkleLoader from "../../components/SparkleLoader";
 import SubtaskNoteModal from "../../components/SubtaskNoteModal";
 import DependencyBadge from "../../components/DependencyBadge";
 import { saveTemplate } from "../../services/templateStorage";
+import { Easings } from "../../utils/animations";
 
 // ── Speech recognition — guarded for Expo Go ─────────────────────────────────
 let ExpoSpeechRecognitionModule: any = null;
@@ -506,6 +508,120 @@ export default function AddTaskScreen() {
   const [templateSaved, setTemplateSaved] = useState(false);
 
   const params = useLocalSearchParams();
+
+  // Animation values for entrance
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const inputFade = useRef(new Animated.Value(0)).current;
+  const inputSlide = useRef(new Animated.Value(30)).current;
+  const aiButtonFade = useRef(new Animated.Value(0)).current;
+  const aiButtonSlide = useRef(new Animated.Value(30)).current;
+  const detailsFade = useRef(new Animated.Value(0)).current;
+  const detailsSlide = useRef(new Animated.Value(30)).current;
+  const subtasksFade = useRef(new Animated.Value(0)).current;
+  const subtasksSlide = useRef(new Animated.Value(30)).current;
+  const saveFade = useRef(new Animated.Value(0)).current;
+  const saveSlide = useRef(new Animated.Value(30)).current;
+
+  // Entrance animations
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerFade, {
+          toValue: 1,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerSlide, {
+          toValue: 0,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(inputFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(inputSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(aiButtonFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(aiButtonSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(detailsFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(detailsSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(subtasksFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(subtasksSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(saveFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(saveSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   useEffect(() => {
     if (params.templateTitle) {
@@ -979,7 +1095,15 @@ export default function AddTaskScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View 
+          style={[
+            styles.header,
+            {
+              opacity: headerFade,
+              transform: [{ translateY: headerSlide }],
+            },
+          ]}
+        >
           <TouchableOpacity onPress={handleBack} hitSlop={12} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
           </TouchableOpacity>
@@ -988,7 +1112,7 @@ export default function AddTaskScreen() {
             <Ionicons name="notifications-outline" size={24} color={theme.colors.text} />
             <View style={[styles.bellDot, { backgroundColor: theme.colors.primary }]} />
           </View>
-        </View>
+        </Animated.View>
 
         <ScrollView
           style={styles.scroll}
@@ -997,7 +1121,13 @@ export default function AddTaskScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* Main task input */}
-          <View style={{ position: "relative" }}>
+          <Animated.View 
+            style={{ 
+              position: "relative",
+              opacity: inputFade,
+              transform: [{ translateY: inputSlide }],
+            }}
+          >
             <TextInput
               style={[styles.mainInput, { backgroundColor: inputBg, color: theme.colors.text }]}
               placeholder={PLACEHOLDER_MAIN}
@@ -1026,7 +1156,7 @@ export default function AddTaskScreen() {
                 />
               </TouchableOpacity>
             )}
-          </View>
+          </Animated.View>
 
           {/* AI error */}
           {aiError ? (
@@ -1034,6 +1164,12 @@ export default function AddTaskScreen() {
           ) : null}
 
           {/* AI breakdown button */}
+          <Animated.View
+            style={{
+              opacity: aiButtonFade,
+              transform: [{ translateY: aiButtonSlide }],
+            }}
+          >
           <TouchableOpacity
             style={[styles.aiButton, {
               backgroundColor: theme.colors.primary,
@@ -1052,6 +1188,7 @@ export default function AddTaskScreen() {
               </>
             )}
           </TouchableOpacity>
+          </Animated.View>
 
           {/* AI title + category row */}
           {aiMeta.title ? (
@@ -1129,6 +1266,12 @@ export default function AddTaskScreen() {
           ) : null}
 
           {/* ── When — opens calendar picker */}
+          <Animated.View
+            style={{
+              opacity: detailsFade,
+              transform: [{ translateY: detailsSlide }],
+            }}
+          >
           <TouchableOpacity
             style={[styles.detailRow, { backgroundColor: rowBg }]}
             onPress={() => setShowDatePicker(true)}
@@ -1177,6 +1320,7 @@ export default function AddTaskScreen() {
               <Ionicons name="chevron-forward" size={18} color={editTint} />
             )}
           </TouchableOpacity>
+          </Animated.View>
 
           {/* ── Reschedule inline input */}
           {showRescheduleInput && whenDate ? (
@@ -1220,6 +1364,12 @@ export default function AddTaskScreen() {
           ) : null}
 
           {/* ── Location */}
+          <Animated.View
+            style={{
+              opacity: detailsFade,
+              transform: [{ translateY: detailsSlide }],
+            }}
+          >
           <TouchableOpacity
             style={[styles.detailRow, { backgroundColor: rowBg }]}
             onPress={() => setLocationDialog(true)}
@@ -1237,8 +1387,15 @@ export default function AddTaskScreen() {
             </View>
             <Ionicons name="chevron-forward" size={18} color={editTint} />
           </TouchableOpacity>
+          </Animated.View>
 
           {/* ── Reminder */}
+          <Animated.View
+            style={{
+              opacity: detailsFade,
+              transform: [{ translateY: detailsSlide }],
+            }}
+          >
           <TouchableOpacity
             style={[styles.detailRow, { backgroundColor: rowBg }]}
             onPress={() => setShowReminderPicker(true)}
@@ -1259,8 +1416,15 @@ export default function AddTaskScreen() {
             )}
             <Ionicons name="chevron-forward" size={18} color={editTint} />
           </TouchableOpacity>
+          </Animated.View>
 
           {/* ── Sub-tasks */}
+          <Animated.View
+            style={{
+              opacity: subtasksFade,
+              transform: [{ translateY: subtasksSlide }],
+            }}
+          >
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Sub task</Text>
 
           {/* DraggableFlatList — must NOT be inside a ScrollView's scroll direction */}
@@ -1284,6 +1448,7 @@ export default function AddTaskScreen() {
               Add sub-task
             </Text>
           </TouchableOpacity>
+          </Animated.View>
 
           {subTasks.length > 0 && (
             <TouchableOpacity
@@ -1315,6 +1480,12 @@ export default function AddTaskScreen() {
           )}
 
           {/* Save */}
+          <Animated.View
+            style={{
+              opacity: saveFade,
+              transform: [{ translateY: saveSlide }],
+            }}
+          >
           <TouchableOpacity
             style={[styles.saveButton, {
               backgroundColor: theme.colors.primary,
@@ -1326,6 +1497,7 @@ export default function AddTaskScreen() {
           >
             <Text style={styles.saveButtonText}>Save Task</Text>
           </TouchableOpacity>
+          </Animated.View>
         </ScrollView>
 
         {/* ── Reminder picker modal */}

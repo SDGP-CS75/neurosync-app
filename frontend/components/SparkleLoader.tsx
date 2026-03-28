@@ -15,12 +15,12 @@ export default function Loader() {
         Animated.delay(delay),
         Animated.timing(anim, {
           toValue: -6,
-          duration: 300,
+          duration: 170,
           useNativeDriver: true,
         }),
         Animated.timing(anim, {
           toValue: 0,
-          duration: 300,
+          duration: 170,
           useNativeDriver: true,
         }),
       ])
