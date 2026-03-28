@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   emojiMarker: { marginBottom: 6 },
   chartLabel: { fontSize: 11, marginTop: 6 },
   listCard: { marginTop: 16, borderRadius: 12, padding: 12 },
-  entryCard: { marginTop: 8, padding: 12, borderRadius: 12, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 1 },
+  entryCard: { marginTop: 8, padding: 12, borderRadius: 12, boxShadow: '0px 0px 6px rgba(0, 0, 0, 0.05)', elevation: 1 },
   entryRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#00000004' },
   entryEmoji: { width: 48, height: 48, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   entryTitle: { fontWeight: '700' },

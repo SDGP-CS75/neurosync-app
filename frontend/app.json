@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "neurosync",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
@@ -47,13 +47,11 @@
         }
       ],
       "expo-web-browser",
-      "expo-speech-recognition",
       "@react-native-community/datetimepicker",
       "expo-asset"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
       "router": {},

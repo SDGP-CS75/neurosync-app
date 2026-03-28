@@ -183,12 +183,8 @@ const cardStyles = StyleSheet.create({
   card: {
     borderRadius: 16,
     marginBottom: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.07,
-    shadowRadius: 3,
-    elevation: 2,
-    overflow: "hidden",
+     boxShadow: '0px 1px 3px 0px rgba(0,0,0,0.07)',
+     overflow: "hidden",
   },
   topRow: {
     flexDirection: "row",
@@ -486,10 +482,7 @@ const createStyles = (theme: any) =>
       backgroundColor: theme.colors.surface,
       alignItems: "center",
       justifyContent: "center",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 3,
+      boxShadow: '0px 1px 3px 0px rgba(0,0,0,0.08)',
       elevation: 2,
     },
     title: {

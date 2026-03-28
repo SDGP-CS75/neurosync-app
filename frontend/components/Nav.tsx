@@ -200,11 +200,10 @@ export default function CustomNavBar() {
   const leftItems  = NAV_ITEMS.slice(0, 2);
   const rightItems = NAV_ITEMS.slice(2, 4);
 
-  return (
-    <View
-      style={[styles.container, { height: NAV_HEIGHT + safeBottom }]}
-      pointerEvents="box-none"
-    >
+    return (
+      <View
+        style={[styles.container, { height: NAV_HEIGHT + safeBottom, pointerEvents: 'box-none' }]}
+      >
       {/* ── SVG bar ── */}
       <View style={{ width, height: NAV_HEIGHT }}>
         <Svg width={width} height={NAV_HEIGHT} style={StyleSheet.absoluteFill}>
@@ -233,7 +232,6 @@ export default function CustomNavBar() {
             height:       FAB_SIZE,
             borderRadius: FAB_SIZE / 2,
             top:          -(FAB_SIZE / 2) - FAB_LIFT,
-            shadowColor:  theme.colors.primary,
           },
         ]}
         onPress={() => router.push("/(tabs)/add-task")}
@@ -286,11 +284,7 @@ const styles = StyleSheet.create({
     alignItems:     "center",
     justifyContent: "center",
   },
-  fab: {
-    position:       "absolute",
-    shadowOffset:   { width: 0, height: 6 },
-    shadowOpacity:  0.45,
-    shadowRadius:   12,
-    elevation:      12,
-  },
+   fab: {
+     position:       "absolute",
+   },
 });

@@ -121,10 +121,7 @@ const taskRowStyles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
     gap: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 3,
+    boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.06)",
     elevation: 2,
   },
   emoji: {
@@ -648,10 +645,7 @@ const createStyles = (theme: any) =>
       backgroundColor: theme.colors.surface,
       alignItems: "center",
       justifyContent: "center",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 3,
+      boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.08)",
       elevation: 2,
     },
     title: {

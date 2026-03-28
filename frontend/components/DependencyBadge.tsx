@@ -60,7 +60,6 @@ export default function DependencyBadge({
               s.tooltipBox,
               {
                 backgroundColor: theme.colors.surface,
-                shadowColor: "#000",
               },
             ]}
             onStartShouldSetResponder={() => true}
@@ -149,9 +148,7 @@ const s = StyleSheet.create({
     maxWidth: 320,
     borderRadius: 18,
     padding: 20,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    boxShadow: '0px 8px 16px 0px rgba(0,0,0,0.15)',
     elevation: 10,
   },
   tooltipHeader: {

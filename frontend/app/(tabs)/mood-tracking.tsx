@@ -113,10 +113,7 @@ export default function MoodTracking() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginTop: 12,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 6 },
-                shadowOpacity: 0.06,
-                shadowRadius: 12,
+                boxShadow: '0px 6px 12px rgba(0, 0, 0, 0.06)',
                 elevation: 6,
               }}>
                 <Text style={{ fontSize: 48 }}>{currentMood.emoji}</Text>
@@ -133,21 +130,17 @@ export default function MoodTracking() {
             </View>
 
 
-          <View
-            style={{
-              alignSelf: "stretch",
-              marginHorizontal: 16,
-              backgroundColor: colors.surface,
-              borderRadius: 20,
-              padding: 20,
-              // subtle card shadow
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.06,
-              shadowRadius: 12,
-              elevation: 6,
-              marginTop: 32,
-            }}
+           <View
+             style={{
+               alignSelf: "stretch",
+               marginHorizontal: 16,
+               backgroundColor: colors.surface,
+               borderRadius: 20,
+               padding: 20,
+               // subtle card shadow
+               boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.06)",
+               marginTop: 32,
+             }}
           >
             {/* Note Input */}
             <TextInput
@@ -164,12 +157,8 @@ export default function MoodTracking() {
                 minHeight: 100,
                 color: colors.onBackground,
                 textAlignVertical: "top",
-                // card-like inset
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.04,
-                shadowRadius: 8,
-                elevation: 3,
+                 // card-like inset
+                 boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.04)",
               }}
             />
 
@@ -193,12 +182,8 @@ export default function MoodTracking() {
                       marginBottom: 8,
                       backgroundColor: isSelected ? colors.primary : colors.surface,
                       borderWidth: isSelected ? 0 : 1,
-                      borderColor: isSelected ? 'transparent' : colors.surfaceVariant,
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 4 },
-                      shadowOpacity: 0.03,
-                      shadowRadius: 8,
-                      elevation: isSelected ? 4 : 2,
+                       borderColor: isSelected ? 'transparent' : colors.surfaceVariant,
+                       boxShadow: isSelected ? '0px 4px 8px rgba(0, 0, 0, 0.04)' : '0px 4px 8px rgba(0, 0, 0, 0.03)',
                     }}
                   >
                     <Text style={{ color: isSelected ? colors.onPrimary : colors.onSurface }}>
