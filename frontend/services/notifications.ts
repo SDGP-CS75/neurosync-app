@@ -441,3 +441,160 @@ function formatDueTime(dueDate: string): string {
     })} at ${timeStr}`;
   }
 }
+
+// ─── Streak & Motivation Functions ───────────────────────────────────────────
+
+export interface StreakData {
+  currentStreak: number;
+  longestStreak: number;
+  lastActivityDate: string;
+}
+
+/**
+ * Schedule a motivational notification based on streak
+ */
+export async function scheduleMotivationalNotification(
+  streakData: StreakData,
+  options?: NotificationOptions
+): Promise<string | null> {
+  const motivationalMessages = [
+    { threshold: 7, message: "🔥 You're on a 7-day streak! Keep the momentum going!" },
+    { threshold: 14, message: "🌟 Two weeks strong! You're building amazing habits!" },
+    { threshold: 21, message: "💎 21 days! You're forming a lasting routine!" },
+    { threshold: 30, message: "🏆 One month streak! You're unstoppable!" },
+    { threshold: 50, message: "🚀 50 days! You're a productivity machine!" },
+    { threshold: 100, message: "💯 100 days! Legendary status achieved!" },
+  ];
+
+  const matchingMessage = motivationalMessages
+    .filter(m => streakData.currentStreak >= m.threshold)
+    .sort((a, b) => b.threshold - a.threshold)[0];
+
+  if (!matchingMessage) {
+    return null;
+  }
+
+  try {
+    const notificationId = `streak-motivation-${Date.now()}`;
+    const triggerTime = new Date();
+    triggerTime.setHours(triggerTime.getHours() + 1); // Schedule 1 hour from now
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: notificationId,
+      content: {
+        title: "Streak Achievement! 🎉",
+        body: matchingMessage.message,
+        data: {
+          type: 'streak-motivation',
+          streak: streakData.currentStreak,
+        },
+        sound: getSound(options?.sound ?? 'default'),
+        vibrate: getVibrationPattern(options?.vibration ?? 'default'),
+        priority: getPriority(options?.priority ?? 'high'),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerTime,
+        channelId: Platform.OS === 'android' ? 'task-reminders' : undefined,
+      },
+    });
+
+    console.log(`Scheduled motivational notification ${notificationId}`);
+    return notificationId;
+  } catch (error) {
+    console.error('Error scheduling motivational notification:', error);
+    return null;
+  }
+}
+
+/**
+ * Schedule a daily streak reminder notification
+ */
+export async function scheduleStreakReminder(
+  currentStreak: number,
+  options?: NotificationOptions
+): Promise<string | null> {
+  try {
+    const notificationId = `streak-reminder-${Date.now()}`;
+    const triggerTime = new Date();
+    triggerTime.setDate(triggerTime.getDate() + 1);
+    triggerTime.setHours(9, 0, 0, 0); // Schedule for 9 AM tomorrow
+
+    const message = currentStreak > 0
+      ? `Don't break your ${currentStreak}-day streak! Complete a task today to keep it going. 💪`
+      : "Start your productivity streak today! Complete a task to begin. 🚀";
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: notificationId,
+      content: {
+        title: "Streak Reminder",
+        body: message,
+        data: {
+          type: 'streak-reminder',
+          streak: currentStreak,
+        },
+        sound: getSound(options?.sound ?? 'default'),
+        vibrate: getVibrationPattern(options?.vibration ?? 'default'),
+        priority: getPriority(options?.priority ?? 'default'),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerTime,
+        channelId: Platform.OS === 'android' ? 'task-reminders' : undefined,
+      },
+    });
+
+    console.log(`Scheduled streak reminder ${notificationId}`);
+    return notificationId;
+  } catch (error) {
+    console.error('Error scheduling streak reminder:', error);
+    return null;
+  }
+}
+
+/**
+ * Schedule a weekly progress summary notification
+ */
+export async function scheduleWeeklyProgressSummary(
+  tasksCompleted: number,
+  totalTasks: number,
+  options?: NotificationOptions
+): Promise<string | null> {
+  try {
+    const notificationId = `weekly-summary-${Date.now()}`;
+    const triggerTime = new Date();
+    triggerTime.setDate(triggerTime.getDate() + 7);
+    triggerTime.setHours(18, 0, 0, 0); // Schedule for 6 PM next week
+
+    const completionRate = totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
+    const message = `This week: ${tasksCompleted}/${totalTasks} tasks completed (${completionRate}%). Keep up the great work! 📊`;
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: notificationId,
+      content: {
+        title: "Weekly Progress Summary",
+        body: message,
+        data: {
+          type: 'weekly-summary',
+          tasksCompleted,
+          totalTasks,
+          completionRate,
+        },
+        sound: getSound(options?.sound ?? 'default'),
+        vibrate: getVibrationPattern(options?.vibration ?? 'default'),
+        priority: getPriority(options?.priority ?? 'default'),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerTime,
+        channelId: Platform.OS === 'android' ? 'task-reminders' : undefined,
+      },
+    });
+
+    console.log(`Scheduled weekly summary ${notificationId}`);
+    return notificationId;
+  } catch (error) {
+    console.error('Error scheduling weekly summary:', error);
+    return null;
+  }
+}

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Text,
   View,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Easing,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -19,6 +20,7 @@ import { useAppTheme } from "../../context/ThemeContext";
 import { useUser } from "../../context/UserContext";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { useTasks } from "../../context/TasksContext";
+import { scheduleTaskNotification } from "../../services/notifications";
 
 const { width } = Dimensions.get("window");
 
@@ -153,6 +155,7 @@ export default function HomeScreen() {
   const { profile } = useUser();
   const { tasks } = useTasks();
   const router = useRouter();
+  const [isScheduling, setIsScheduling] = useState(false);
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const displayName = profile.name || "You";
@@ -214,6 +217,51 @@ export default function HomeScreen() {
     }))
     .sort((a, b) => b.tasks - a.tasks);
 
+  // Schedule daily summary notification
+  const scheduleDailySummary = async () => {
+    if (todayTasks.length === 0) {
+      Alert.alert("No Tasks", "Add some tasks for today to schedule a summary notification.");
+      return;
+    }
+
+    setIsScheduling(true);
+    try {
+      const summaryTime = new Date();
+      summaryTime.setHours(20, 0, 0, 0); // Schedule for 8 PM today
+
+      const taskList = todayTasks
+        .map((task) => `• ${task.title}`)
+        .join("\n");
+
+      await scheduleTaskNotification(
+        {
+          id: `daily-summary-${todayKey}`,
+          title: "Daily Task Summary",
+          dueDate: summaryTime.toISOString(),
+          reminder: "0",
+          reminderSound: "default",
+          reminderVibration: "default",
+          reminderPriority: "high",
+        },
+        {
+          sound: "default",
+          vibration: "default",
+          priority: "high",
+        }
+      );
+
+      Alert.alert(
+        "Summary Scheduled",
+        `You'll receive a summary of your ${todayTasks.length} task${todayTasks.length === 1 ? "" : "s"} at 8 PM today.`
+      );
+    } catch (error) {
+      console.error("Failed to schedule daily summary:", error);
+      Alert.alert("Error", "Failed to schedule summary notification.");
+    } finally {
+      setIsScheduling(false);
+    }
+  };
+
   return (
     <>
       <SafeAreaView style={styles.safeArea} edges={["top"]}>
@@ -248,7 +296,11 @@ export default function HomeScreen() {
                 </Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.notificationBtn}>
+            <TouchableOpacity 
+              style={styles.notificationBtn}
+              onPress={scheduleDailySummary}
+              disabled={isScheduling}
+            >
               <Ionicons
                 name="notifications-outline"
                 size={24}

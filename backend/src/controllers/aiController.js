@@ -446,7 +446,8 @@ export async function breakTaskIntoSteps(req, res) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
 
-  const { task, userId } = req.body || {};
+  const { task } = req.body || {};
+  const userId = req.user?.uid;
   let taskStr = typeof task === 'string' ? task.trim() : '';
 
   if (!taskStr)
@@ -541,7 +542,8 @@ export async function rescheduleTask(req, res) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
 
-  const { instruction, currentDueDate, userId } = req.body || {};
+  const { instruction, currentDueDate } = req.body || {};
+  const userId = req.user?.uid;
 
   if (!instruction || typeof instruction !== 'string' || !instruction.trim())
     return res.status(400).json({ error: 'Missing or empty instruction' });
@@ -618,7 +620,8 @@ export async function suggestSplit(req, res) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
 
-  const { task, steps, totalDurationMinutes, userId } = req.body || {};
+  const { task, steps, totalDurationMinutes } = req.body || {};
+  const userId = req.user?.uid;
 
   if (!task || typeof task !== 'string' || !task.trim())
     return res.status(400).json({ error: 'Missing or empty task' });
@@ -735,7 +738,8 @@ export async function getDailyPlan(req, res) {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
 
-  const { tasks, availableMinutes, userId } = req.body || {};
+  const { tasks, availableMinutes } = req.body || {};
+  const userId = req.user?.uid;
 
   if (!Array.isArray(tasks) || tasks.length === 0)
     return res.status(400).json({ error: 'Missing or empty tasks array' });

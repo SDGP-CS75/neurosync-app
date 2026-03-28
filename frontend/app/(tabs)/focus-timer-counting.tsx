@@ -25,6 +25,7 @@ import { useAppTheme } from "../../context/ThemeContext";
 import BreakActivityModal from "../../components/BreakActivityModal";
 import { useTasks, SubTask } from "../../context/TasksContext";
 import { writeSession, FocusSession } from "../../services/sessionStorage";
+import { scheduleTaskNotification, cancelTaskNotification } from "../../services/notifications";
 
 // ─── Animated Circular Progress ──────────────────────────────────────────────
 
@@ -678,6 +679,21 @@ export default function FocusTimerCounting() {
         setCompletedFocusMinutes(focusMins);
         setSessionsCompleted((prev) => prev + 1);
         logCompletedSession(focusMins);
+
+        // Schedule notification for focus completion
+        if (linkedTaskId && linkedTaskTitle) {
+          scheduleTaskNotification(
+            {
+              id: `focus-complete-${Date.now()}`,
+              title: `Focus session complete! 🎯`,
+              dueDate: new Date().toISOString(),
+              reminder: '0',
+            },
+            { sound: 'default', vibration: 'default', priority: 'high' }
+          ).catch((error) => {
+            console.error('Failed to schedule focus completion notification:', error);
+          });
+        }
 
         // Show subtask prompt if there's a linked task with subtasks
         if (linkedTask && linkedTask.subtasks && linkedTask.subtasks.length > 0) {

@@ -5,8 +5,12 @@ import {
   suggestSplit,
   getDailyPlan,
 } from '../controllers/aiController.js';
+import { authenticate } from '../middleware/auth.js';
 
 const router = express.Router();
+
+// Apply authentication middleware to all AI routes
+router.use(authenticate);
 
 router.post('/breakdown',    breakTaskIntoSteps);
 router.post('/reschedule',   rescheduleTask);
