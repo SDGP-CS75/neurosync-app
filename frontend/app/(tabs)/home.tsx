@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Text,
   View,
@@ -9,6 +9,7 @@ import {
   Dimensions,
   Easing,
   Alert,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -21,6 +22,8 @@ import { useUser } from "../../context/UserContext";
 import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { useTasks } from "../../context/TasksContext";
 import { scheduleTaskNotification } from "../../services/notifications";
+
+import { Easings } from "../../utils/animations";
 
 const { width } = Dimensions.get("window");
 
@@ -156,6 +159,66 @@ export default function HomeScreen() {
   const { tasks } = useTasks();
   const router = useRouter();
   const [isScheduling, setIsScheduling] = useState(false);
+  
+  // Animation values for entrance
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const cardsFade = useRef(new Animated.Value(0)).current;
+  const cardsSlide = useRef(new Animated.Value(30)).current;
+  const sectionsFade = useRef(new Animated.Value(0)).current;
+  const sectionsSlide = useRef(new Animated.Value(30)).current;
+  
+  // Entrance animations
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerFade, {
+          toValue: 1,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerSlide, {
+          toValue: 0,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(cardsFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardsSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(sectionsFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(sectionsSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   const todayKey = new Date().toISOString().slice(0, 10);
   const displayName = profile.name || "You";
@@ -271,7 +334,15 @@ export default function HomeScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View style={styles.header}>
+          <Animated.View 
+            style={[
+              styles.header,
+              {
+                opacity: headerFade,
+                transform: [{ translateY: headerSlide }],
+              },
+            ]}
+          >
             <TouchableOpacity
               style={styles.headerLeft}
               onPress={() => router.push("/(tabs)/settings")}
@@ -307,16 +378,22 @@ export default function HomeScreen() {
                 color={theme.colors.onSurface}
               />
             </TouchableOpacity>
-          </View>
+          </Animated.View>
 
           {/* Swipeable cards: Today's Task + Mood Tracking widget */}
-          <ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            style={{ marginBottom: 10 }}
-          // contentContainerStyle={{ paddingHorizontal: 20 }}
+          <Animated.View
+            style={{
+              opacity: cardsFade,
+              transform: [{ translateY: cardsSlide }],
+            }}
           >
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              style={{ marginBottom: 10 }}
+            // contentContainerStyle={{ paddingHorizontal: 20 }}
+            >
             {/* Today's Task Card (centered, inset) */}
             <View style={[styles.todayCard, { width: width - 48, backgroundColor: theme.colors.primary }]}>
               <View style={styles.todayCardContent}>
@@ -384,9 +461,18 @@ export default function HomeScreen() {
               </View>
             </View>
           </ScrollView>
+          </Animated.View>
 
           {/* In Progress Section */}
-          <View style={styles.section}>
+          <Animated.View 
+            style={[
+              styles.section,
+              {
+                opacity: sectionsFade,
+                transform: [{ translateY: sectionsSlide }],
+              },
+            ]}
+          >
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                 In Progress
@@ -458,10 +544,18 @@ export default function HomeScreen() {
                 ))}
               </ScrollView>
             )}
-          </View>
+          </Animated.View>
 
           {/* Task Groups Section */}
-          <View style={styles.section}>
+          <Animated.View 
+            style={[
+              styles.section,
+              {
+                opacity: sectionsFade,
+                transform: [{ translateY: sectionsSlide }],
+              },
+            ]}
+          >
             <View style={styles.sectionHeader}>
               <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
                 Task Groups
@@ -501,7 +595,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               ))
             )}
-          </View>
+          </Animated.View>
 
           {/* Bottom spacing for nav */}
           <View style={{ height: 100 }} />
