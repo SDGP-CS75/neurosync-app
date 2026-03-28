@@ -35,6 +35,8 @@ import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useSegments } from "expo-router";
 import { useAppTheme } from "../context/ThemeContext";
+import { useUser } from "../context/UserContext";
+import { triggerNavigationHaptic } from "../utils/haptics";
 
 // ─────────────────────────────────────────────────────────────────
 // Responsive scale
@@ -137,6 +139,7 @@ export default function CustomNavBar() {
   const { theme }        = useAppTheme();
   const { width, scale } = useScale();
   const insets           = useSafeAreaInsets();
+  const { hapticFeedbackEnabled } = useUser();
 
   // useSegments() → e.g. ["(tabs)", "daily-routine"]
   // The last element is always the exact screen name.
@@ -174,7 +177,12 @@ export default function CustomNavBar() {
     return (
       <TouchableOpacity
         key={item.key}
-        onPress={() => router.replace(item.path as any)}
+        onPress={() => {
+          if (hapticFeedbackEnabled) {
+            triggerNavigationHaptic();
+          }
+          router.replace(item.path as any);
+        }}
         style={styles.navItem}
         activeOpacity={0.7}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
@@ -234,7 +242,12 @@ export default function CustomNavBar() {
             top:          -(FAB_SIZE / 2) - FAB_LIFT,
           },
         ]}
-        onPress={() => router.push("/(tabs)/add-task")}
+        onPress={() => {
+          if (hapticFeedbackEnabled) {
+            triggerNavigationHaptic();
+          }
+          router.push("/(tabs)/add-task");
+        }}
         activeOpacity={0.85}
       >
         <View

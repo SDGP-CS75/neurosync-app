@@ -10,6 +10,7 @@ interface UserProfile {
   about: string;
   profileImage: string;
   themeName?: string;
+  hapticFeedback?: boolean;
 }
 
 interface UserContextType {
@@ -20,6 +21,8 @@ interface UserContextType {
   isLoading: boolean;
   saveThemePreference: (themeName: string) => Promise<void>;
   themePreference: UserThemePreference;
+  saveHapticFeedbackPreference: (enabled: boolean) => Promise<void>;
+  hapticFeedbackEnabled: boolean;
 }
 
 // Default empty profile - should be replaced with actual user data after authentication
@@ -30,6 +33,7 @@ const defaultProfile: UserProfile = {
   about: '',
   profileImage: '',
   themeName: undefined,
+  hapticFeedback: true,
 };
 
 // Type for theme preference that can be passed to ThemeContext
@@ -42,6 +46,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [themePreference, setThemePreference] = useState<UserThemePreference>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [hapticFeedbackEnabled, setHapticFeedbackEnabled] = useState<boolean>(true);
 
   // Load user profile from Firestore when auth state changes
   // Also track userId for saving theme preferences
@@ -62,6 +67,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
           if (userDocSnap.exists()) {
             const userData = userDocSnap.data();
             const themeName = userData.themeName || undefined;
+            const hapticFeedback = userData.hapticFeedback !== undefined ? userData.hapticFeedback : true;
             setProfile({
               name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
               email: userData.email || user.email || '',
@@ -69,9 +75,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
               about: userData.about || '',
               age: userData.age || '',
               themeName: themeName,
+              hapticFeedback: hapticFeedback,
             });
             // Set theme preference for ThemeContext
             setThemePreference(themeName || null);
+            // Set haptic feedback preference
+            setHapticFeedbackEnabled(hapticFeedback);
           } else {
             // If no profile exists in Firestore, at least use auth data
             setProfile({
@@ -110,6 +119,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
         // User is logged out
         setProfile(defaultProfile);
         setThemePreference(null);
+        setHapticFeedbackEnabled(true);
       }
       setIsLoading(false);
     });
@@ -128,6 +138,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const resetProfile = () => {
     setProfile(defaultProfile);
     setThemePreference(null);
+    setHapticFeedbackEnabled(true);
   };
 
   // Save theme preference to Firestore
@@ -144,8 +155,22 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [userId]);
 
+  // Save haptic feedback preference to Firestore
+  const saveHapticFeedbackPreference = useCallback(async (enabled: boolean) => {
+    if (!userId) return;
+    
+    try {
+      const userDocRef = doc(db, 'users', userId);
+      await setDoc(userDocRef, { hapticFeedback: enabled }, { merge: true });
+      setHapticFeedbackEnabled(enabled);
+      setProfile(prev => ({ ...prev, hapticFeedback: enabled }));
+    } catch (error) {
+      console.error('Error saving haptic feedback preference:', error);
+    }
+  }, [userId]);
+
   return (
-    <UserContext.Provider value={{ profile, updateProfile, setProfileImage, resetProfile, isLoading, saveThemePreference, themePreference }}>
+    <UserContext.Provider value={{ profile, updateProfile, setProfileImage, resetProfile, isLoading, saveThemePreference, themePreference, saveHapticFeedbackPreference, hapticFeedbackEnabled }}>
       {children}
     </UserContext.Provider>
   );

@@ -14,7 +14,7 @@ const BASE_WIDTH = 390;
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { profile, updateProfile, setProfileImage, resetProfile } = useUser();
+  const { profile, updateProfile, setProfileImage, resetProfile, saveHapticFeedbackPreference, hapticFeedbackEnabled } = useUser();
   const { palette } = useAppTheme();
   const { width } = useWindowDimensions();
   const activeColor = palette.primary;
@@ -32,7 +32,6 @@ export default function SettingsScreen() {
   // Enforces a 1:1 aspect ratio crop so the image fits perfectly into the circular avatar UI.
   // Updates the global UserContext upon successful selection.
   const [dailyReminders, setDailyReminders] = useState(true);
-  const [hapticFeedback, setHapticFeedback] = useState(true);
   const [strictFocus, setStrictFocus] = useState(false);
 
   // Function to open the phone gallery
@@ -247,10 +246,10 @@ export default function SettingsScreen() {
               <Text style={styles.settingText}>Haptic Feedback</Text>
             </View>
             <Switch 
-              value={hapticFeedback} 
-              onValueChange={setHapticFeedback}
+              value={hapticFeedbackEnabled} 
+              onValueChange={saveHapticFeedbackPreference}
               trackColor={{ false: "#E5E7EB", true: activeColor + '80' }}
-              thumbColor={hapticFeedback ? activeColor : "#f4f3f4"}
+              thumbColor={hapticFeedbackEnabled ? activeColor : "#f4f3f4"}
             />
           </View>
 
