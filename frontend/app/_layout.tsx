@@ -8,11 +8,13 @@ import { ImageBackground, StyleSheet, View, Platform } from "react-native";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useEffect } from "react";
 
 import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
 import { UserProvider, useUser } from "../context/UserContext";
 import { TasksProvider } from "../context/TasksContext";
 import UndoSnackbar from "../components/UndoSnackbar";
+import { requestNotificationPermissions } from "../services/notifications";
 
 // Clear localStorage on web to prevent Firebase token refresh errors
 // This runs before React renders to ensure clean auth state
@@ -35,6 +37,13 @@ if (Platform.OS === "web" && typeof window !== "undefined") {
 
 function AppShell() {
   const { theme } = useAppTheme();
+
+  // Request notification permissions on app start
+  useEffect(() => {
+    requestNotificationPermissions().catch((error) => {
+      console.error('Failed to request notification permissions:', error);
+    });
+  }, []);
 
   return (
     <PaperProvider theme={theme}>

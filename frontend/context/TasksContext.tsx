@@ -15,6 +15,11 @@ import NetInfo from "@react-native-community/netinfo";
 import { onAuthStateChanged } from "firebase/auth";
 import { collection, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore";
 import { auth, db } from "../services/firebase";
+import {
+  scheduleTaskNotification,
+  scheduleRecurringNotification,
+  cancelTaskNotification,
+} from "../services/notifications";
 
 const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
 
@@ -41,6 +46,16 @@ export interface Task {
   dueDate?: string;
   location?: string;
   reminder?: string;
+  reminderSound?: 'default' | 'gentle' | 'urgent' | 'none';
+  reminderVibration?: 'default' | 'light' | 'heavy' | 'none';
+  reminderPriority?: 'default' | 'high' | 'low';
+  recurringReminder?: {
+    enabled: boolean;
+    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
+    interval: number;
+    endDate?: string;
+    maxOccurrences?: number;
+  };
   icon: string;
   iconBg: string;
   dateKey: string;
@@ -308,13 +323,85 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     };
 
     setTasks((prev) => [newTask, ...prev]);
+
+    // Schedule notification if reminder is set
+    if (newTask.reminder && newTask.dueDate) {
+      if (newTask.recurringReminder?.enabled) {
+        const recurringOptions = {
+          ...newTask.recurringReminder,
+          endDate: newTask.recurringReminder.endDate
+            ? new Date(newTask.recurringReminder.endDate)
+            : undefined,
+        };
+        scheduleRecurringNotification(newTask, recurringOptions, {
+          sound: newTask.reminderSound,
+          vibration: newTask.reminderVibration,
+          priority: newTask.reminderPriority,
+        }).catch((error) => {
+          console.error('Failed to schedule recurring notification:', error);
+        });
+      } else {
+        scheduleTaskNotification(newTask, {
+          sound: newTask.reminderSound,
+          vibration: newTask.reminderVibration,
+          priority: newTask.reminderPriority,
+        }).catch((error) => {
+          console.error('Failed to schedule notification:', error);
+        });
+      }
+    }
+
+    return newTask;
   }, []);
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
     setTasks((prev) =>
-      prev.map((task) =>
-        task.id === id ? { ...task, ...updates, isSynced: false } : task
-      )
+      prev.map((task) => {
+        if (task.id !== id) return task;
+
+        const updatedTask = { ...task, ...updates, isSynced: false };
+
+        // Handle notification updates
+        const reminderChanged = updates.reminder !== undefined;
+        const dueDateChanged = updates.dueDate !== undefined;
+        const recurringChanged = updates.recurringReminder !== undefined;
+
+        if (reminderChanged || dueDateChanged || recurringChanged) {
+          // Cancel existing notification
+          cancelTaskNotification(id).catch((error) => {
+            console.error('Failed to cancel notification:', error);
+          });
+
+          // Schedule new notification if reminder is set
+          if (updatedTask.reminder && updatedTask.dueDate) {
+            if (updatedTask.recurringReminder?.enabled) {
+              const recurringOptions = {
+                ...updatedTask.recurringReminder,
+                endDate: updatedTask.recurringReminder.endDate
+                  ? new Date(updatedTask.recurringReminder.endDate)
+                  : undefined,
+              };
+              scheduleRecurringNotification(updatedTask, recurringOptions, {
+                sound: updatedTask.reminderSound,
+                vibration: updatedTask.reminderVibration,
+                priority: updatedTask.reminderPriority,
+              }).catch((error) => {
+                console.error('Failed to schedule recurring notification:', error);
+              });
+            } else {
+              scheduleTaskNotification(updatedTask, {
+                sound: updatedTask.reminderSound,
+                vibration: updatedTask.reminderVibration,
+                priority: updatedTask.reminderPriority,
+              }).catch((error) => {
+                console.error('Failed to schedule notification:', error);
+              });
+            }
+          }
+        }
+
+        return updatedTask;
+      })
     );
   }, []);
 
@@ -324,6 +411,11 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       const taskToDelete = prev.find((t) => t.id === id);
       if (taskToDelete) {
         setLastDeleted(taskToDelete);
+
+        // Cancel notification for the deleted task
+        cancelTaskNotification(id).catch((error) => {
+          console.error('Failed to cancel notification:', error);
+        });
 
         // Clear any existing undo timer
         if (undoTimerRef.current) {
@@ -401,6 +493,13 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
           default:
             newStatus = "todo";
             break;
+        }
+
+        // Cancel notification when task is marked as done
+        if (newStatus === "done") {
+          cancelTaskNotification(taskId).catch((error) => {
+            console.error('Failed to cancel notification:', error);
+          });
         }
 
         return {
