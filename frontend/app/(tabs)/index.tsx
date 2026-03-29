@@ -206,22 +206,25 @@ export default function DashboardScreen() {
             title="Office Project"
             tasks={23}
             progress={70}
-            icon={<Ionicons name="briefcase-outline" size={24 * scale} color="#EC4899" />}
-            iconBgColor="bg-pink-100"
+            icon={<Ionicons name="briefcase" size={24 * scale} color="#4B5563" />}
+            iconBgColor="bg-[#FCEEF5]"
+            progressColor="#E84088"
           />
           <TaskGroupCard
             title="Office Project"
             tasks={30}
             progress={70}
-            icon={<MaterialCommunityIcons name="briefcase-clock-outline" size={24 * scale} color="#8B5CF6" />}
-            iconBgColor="bg-purple-100"
+            icon={<Ionicons name="lock-closed" size={24 * scale} color="#4B5563" />}
+            iconBgColor="bg-[#ECEEFA]"
+            progressColor="#7B37F4"
           />
           <TaskGroupCard
             title="Daily Study"
-            tasks={30}
+            tasks={50}
             progress={87}
-            icon={<Ionicons name="book-outline" size={24 * scale} color="#F59E0B" />}
-            iconBgColor="bg-orange-100"
+            icon={<Ionicons name="book" size={24 * scale} color="#4B5563" />}
+            iconBgColor="bg-[#FDF1DC]"
+            progressColor="#EA580C"
           />
         </Animated.View>
       </ScrollView>

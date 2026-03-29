@@ -8,6 +8,7 @@ interface TaskGroupCardProps {
   progress: number;
   icon: React.ReactNode;
   iconBgColor: string;
+  progressColor?: string;
 }
 
 export default function TaskGroupCard({
@@ -16,28 +17,29 @@ export default function TaskGroupCard({
   progress,
   icon,
   iconBgColor,
+  progressColor = '#8B5CF6',
 }: TaskGroupCardProps) {
   return (
-    <View className="flex-row justify-between items-center bg-white p-4 rounded-2xl mb-3">
+    <View className="flex-row justify-between items-center bg-white p-4 rounded-[20px] mb-3 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-50">
       <View className="flex-row items-center">
-        <View className={`p-3 rounded-xl ${iconBgColor} mr-4`}>{icon}</View>
+        <View className={`w-[52px] h-[52px] justify-center items-center rounded-2xl ${iconBgColor} mr-4`}>{icon}</View>
         <View>
-          <Text className="text-lg font-semibold text-gray-800">{title}</Text>
-          <Text className="text-gray-500">{tasks} Tasks</Text>
+          <Text className="text-[16px] font-bold text-gray-900">{title}</Text>
+          <Text className="text-[13px] text-gray-500 mt-1">{tasks} Tasks</Text>
         </View>
       </View>
       <CircularProgress
         value={progress}
-        radius={28}
+        radius={22}
         duration={1000}
         progressValueColor={'#000'}
-        activeStrokeColor={progress > 80 ? '#F59E0B' : '#8B5CF6'}
-        inActiveStrokeColor={'#E5E7EB'}
-        inActiveStrokeOpacity={0.5}
-        activeStrokeWidth={6}
-        inActiveStrokeWidth={6}
+        activeStrokeColor={progressColor}
+        inActiveStrokeColor={'#F3F4F6'}
+        inActiveStrokeOpacity={1}
+        activeStrokeWidth={4}
+        inActiveStrokeWidth={4}
         valueSuffix={'%'}
-        titleStyle={{ fontWeight: 'bold' }}
+        titleStyle={{ fontWeight: '600', fontSize: 13 }}
       />
     </View>
   );

@@ -11,6 +11,8 @@ export default function Welcome3() {
   const { theme } = useAppTheme();
 
   const isSmallScreen = width < 375;
+  const isMediumScreen = width >= 375 && width < 768;
+  const isLargeScreen = width >= 768;
 
   const dynamicStyles = useMemo(() => ({
     image: {
@@ -56,8 +58,16 @@ export default function Welcome3() {
         style={[styles.button, dynamicStyles.button]}
         onPress={() => router.push("/(auth)/signIn")}
       >
-        Let's Start
-      </Button>
+        <Text style={{ 
+          color: '#ffffff', 
+          fontSize: isSmallScreen ? 14 : isMediumScreen ? 16 : 18, 
+          fontWeight: 'bold', 
+          textAlign: 'center',
+          paddingHorizontal: 10
+        }}>
+          Let's Start 
+        </Text>
+      </TouchableOpacity>
 
       <Text style={[styles.loginText, dynamicStyles.loginText, { color: theme.colors.textMuted }]}>
         Already have an account?{" "}
@@ -67,7 +77,7 @@ export default function Welcome3() {
         >
           Login
         </Text>
-      </Text>
+      </View>
 
     </SafeAreaView>
   );
