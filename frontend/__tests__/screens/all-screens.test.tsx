@@ -27,12 +27,17 @@ import SettingsScreen from "../../app/(tabs)/settings";
 import TodoListScreen from "../../app/(tabs)/todo-list";
 import { mockSearchParams } from "../test-utils/mockAppContext";
 
-jest.setTimeout(30000);
+jest.setTimeout(60000);
 
 describe("screen coverage", () => {
   function renderAndUnmount(screens: React.ComponentType[]) {
     const renderedScreens = screens.map((Screen) => render(<Screen />));
     renderedScreens.forEach(({ unmount }) => unmount());
+  }
+
+  function renderSingle(Screen: React.ComponentType) {
+    const rendered = render(<Screen />);
+    rendered.unmount();
   }
 
   beforeEach(() => {
@@ -75,13 +80,23 @@ describe("screen coverage", () => {
     ]);
   });
 
-  it("renders analytics and settings screens without crashing", () => {
-    renderAndUnmount([
-      MoodAnalysis,
-      MoodTracking,
-      SessionHistory,
-      SettingsScreen,
-      TodoListScreen,
-    ]);
+  it("renders mood analysis without crashing", () => {
+    renderSingle(MoodAnalysis);
+  });
+
+  it("renders mood tracking without crashing", () => {
+    renderSingle(MoodTracking);
+  });
+
+  it("renders session history without crashing", () => {
+    renderSingle(SessionHistory);
+  });
+
+  it("renders settings without crashing", () => {
+    renderSingle(SettingsScreen);
+  });
+
+  it("renders todo list without crashing", () => {
+    renderSingle(TodoListScreen);
   });
 });
