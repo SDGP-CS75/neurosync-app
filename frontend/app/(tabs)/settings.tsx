@@ -9,6 +9,7 @@ import { useUser } from '../../context/UserContext';
 import { useAppTheme } from '../../context/ThemeContext';
 import ThemePicker from '../../components/ThemePicker';
 import { logoutUser } from '../../services/auth';
+import { resetAllData } from '../../services/reset';
 import { Easings } from '../../utils/animations';
 
 const BASE_WIDTH = 390;
@@ -174,6 +175,37 @@ export default function SettingsScreen() {
               router.replace('/(auth)/welcome');
             } catch (error) {
               Alert.alert('Error', 'Failed to log out. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Handle Reset All Data
+  const handleResetData = async () => {
+    Alert.alert(
+      'Reset All Data',
+      'This will permanently delete all your tasks, sessions, and mood analysis data from both this device and the cloud. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const result = await resetAllData();
+              if (result.success) {
+                Alert.alert(
+                  'Data Reset Complete',
+                  'All your tasks, sessions, and mood analysis data have been successfully deleted.',
+                  [{ text: 'OK', style: 'default' }]
+                );
+              } else {
+                Alert.alert('Error', result.error || 'Failed to reset data. Please try again.');
+              }
+            } catch (error) {
+              Alert.alert('Error', 'An unexpected error occurred while resetting data.');
             }
           },
         },
@@ -412,6 +444,22 @@ export default function SettingsScreen() {
             },
           ]}
         >
+          <TouchableOpacity 
+            style={styles.settingRow}
+            onPress={handleResetData}
+          >
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconWrapper, { backgroundColor: '#FEE2E2' }]}>
+                <Ionicons name="trash-outline" size={16 * scale} color="#EF4444" />
+              </View>
+              <View>
+                <Text style={[styles.settingText, { color: '#EF4444' }]}>Reset All Data</Text>
+                <Text style={styles.settingSubtext}>Delete all tasks, sessions & mood data</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18 * scale} color="#9CA3AF" />
+          </TouchableOpacity>
+
           <TouchableOpacity 
             style={[styles.settingRow, { borderBottomWidth: 0 }]}
             onPress={handleLogout}
