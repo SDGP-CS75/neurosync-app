@@ -276,6 +276,37 @@ npm run dev      # Start Expo development server
 
 For detailed API documentation, see [`backend/README.md`](backend/README.md)
 
+## 🚀 Deployment
+
+For detailed deployment instructions, see [`DEPLOYMENT.md`](DEPLOYMENT.md)
+
+For Vercel-specific deployment, see [`VERCEL_DEPLOYMENT.md`](VERCEL_DEPLOYMENT.md)
+
+### Quick Deploy
+
+**Backend:**
+```bash
+# Using Railway (Recommended)
+railway up
+
+# Or use the deployment script
+./deploy.sh    # Linux/Mac
+deploy.bat     # Windows
+```
+
+**Frontend:**
+```bash
+# Mobile app
+eas build --platform all --profile production
+
+# Web app (Vercel)
+cd frontend
+vercel --prod
+
+# Web app (Other)
+npm run build:web
+```
+
 ### Main Endpoints
 
 - **AI**: `/api/ai/*` - AI-powered suggestions and calibration
