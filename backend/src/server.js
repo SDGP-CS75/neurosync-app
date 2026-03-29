@@ -15,9 +15,20 @@ import { errorHandler } from './middleware/errorHandler.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DEBUG_LOG_PATH = path.join(__dirname, '..', '..', '.cursor', 'debug.log');
 
-const serviceAccount = JSON.parse(
-  fs.readFileSync(new URL('./config/sdgp-cs75-firebase-adminsdk-fbsvc-5684359436.json', import.meta.url))
-);
+// Initialize Firebase Admin with credentials from environment variable or file
+let serviceAccount;
+
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  // Use credentials from environment variable (for Railway deployment)
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  console.log('Firebase Admin initialized from environment variable');
+} else {
+  // Fall back to reading from file (for local development)
+  serviceAccount = JSON.parse(
+    fs.readFileSync(new URL('./config/sdgp-cs75-firebase-adminsdk-fbsvc-5684359436.json', import.meta.url))
+  );
+  console.log('Firebase Admin initialized from file');
+}
 
 dotenv.config();
 

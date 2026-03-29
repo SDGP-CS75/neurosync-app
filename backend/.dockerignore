@@ -1,0 +1,84 @@
+# Dependencies
+node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+coverage/
+.nyc_output/
+
+# Build output
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Cache directories
+.cache/
+__pycache__/
+
+# Database files
+*.db
+*.sqlite
+
+# Media files (if not needed in repo)
+*.mp4
+*.mp3
+*.avi
+*.mov
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+
+# Package files
+*.jar
+*.war
+*.ear
+
+# Crash logs
+hs_err_pid*
+
+# Firebase admin SDK credentials (SENSITIVE!)
+**/firebase-adminsdk*.json
+**/*firebase-adminsdk*.json
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+README.md
