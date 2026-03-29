@@ -285,10 +285,56 @@ jest.mock("expo-web-browser", () => ({
   maybeCompleteAuthSession: jest.fn(),
 }));
 
+jest.mock("expo-notifications", () => ({
+  setNotificationHandler: jest.fn(),
+  getPermissionsAsync: jest.fn().mockResolvedValue({
+    status: "granted",
+    canAskAgain: true,
+  }),
+  requestPermissionsAsync: jest.fn().mockResolvedValue({
+    status: "granted",
+    canAskAgain: true,
+  }),
+  setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
+  scheduleNotificationAsync: jest.fn().mockResolvedValue("notification-id"),
+  cancelScheduledNotificationAsync: jest.fn().mockResolvedValue(undefined),
+  cancelAllScheduledNotificationsAsync: jest.fn().mockResolvedValue(undefined),
+  getAllScheduledNotificationsAsync: jest.fn().mockResolvedValue([]),
+  AndroidImportance: {
+    HIGH: "high",
+  },
+  AndroidNotificationPriority: {
+    HIGH: "high",
+    LOW: "low",
+    DEFAULT: "default",
+  },
+  SchedulableTriggerInputTypes: {
+    DATE: "date",
+  },
+}), { virtual: true });
+
+jest.mock("expo-device", () => ({
+  isDevice: true,
+}), { virtual: true });
+
 jest.mock("expo-speech-recognition", () => ({
   useSpeechRecognitionEvent: jest.fn(),
   startSpeechRecognitionAsync: jest.fn(),
   stopSpeechRecognitionAsync: jest.fn(),
+}), { virtual: true });
+
+jest.mock("@react-native-community/netinfo", () => ({
+  __esModule: true,
+  default: {
+    addEventListener: jest.fn((callback) => {
+      callback({ isConnected: true, isInternetReachable: true });
+      return jest.fn();
+    }),
+    fetch: jest.fn().mockResolvedValue({
+      isConnected: true,
+      isInternetReachable: true,
+    }),
+  },
 }));
 
 jest.mock("@react-native-community/datetimepicker", () => {

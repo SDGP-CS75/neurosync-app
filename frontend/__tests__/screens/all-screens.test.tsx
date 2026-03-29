@@ -16,7 +16,6 @@ import TemplatesScreen from "../../app/templates";
 import TabsLayout from "../../app/(tabs)/_layout";
 import AddTaskScreen from "../../app/(tabs)/add-task";
 import CalendarScreen from "../../app/(tabs)/calendar";
-import DailyRoutine from "../../app/(tabs)/daily-routine";
 import FocusTimer from "../../app/(tabs)/focus-timer";
 import FocusTimerCounting from "../../app/(tabs)/focus-timer-counting";
 import HomeScreen from "../../app/(tabs)/home";
@@ -55,7 +54,6 @@ describe("screen coverage", () => {
       TabsLayout,
       AddTaskScreen,
       CalendarScreen,
-      DailyRoutine,
       FocusTimer,
       FocusTimerCounting,
       HomeScreen,
