@@ -19,6 +19,7 @@ import {
   scheduleTaskNotification,
   scheduleRecurringNotification,
   cancelTaskNotification,
+  rescheduleAllNotifications,
 } from "../services/notifications";
 
 const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
@@ -241,6 +242,12 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     loadTasksForUser(userId).then((loaded) => {
       setTasks(loaded);
       setIsLoading(false);
+      
+      // Reschedule all notifications for existing tasks on app launch
+      // This ensures notifications are restored after app restart
+      rescheduleAllNotifications(loaded).catch((error) => {
+        console.error('Failed to reschedule notifications on app launch:', error);
+      });
     });
   }, [userId]);
 
@@ -372,8 +379,8 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
             console.error('Failed to cancel notification:', error);
           });
 
-          // Schedule new notification if reminder is set
-          if (updatedTask.reminder && updatedTask.dueDate) {
+          // Schedule new notification if reminder is set and task is not done
+          if (updatedTask.reminder && updatedTask.dueDate && updatedTask.status !== 'done') {
             if (updatedTask.recurringReminder?.enabled) {
               const recurringOptions = {
                 ...updatedTask.recurringReminder,
@@ -450,6 +457,34 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       return [{ ...task, isSynced: false }, ...prev];
     });
 
+    // Reschedule notification for the restored task
+    // This ensures notifications are restored when a task is undeleted
+    if (task.reminder && task.dueDate && task.status !== 'done') {
+      if (task.recurringReminder?.enabled) {
+        const recurringOptions = {
+          ...task.recurringReminder,
+          endDate: task.recurringReminder.endDate
+            ? new Date(task.recurringReminder.endDate)
+            : undefined,
+        };
+        scheduleRecurringNotification(task, recurringOptions, {
+          sound: task.reminderSound,
+          vibration: task.reminderVibration,
+          priority: task.reminderPriority,
+        }).catch((error) => {
+          console.error('Failed to schedule recurring notification after undo:', error);
+        });
+      } else {
+        scheduleTaskNotification(task, {
+          sound: task.reminderSound,
+          vibration: task.reminderVibration,
+          priority: task.reminderPriority,
+        }).catch((error) => {
+          console.error('Failed to schedule notification after undo:', error);
+        });
+      }
+    }
+
     setLastDeleted(null);
   }, []);
 
@@ -500,6 +535,34 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
           cancelTaskNotification(taskId).catch((error) => {
             console.error('Failed to cancel notification:', error);
           });
+        }
+        
+        // Reschedule notification when task is moved back to todo/in-progress
+        // This ensures notifications are restored if a task is unmarked as done
+        if (newStatus !== "done" && task.reminder && task.dueDate) {
+          if (task.recurringReminder?.enabled) {
+            const recurringOptions = {
+              ...task.recurringReminder,
+              endDate: task.recurringReminder.endDate
+                ? new Date(task.recurringReminder.endDate)
+                : undefined,
+            };
+            scheduleRecurringNotification(task, recurringOptions, {
+              sound: task.reminderSound,
+              vibration: task.reminderVibration,
+              priority: task.reminderPriority,
+            }).catch((error) => {
+              console.error('Failed to schedule recurring notification:', error);
+            });
+          } else {
+            scheduleTaskNotification(task, {
+              sound: task.reminderSound,
+              vibration: task.reminderVibration,
+              priority: task.reminderPriority,
+            }).catch((error) => {
+              console.error('Failed to schedule notification:', error);
+            });
+          }
         }
 
         return {

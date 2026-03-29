@@ -902,8 +902,9 @@ export default function AddTaskScreen() {
     const title = (aiMeta.title ?? mainTask).trim();
     if (!title) return;
 
-    const today = new Date();
-    const dateKey = today.toISOString().slice(0, 10);
+    const dateKey = whenDate 
+      ? `${whenDate.getFullYear()}-${String(whenDate.getMonth() + 1).padStart(2, "0")}-${String(whenDate.getDate()).padStart(2, "0")}`
+      : new Date().toISOString().slice(0, 10);
 
     addTask({
       title,
