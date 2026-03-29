@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useEffect, useState, useMemo } from "react";
 import { TextInput, Button, HelperText, Text } from "react-native-paper";
 import { StyleSheet, useWindowDimensions, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -35,13 +35,12 @@ export default function SignIn() {
   const [googleError,   setGoogleError]   = useState<string | null>(null);
 
   // ── Google OAuth request ──────────────────────────────────────────────────
-  // Using webClientId for all platforms during Expo Go development.
-  // For production builds, replace androidClientId and iosClientId
-  // with their real values from Firebase Console → Project Settings → Your apps.
+  // Using platform-specific client IDs from Firebase Console.
+  // webClientId: For web platform
+  // androidClientId: For Android builds (APK)
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId:     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    iosClientId:     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
   });
 
   // ── Handle native Google response ────────────────────────────────────────
