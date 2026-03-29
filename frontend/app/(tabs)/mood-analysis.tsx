@@ -287,7 +287,7 @@ export default function MoodAnalysis() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: 16 },
+  content: { paddingHorizontal: 16, paddingTop: 55, paddingBottom: 16 },
   headerRow: { marginBottom: 12 },
   title: { fontSize: 22, fontWeight: '700' },
   subtitle: { fontSize: 13, marginTop: 6 },
