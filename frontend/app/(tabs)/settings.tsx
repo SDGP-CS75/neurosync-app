@@ -473,6 +473,7 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </Animated.View>
 
+        <View style={{ height: 90 }} />
       </ScrollView>
       <Nav />
     </SafeAreaView>

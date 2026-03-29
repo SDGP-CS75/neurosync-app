@@ -207,7 +207,7 @@ export default function MoodAnalysis() {
         <Animated.View style={[styles.chartWrap, { backgroundColor: colors.surface, opacity: chartFade, transform: [{ translateY: chartFade.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }] }]}> 
           <Text style={[styles.cardTitle, { color: colors.onBackground }]}>Mood chart</Text>
 
-          <View style={[styles.chartBg]}> 
+          <View style={[styles.chartBg, { backgroundColor: colors.background }]}> 
             <View style={[styles.chartInner, { paddingVertical: 12 }] }>
               {(!selectedDay || (selectedDay.items || []).length === 0) ? (
                 <Text style={{ color: colors.textMuted }}>No data for this day — add moods to see the chart.</Text>
@@ -277,7 +277,7 @@ export default function MoodAnalysis() {
           </View>
         </View>
 
-        <View style={{ height: 120 }} />
+        <View style={{ height: 200 }} />
       </ScrollView>
 
       <Nav />
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
   statValue: { fontSize: 16, fontWeight: '700', marginTop: 6 },
   todayCard: { marginTop: 12, padding: 12, borderRadius: 12 },
   chartWrap: { marginTop: 16, borderRadius: 12, padding: 12 },
-  chartBg: { marginTop: 8, borderRadius: 12, padding: 16, backgroundColor: '#f3eefe' },
+  chartBg: { marginTop: 8, borderRadius: 12, padding: 16 },
   cardTitle: { fontSize: 16, fontWeight: '700', marginBottom: 8 },
   chartInner: { alignItems: 'center', justifyContent: 'center' },
   chartRow: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between' },
