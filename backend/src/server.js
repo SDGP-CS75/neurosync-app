@@ -18,25 +18,34 @@ const DEBUG_LOG_PATH = path.join(__dirname, '..', '..', '.cursor', 'debug.log');
 // Initialize Firebase Admin with credentials from environment variable or file
 let serviceAccount;
 
-if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-  // Use credentials from environment variable (for Railway deployment)
-  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  console.log('Firebase Admin initialized from environment variable');
-} else {
-  // Fall back to reading from file (for local development)
-  serviceAccount = JSON.parse(
-    fs.readFileSync(new URL('./config/sdgp-cs75-firebase-adminsdk-fbsvc-5684359436.json', import.meta.url))
-  );
-  console.log('Firebase Admin initialized from file');
+try {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    // Use credentials from environment variable (for Railway deployment)
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    console.log('Firebase Admin initialized from environment variable');
+  } else {
+    // Fall back to reading from file (for local development)
+    const configPath = new URL('./config/sdgp-cs75-firebase-adminsdk-fbsvc-5684359436.json', import.meta.url);
+    if (fs.existsSync(configPath)) {
+      serviceAccount = JSON.parse(fs.readFileSync(configPath));
+      console.log('Firebase Admin initialized from file');
+    } else {
+      console.error('Firebase credentials not found. Set FIREBASE_SERVICE_ACCOUNT environment variable or provide the credentials file.');
+      process.exit(1);
+    }
+  }
+
+  dotenv.config();
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+
+  console.log('Firebase Admin initialized successfully');
+} catch (error) {
+  console.error('Failed to initialize Firebase Admin:', error.message);
+  process.exit(1);
 }
-
-dotenv.config();
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-
-console.log('Firebase Admin initialized');
 
 const app = express();
 
