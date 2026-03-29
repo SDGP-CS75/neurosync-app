@@ -42,7 +42,7 @@ jobs:
 
       - name: Build APK with EAS
         run: |
-          eas build --platform android --profile production --non-interactive --wait --json > result.json
+          eas build --platform android --profile preview --non-interactive --wait --json > result.json
 
       - name: Get APK URL
         run: |
