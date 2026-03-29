@@ -24,7 +24,9 @@ function getApiBase(): string {
     const resolved = host ? `http://${host}:8080` : null;
     if (resolved) return resolved;
   }
-  return "http://localhost:8080";
+  
+  // Production Railway URL
+  return "https://neurosync-app-production.up.railway.app";
 }
 
 export const API_BASE = getApiBase();
