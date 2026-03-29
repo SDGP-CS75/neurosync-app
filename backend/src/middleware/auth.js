@@ -1,9 +1,9 @@
 import admin from 'firebase-admin';
 
 export const authenticate = async (req, res, next) => {
-  // Skip auth for development testing
-  const testMode = process.env.NODE_ENV === 'development' && process.env.SKIP_AUTH === 'true';
-  if (testMode) {
+  // Skip auth when SKIP_AUTH is set (for testing/deployment)
+  const skipAuth = process.env.SKIP_AUTH === 'true';
+  if (skipAuth) {
     req.user = { uid: 'test-user-123' };
     return next();
   }
