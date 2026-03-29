@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "742980817935",
+    "project_id": "sdgp-cs75",
+    "storage_bucket": "sdgp-cs75.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:742980817935:android:2b43d6c19e8f72ee85bf7a",
+        "android_client_info": {
+          "package_name": "com.nuerosync"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "742980817935-mb1bqsl9ri83ao7getbte6bitq25jslh.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAhqFCupC7JgKFZ10w8bgqf0HEumHbnqvU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "742980817935-mb1bqsl9ri83ao7getbte6bitq25jslh.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
