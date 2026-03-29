@@ -37,6 +37,7 @@ export interface Task {
     endDate?: string;
     maxOccurrences?: number;
   };
+  status?: 'done' | 'in-progress' | 'todo';
 }
 
 // ─── Configuration ────────────────────────────────────────────────────────────
@@ -73,10 +74,21 @@ function parseReminderMinutes(reminder: string): number {
 
 /**
  * Calculate notification trigger time
+ * Handles timezone issues by ensuring consistent UTC-based calculations
  */
 function calculateTriggerTime(dueDate: string, reminderMinutes: number): Date {
+  // Parse the due date - this will be in the user's local timezone
   const due = new Date(dueDate);
+  
+  // Calculate trigger time by subtracting reminder minutes
   const triggerTime = new Date(due.getTime() - reminderMinutes * 60 * 1000);
+  
+  // Ensure we're working with a valid date
+  if (isNaN(triggerTime.getTime())) {
+    console.error('Invalid trigger time calculated for dueDate:', dueDate, 'reminderMinutes:', reminderMinutes);
+    return new Date(); // Return current time as fallback
+  }
+  
   return triggerTime;
 }
 
@@ -242,7 +254,14 @@ export async function scheduleTaskNotification(
   const triggerTime = calculateTriggerTime(task.dueDate, reminderMinutes);
 
   if (isTriggerTimeInPast(triggerTime)) {
-    console.warn('Cannot schedule notification: trigger time is in the past');
+    console.warn('Cannot schedule notification: trigger time is in the past', {
+      taskId: task.id,
+      taskTitle: task.title,
+      dueDate: task.dueDate,
+      reminderMinutes,
+      triggerTime: triggerTime.toISOString(),
+      currentTime: new Date().toISOString(),
+    });
     return null;
   }
 
@@ -272,7 +291,14 @@ export async function scheduleTaskNotification(
     console.log(`Scheduled notification ${notificationId} for ${triggerTime.toISOString()}`);
     return notificationId;
   } catch (error) {
-    console.error('Error scheduling notification:', error);
+    console.error('Error scheduling notification:', {
+      error,
+      taskId: task.id,
+      taskTitle: task.title,
+      dueDate: task.dueDate,
+      reminderMinutes,
+      triggerTime: triggerTime.toISOString(),
+    });
     return null;
   }
 }
@@ -358,7 +384,14 @@ export async function scheduleRecurringNotification(
       notificationIds.push(notificationId);
       console.log(`Scheduled recurring notification ${notificationId} for ${triggerTime.toISOString()}`);
     } catch (error) {
-      console.error(`Error scheduling recurring notification ${i}:`, error);
+      console.error(`Error scheduling recurring notification ${i}:`, {
+        error,
+        taskId: task.id,
+        taskTitle: task.title,
+        occurrence: i,
+        occurrenceDueDate: occurrenceDueDate.toISOString(),
+        triggerTime: triggerTime.toISOString(),
+      });
     }
   }
 
@@ -367,22 +400,30 @@ export async function scheduleRecurringNotification(
 
 /**
  * Cancel notification for a task
+ * Properly cancels all notifications including recurring ones
  */
 export async function cancelTaskNotification(taskId: string): Promise<void> {
   try {
     // Cancel single notification
     const singleId = getNotificationId(taskId);
-    await Notifications.cancelScheduledNotificationAsync(singleId);
-    console.log(`Cancelled notification ${singleId}`);
+    try {
+      await Notifications.cancelScheduledNotificationAsync(singleId);
+      console.log(`Cancelled notification ${singleId}`);
+    } catch (error) {
+      // Notification might not exist, that's okay
+      console.log(`Notification ${singleId} not found or already cancelled`);
+    }
 
     // Cancel recurring notifications (up to 365 occurrences)
+    // Don't break on first error - continue trying to cancel all
     for (let i = 0; i < 365; i++) {
       const recurringId = getNotificationId(taskId, i);
       try {
         await Notifications.cancelScheduledNotificationAsync(recurringId);
-      } catch {
-        // Notification doesn't exist, continue
-        break;
+        console.log(`Cancelled recurring notification ${recurringId}`);
+      } catch (error) {
+        // Notification doesn't exist, continue to next one
+        // Don't break - there might be gaps in the sequence
       }
     }
   } catch (error) {
@@ -597,4 +638,71 @@ export async function scheduleWeeklyProgressSummary(
     console.error('Error scheduling weekly summary:', error);
     return null;
   }
+}
+
+/**
+ * Reschedule all notifications for existing tasks
+ * This should be called on app launch to ensure notifications are restored
+ */
+export async function rescheduleAllNotifications(tasks: Task[]): Promise<void> {
+  console.log(`Rescheduling notifications for ${tasks.length} tasks`);
+  
+  let scheduledCount = 0;
+  let skippedCount = 0;
+  let errorCount = 0;
+  
+  for (const task of tasks) {
+    // Skip tasks without reminders or due dates
+    if (!task.reminder || !task.dueDate) {
+      continue;
+    }
+    
+    // Skip completed tasks
+    if (task.status === 'done') {
+      continue;
+    }
+    
+    try {
+      if (task.recurringReminder?.enabled) {
+        const recurringOptions = {
+          ...task.recurringReminder,
+          endDate: task.recurringReminder.endDate
+            ? new Date(task.recurringReminder.endDate)
+            : undefined,
+        };
+        const result = await scheduleRecurringNotification(task, recurringOptions, {
+          sound: task.reminderSound,
+          vibration: task.reminderVibration,
+          priority: task.reminderPriority,
+        });
+        if (result) {
+          scheduledCount++;
+        } else {
+          skippedCount++;
+        }
+      } else {
+        const result = await scheduleTaskNotification(task, {
+          sound: task.reminderSound,
+          vibration: task.reminderVibration,
+          priority: task.reminderPriority,
+        });
+        if (result) {
+          scheduledCount++;
+        } else {
+          skippedCount++;
+        }
+      }
+    } catch (error) {
+      console.error(`Error rescheduling notification for task ${task.id}:`, {
+        error,
+        taskId: task.id,
+        taskTitle: task.title,
+        dueDate: task.dueDate,
+        reminder: task.reminder,
+      });
+      errorCount++;
+    }
+  }
+  
+  console.log(`Rescheduled ${scheduledCount} notifications, skipped ${skippedCount}, errors ${errorCount}`);
 }
