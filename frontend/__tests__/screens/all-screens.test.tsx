@@ -27,8 +27,15 @@ import SettingsScreen from "../../app/(tabs)/settings";
 import TodoListScreen from "../../app/(tabs)/todo-list";
 import { mockSearchParams } from "../test-utils/mockAppContext";
 
+jest.setTimeout(30000);
+
 describe("screen coverage", () => {
-  it("renders all screens and layouts without crashing", () => {
+  function renderAndUnmount(screens: React.ComponentType[]) {
+    const renderedScreens = screens.map((Screen) => render(<Screen />));
+    renderedScreens.forEach(({ unmount }) => unmount());
+  }
+
+  beforeEach(() => {
     Object.assign(mockSearchParams, {
       mode: "focus",
       focusDuration: "1",
@@ -37,8 +44,10 @@ describe("screen coverage", () => {
       taskTitle: "",
       preselectedTaskId: "task-1",
     });
+  });
 
-    const screens = [
+  it("renders app shell and auth screens without crashing", () => {
+    renderAndUnmount([
       RootLayout,
       AuthLayout,
       ForgotPassword,
@@ -47,6 +56,11 @@ describe("screen coverage", () => {
       Welcome,
       Welcome2,
       Welcome3,
+    ]);
+  });
+
+  it("renders top-level and productivity screens without crashing", () => {
+    renderAndUnmount([
       DashboardIndex,
       DailyPlanScreen,
       Index,
@@ -58,15 +72,16 @@ describe("screen coverage", () => {
       FocusTimerCounting,
       HomeScreen,
       TabsIndex,
+    ]);
+  });
+
+  it("renders analytics and settings screens without crashing", () => {
+    renderAndUnmount([
       MoodAnalysis,
       MoodTracking,
       SessionHistory,
       SettingsScreen,
       TodoListScreen,
-    ];
-
-    const renderedScreens = screens.map((Screen) => render(<Screen />));
-
-    renderedScreens.forEach(({ unmount }) => unmount());
-  }, 30000);
+    ]);
+  });
 });

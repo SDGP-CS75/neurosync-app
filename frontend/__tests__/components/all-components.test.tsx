@@ -18,6 +18,8 @@ import ThemePicker from "../../components/ThemePicker";
 import UndoSnackbar from "../../components/UndoSnackbar";
 import { mockTasksContext } from "../test-utils/mockAppContext";
 
+jest.setTimeout(30000);
+
 describe("component coverage", () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -28,7 +30,11 @@ describe("component coverage", () => {
     jest.useRealTimers();
   });
 
-  it("renders all shared components without crashing", () => {
+  function renderAndUnmount(components: Array<ReturnType<typeof render>>) {
+    components.forEach((component) => component.unmount());
+  }
+
+  it("renders modal components without crashing", () => {
     mockTasksContext.lastDeleted = {
       id: "deleted-1",
       title: "Deleted task",
@@ -38,7 +44,6 @@ describe("component coverage", () => {
 
     const components = [
       render(<AddTaskModal visible onClose={jest.fn()} onSave={saveTask} />),
-      render(<BottomNavBar />),
       render(
         <BreakActivityModal
           visible
@@ -72,9 +77,6 @@ describe("component coverage", () => {
           initialValue="Old name"
         />
       ),
-      render(<Nav />),
-      render(<SectionTitle title="Tasks" count={2} />),
-      render(<SparkleLoader />),
       render(
         <SubtaskNoteModal
           visible
@@ -84,6 +86,37 @@ describe("component coverage", () => {
           subtaskText="Draft outline"
         />
       ),
+      render(<TaskPicker visible onClose={jest.fn()} onSelect={jest.fn()} />),
+    ];
+
+    expect(components[0].toJSON()).toBeTruthy();
+    expect(components[1].toJSON()).toBeTruthy();
+
+    renderAndUnmount(components);
+  });
+
+  it("renders shared display components without crashing", () => {
+    const components = [
+      render(<BottomNavBar />),
+      render(
+        <DependencyBadge
+          blockedByTexts={["Complete draft", "Review notes"]}
+          visible
+        />
+      ),
+      render(
+        <InProgressCard
+          title="Office Project"
+          subtitle="Finish weekly report"
+          icon={<Text>icon</Text>}
+          bgColor="bg-white"
+          progress={0.6}
+          progressColor="#2563eb"
+        />
+      ),
+      render(<Nav />),
+      render(<SectionTitle title="Tasks" count={2} />),
+      render(<SparkleLoader />),
       render(
         <TaskGroupCard
           title="Personal"
@@ -93,14 +126,28 @@ describe("component coverage", () => {
           iconBgColor="bg-blue-100"
         />
       ),
-      render(<TaskPicker visible onClose={jest.fn()} onSelect={jest.fn()} />),
+    ];
+
+    expect(components[4].toJSON()).toBeTruthy();
+    expect(components[5].toJSON()).toBeTruthy();
+
+    renderAndUnmount(components);
+  });
+
+  it("renders context-driven utility components without crashing", () => {
+    mockTasksContext.lastDeleted = {
+      id: "deleted-1",
+      title: "Deleted task",
+    } as never;
+
+    const components = [
       render(<ThemePicker />),
       render(<UndoSnackbar />),
     ];
 
-    expect(components[11].toJSON()).toBeTruthy();
-    expect(components[13].getByText("Undo")).toBeTruthy();
+    expect(components[0].toJSON()).toBeTruthy();
+    expect(components[1].getByText("Undo")).toBeTruthy();
 
-    components.forEach((component) => component.unmount());
-  }, 30000);
+    renderAndUnmount(components);
+  });
 });
