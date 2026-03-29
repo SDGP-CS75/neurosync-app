@@ -1,0 +1,74 @@
+name: Build APK + Update Website Repo
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout app repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --runInBand
+
+      - name: Install tools
+        run: |
+          npm install -g eas-cli
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Authenticate EAS
+        run: eas whoami || eas login --token "${{ secrets.EXPO_TOKEN }}"
+
+      - name: Start EAS build
+        id: build
+        run: |
+          BUILD_ID=$(eas build --platform android --profile production --non-interactive --json | jq -r '.[0].id // .id')
+          echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
+
+      - name: Wait for build to finish
+        run: |
+          eas build:wait "$BUILD_ID" --non-interactive --json > result.json
+
+      - name: Get APK URL
+        run: |
+          APK_URL=$(jq -r '.artifacts.buildUrl' result.json)
+          echo "APK_URL=$APK_URL" >> "$GITHUB_ENV"
+
+      - name: Clone website repo
+        run: |
+          cd ..
+          git clone https://x-access-token:${{ secrets.WEBSITE_REPO_TOKEN }}@github.com/SDGP-CS75/NeuroSync-Website.git
+
+      - name: Update APK file
+        run: |
+          cd ../NeuroSync-Website
+          mkdir -p public
+          echo "{\"apkUrl\": \"${APK_URL}\"}" > public/apk.json
+
+      - name: Commit and push
+        run: |
+          cd ../NeuroSync-Website
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add public/apk.json
+          git commit -m "Update APK download link" || echo "No changes"
+          git push
