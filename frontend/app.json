@@ -56,8 +56,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "fccf1745-dc29-447e-bdf9-a757017bd110"
+        "projectId": "2f5dc22d-45b3-4a65-8dd4-5587d410103f"
       }
-    }
+    },
+    "owner": "nadil_iit"
   }
 }
