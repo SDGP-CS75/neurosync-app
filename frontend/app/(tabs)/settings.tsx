@@ -196,11 +196,10 @@ export default function SettingsScreen() {
             try {
               const result = await resetAllData();
               if (result.success) {
-                Alert.alert(
-                  'Data Reset Complete',
-                  'All your tasks, sessions, and mood analysis data have been successfully deleted.',
-                  [{ text: 'OK', style: 'default' }]
-                );
+                // Logout and redirect to welcome screen after successful reset
+                await logoutUser();
+                resetProfile();
+                router.replace('/(auth)/welcome');
               } else {
                 Alert.alert('Error', result.error || 'Failed to reset data. Please try again.');
               }
