@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     defaults:
       run:
         working-directory: frontend
@@ -36,7 +38,7 @@ jobs:
           sudo apt-get install -y jq
 
       - name: Authenticate EAS
-        run: eas whoami || eas login --token "${{ secrets.EXPO_TOKEN }}"
+        run: eas whoami
 
       - name: Start EAS build
         id: build
