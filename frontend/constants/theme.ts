@@ -25,18 +25,7 @@ export type AppPalette = {
 };
 
 export const COLOR_PALETTES: AppPalette[] = [
-  {
-    name: "Violet",
-    primary: "#8263fd",           // richer, more vibrant violet for main accents
-    secondary: "#B0A5FF",         // slightly deeper secondary violet for contrast
-    background: "#e8e4fd",        // soft lilac background to keep eyes relaxed
-    surface: "#FFFFFF",            // cards and surfaces
-    text: "#1E1B3C",               // strong, high-contrast text
-    textMuted: "#6E6A8F",          // muted grey-purple for secondary text
-    statusDone: "#C8E6C9",         // calming green for completed tasks
-    statusInProgress: "#FFE082",   // gentle amber for in-progress tasks
-    statusTodo: "#BBDEFB",         // soft blue for to-do tasks
-  },
+  { name: "Violet", primary: "#6C5BA1", secondary: "#8d87b1ff", background: "#eeeaff", surface: "#FFFFFF", text: "#1A1726", textMuted: "#6E6A7C", statusDone: "#E8F5E9", statusInProgress: "#FFF3E0", statusTodo: "#E3F2FD", },
   {
     name: "Ocean",
     primary: "#466babff",
