@@ -5,7 +5,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
+  Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppTheme } from "../context/ThemeContext";
 import { useTasks } from "../context/TasksContext";
 
@@ -14,6 +16,7 @@ const SNACKBAR_DURATION = 5000;
 export default function UndoSnackbar() {
   const { theme } = useAppTheme();
   const { lastDeleted, undoDelete } = useTasks();
+  const insets = useSafeAreaInsets();
 
   // Slide animation — starts off-screen below
   const slideAnim = useRef(new Animated.Value(500)).current;
@@ -24,10 +27,11 @@ export default function UndoSnackbar() {
 
   useEffect(() => {
     if (isVisible) {
-      // Reset progress bar
+      // Reset both animations to initial state
+      slideAnim.setValue(500);
       progressAnim.setValue(1);
 
-      // Slide in
+      // Slide in from bottom
       Animated.spring(slideAnim, {
         toValue: 0,
         useNativeDriver: true,
@@ -42,7 +46,7 @@ export default function UndoSnackbar() {
         useNativeDriver: false,
       }).start();
     } else {
-      // Slide out
+      // Slide out to bottom
       Animated.timing(slideAnim, {
         toValue: 500,
         duration: 170,
@@ -53,17 +57,14 @@ export default function UndoSnackbar() {
 
 
 
-  const s = styles(theme);
+  const safeBottom = Platform.OS === "ios" ? insets.bottom : Math.max(insets.bottom, 8);
+  const s = styles(theme, safeBottom);
 
    const containerStyle = [
      s.container,
      { transform: [{ translateY: slideAnim }] },
      { pointerEvents: isVisible ? "auto" : "none" },
    ];
-
-   if (!isVisible) {
-     containerStyle.push({ display: "none" } as any);
-   }
 
    return (
      <Animated.View style={StyleSheet.flatten(containerStyle as any)}>
@@ -109,22 +110,18 @@ export default function UndoSnackbar() {
   );
 }
 
-const styles = (theme: any) =>
+const styles = (theme: any, safeBottom: number) =>
   StyleSheet.create({
     container: {
       position: "absolute",
-      bottom: 80, // sits above the nav bar
+      bottom: 64 + safeBottom + 16, // sits above the nav bar (64px height + safe area + 16px gap)
       left: 16,
       right: 16,
-      backgroundColor: theme.colors.text,
+      backgroundColor: theme.colors.surface || theme.colors.text,
       borderRadius: 14,
-      overflow: "hidden",
       boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.2)",
       elevation: 8,
       zIndex: 9999,
-    },
-    hidden: {
-      display: "none",
     },
     row: {
       flexDirection: "row",
@@ -139,13 +136,12 @@ const styles = (theme: any) =>
     message: {
       fontSize: 13,
       fontWeight: "500",
-      color: theme.colors.background,
-      opacity: 0.7,
+      color: theme.colors.text,
     },
     taskName: {
       fontSize: 15,
       fontWeight: "600",
-      color: theme.colors.background,
+      color: theme.colors.text,
       marginTop: 1,
     },
     undoButton: {
