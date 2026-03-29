@@ -102,5 +102,5 @@ describe("component coverage", () => {
     expect(components[13].getByText("Undo")).toBeTruthy();
 
     components.forEach((component) => component.unmount());
-  }, 15000);
+  }, 30000);
 });

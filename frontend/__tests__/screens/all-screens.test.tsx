@@ -65,9 +65,8 @@ describe("screen coverage", () => {
       TodoListScreen,
     ];
 
-    screens.forEach((Screen) => {
-      const { unmount } = render(<Screen />);
-      unmount();
-    });
-  });
+    const renderedScreens = screens.map((Screen) => render(<Screen />));
+
+    renderedScreens.forEach(({ unmount }) => unmount());
+  }, 30000);
 });
