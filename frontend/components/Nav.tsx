@@ -30,8 +30,9 @@ import {
 } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { MaterialIcons } from '@expo/vector-icons';
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import ImportContactsRoundedIcon from '@mui/icons-material/ImportContactsRounded';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useSegments } from "expo-router";
 import { useAppTheme } from "../context/ThemeContext";
@@ -98,35 +99,35 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    key:     "home",
-    path:    "/(tabs)/home",
+    key: "home",
+    path: "/(tabs)/home",
     segment: "home",
     renderIcon: (size, color) => (
       <Ionicons name="home" size={size} color={color} />
     ),
   },
   {
-    key:     "calendar",
-    path:    "/(tabs)/todo-list",
+    key: "calendar",
+    path: "/(tabs)/todo-list",
     segment: "todo-list",
     renderIcon: (size, color) => (
-      <Ionicons name="calendar" size={size} color={color} />
+      <MaterialIcons name="assignment" size={size} color={color} />
     ),
   },
   {
-    key:     "focus",
-    path:    "/(tabs)/focus-timer",
+    key: "focus",
+    path: "/(tabs)/focus-timer",
     segment: "focus-timer",
     renderIcon: (size, color) => (
-      <FontAwesome5 name="crosshairs" size={size} color={color} />
+      <MaterialIcons name="timer" size={size} color={color} />
     ),
   },
   {
-    key:     "mood",
-    path:    "/(tabs)/mood-tracking",
+    key: "mood",
+    path: "/(tabs)/mood-tracking",
     segment: "mood-tracking",
     renderIcon: (size, color) => (
-      <MaterialCommunityIcons name="account" size={size} color={color} />
+      <MaterialIcons name="import-contacts" size={size} color={color} />
     ),
   },
 ];
