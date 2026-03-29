@@ -103,14 +103,14 @@ function TaskRow({ task, theme, index }: { task: Task; theme: any; index: number
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 300,
+        duration: 120,
         delay: index * 50,
         easing: Easings.easeOut,
         useNativeDriver: true,
       }),
       Animated.timing(slideAnim, {
         toValue: 0,
-        duration: 300,
+        duration: 120,
         delay: index * 50,
         easing: Easings.easeOut,
         useNativeDriver: true,

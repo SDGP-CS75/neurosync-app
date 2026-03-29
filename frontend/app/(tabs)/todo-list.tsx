@@ -106,13 +106,13 @@ export default function TodoListScreen() {
       Animated.parallel([
         Animated.timing(headerFade, {
           toValue: 1,
-          duration: 300,
+          duration: 120,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(headerSlide, {
           toValue: 0,
-          duration: 300,
+          duration: 120,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -120,15 +120,15 @@ export default function TodoListScreen() {
       Animated.parallel([
         Animated.timing(dateRowFade, {
           toValue: 1,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(dateRowSlide, {
           toValue: 0,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -136,15 +136,15 @@ export default function TodoListScreen() {
       Animated.parallel([
         Animated.timing(filterFade, {
           toValue: 1,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(filterSlide, {
           toValue: 0,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -152,14 +152,14 @@ export default function TodoListScreen() {
       Animated.parallel([
         Animated.timing(taskListFade, {
           toValue: 1,
-          duration: 300,
+          duration: 200,
           delay: 50,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(taskListSlide, {
           toValue: 0,
-          duration: 300,
+          duration: 200,
           delay: 50,
           easing: Easings.easeOut,
           useNativeDriver: true,

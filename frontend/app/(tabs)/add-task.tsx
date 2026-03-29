@@ -543,15 +543,15 @@ export default function AddTaskScreen() {
       Animated.parallel([
         Animated.timing(inputFade, {
           toValue: 1,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(inputSlide, {
           toValue: 0,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -559,15 +559,15 @@ export default function AddTaskScreen() {
       Animated.parallel([
         Animated.timing(aiButtonFade, {
           toValue: 1,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(aiButtonSlide, {
           toValue: 0,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -575,15 +575,15 @@ export default function AddTaskScreen() {
       Animated.parallel([
         Animated.timing(detailsFade, {
           toValue: 1,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(detailsSlide, {
           toValue: 0,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -591,15 +591,15 @@ export default function AddTaskScreen() {
       Animated.parallel([
         Animated.timing(subtasksFade, {
           toValue: 1,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(subtasksSlide, {
           toValue: 0,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -607,15 +607,15 @@ export default function AddTaskScreen() {
       Animated.parallel([
         Animated.timing(saveFade, {
           toValue: 1,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(saveSlide, {
           toValue: 0,
-          duration: 300,
-          delay: 50,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),

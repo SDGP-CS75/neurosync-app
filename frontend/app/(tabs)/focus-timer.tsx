@@ -69,13 +69,13 @@ export default function FocusTimer() {
       Animated.parallel([
         Animated.timing(headerFade, {
           toValue: 1,
-          duration: 170,
+          duration: 120,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(headerSlide, {
           toValue: 0,
-          duration: 170,
+          duration: 120,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -83,15 +83,15 @@ export default function FocusTimer() {
       Animated.parallel([
         Animated.timing(descriptionFade, {
           toValue: 1,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(descriptionSlide, {
           toValue: 0,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -99,15 +99,15 @@ export default function FocusTimer() {
       Animated.parallel([
         Animated.timing(workingOnFade, {
           toValue: 1,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(workingOnSlide, {
           toValue: 0,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -115,15 +115,15 @@ export default function FocusTimer() {
       Animated.parallel([
         Animated.timing(modeFade, {
           toValue: 1,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(modeSlide, {
           toValue: 0,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -131,15 +131,15 @@ export default function FocusTimer() {
       Animated.parallel([
         Animated.timing(durationFade, {
           toValue: 1,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(durationSlide, {
           toValue: 0,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -147,15 +147,15 @@ export default function FocusTimer() {
       Animated.parallel([
         Animated.timing(previewFade, {
           toValue: 1,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(previewSlide, {
           toValue: 0,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -163,15 +163,15 @@ export default function FocusTimer() {
       Animated.parallel([
         Animated.timing(startFade, {
           toValue: 1,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(startSlide, {
           toValue: 0,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
@@ -179,15 +179,15 @@ export default function FocusTimer() {
       Animated.parallel([
         Animated.timing(tipsFade, {
           toValue: 1,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
         Animated.timing(tipsSlide, {
           toValue: 0,
-          duration: 170,
-          delay: 20,
+          duration: 120,
+          delay: 0,
           easing: Easings.easeOut,
           useNativeDriver: true,
         }),
