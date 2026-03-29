@@ -8,6 +8,25 @@ const REQUEST_TIMEOUT  = 12_000;
 const MAX_RETRIES      = 2;
 const RETRY_DELAY_MS   = 800;
 
+// Cache for calibration context to reduce Firestore reads
+const calibrationCache = new Map();
+const CALIBRATION_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
+// Cache cleanup interval to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of calibrationCache.entries()) {
+    if (now - value.timestamp > CALIBRATION_CACHE_TTL) {
+      calibrationCache.delete(key);
+    }
+  }
+}, 5 * 60 * 1000); // Clean up every 5 minutes
+
+// Cache for date context (rebuilds every minute)
+let cachedDateContext = null;
+let dateContextTimestamp = 0;
+const DATE_CONTEXT_TTL = 60 * 1000; // 1 minute
+
 const ALLOWED_MODELS = [
   'llama-3.1-8b-instant',
   'llama-3.3-70b-versatile',
@@ -63,6 +82,21 @@ const WEEKDAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Frida
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
+/**
+ * Parse JSON response from AI, stripping markdown code fences
+ * @param {string} text - Raw AI response
+ * @returns {object|null} Parsed JSON or null if parsing fails
+ */
+function parseJsonResponse(text) {
+  if (!text || typeof text !== 'string') return null;
+  const stripped = text.trim().replace(/^```(?:json)?\s*|```\s*$/gm, '').trim();
+  try {
+    return JSON.parse(stripped);
+  } catch {
+    return null;
+  }
+}
+
 function resolveModel() {
   const requested = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
   return ALLOWED_MODELS.includes(requested) ? requested : 'llama-3.1-8b-instant';
@@ -80,22 +114,32 @@ function nextWeekday(now, targetDow) {
 }
 
 function buildDateContext() {
-  const now         = new Date();
-  const tomorrow    = new Date(now); tomorrow.setUTCDate(now.getUTCDate() + 1);
-  const nextWeekend = nextWeekday(now, 6);
-  const nextWeek    = new Date(now); nextWeek.setUTCDate(now.getUTCDate() + 7);
-  const endOfWeek   = nextWeekday(now, 5);
+  const now = Date.now();
+  
+  // Return cached context if still valid
+  if (cachedDateContext && (now - dateContextTimestamp < DATE_CONTEXT_TTL)) {
+    return cachedDateContext;
+  }
+  
+  const nowDate     = new Date();
+  const tomorrow    = new Date(nowDate); tomorrow.setUTCDate(nowDate.getUTCDate() + 1);
+  const nextWeekend = nextWeekday(nowDate, 6);
+  const nextWeek    = new Date(nowDate); nextWeek.setUTCDate(nowDate.getUTCDate() + 7);
+  const endOfWeek   = nextWeekday(nowDate, 5);
 
-  return [
-    `Today         : ${fmtDate(now)}`,
-    `Tonight       : ${fmtDate(now)}  (use 9.00 pm unless a time is given)`,
+  cachedDateContext = [
+    `Today         : ${fmtDate(nowDate)}`,
+    `Tonight       : ${fmtDate(nowDate)}  (use 9.00 pm unless a time is given)`,
     `Tomorrow      : ${fmtDate(tomorrow)}`,
     `This weekend  : ${fmtDate(nextWeekend)}`,
     `End of week   : ${fmtDate(endOfWeek)}`,
     `Next week     : ${fmtDate(nextWeek)}`,
     '',
-    ...WEEKDAY_NAMES.map((name, i) => `Next ${name.padEnd(10)}: ${fmtDate(nextWeekday(now, i))}`),
+    ...WEEKDAY_NAMES.map((name, i) => `Next ${name.padEnd(10)}: ${fmtDate(nextWeekday(nowDate, i))}`),
   ].join('\n');
+  
+  dateContextTimestamp = now;
+  return cachedDateContext;
 }
 
 const DURATION_REFERENCE = `
@@ -422,8 +466,21 @@ async function buildPayload(model, taskStr, userId = null) {
 
   if (userId) {
     try {
-      const calibration = await getCalibrationContext(userId);
-      if (calibration) systemPrompt += '\n\n' + calibration;
+      const cachedCalibration = calibrationCache.get(userId);
+      const now = Date.now();
+      
+      if (cachedCalibration && (now - cachedCalibration.timestamp < CALIBRATION_CACHE_TTL)) {
+        systemPrompt += '\n\n' + cachedCalibration.context;
+      } else {
+        const calibration = await getCalibrationContext(userId);
+        if (calibration) {
+          systemPrompt += '\n\n' + calibration;
+          calibrationCache.set(userId, { 
+            context: calibration, 
+            timestamp: now 
+          });
+        }
+      }
     } catch (err) {
       console.warn('[aiController] Calibration fetch failed | user=' + userId + ' :', err?.message);
     }
@@ -595,14 +652,11 @@ Rules:
     return res.status(500).json({ error: err.message || 'Failed to reschedule. Please try again.' });
   }
 
-  const rawText  = data?.choices?.[0]?.message?.content || '';
-  const stripped = rawText.trim().replace(/^```(?:json)?\s*|```\s*$/gm, '').trim();
+  const rawText = data?.choices?.[0]?.message?.content || '';
+  const parsed = parseJsonResponse(rawText);
 
-  let parsed;
-  try {
-    parsed = JSON.parse(stripped);
-  } catch {
-    console.warn('[aiController:reschedule] JSON parse failed:', stripped.slice(0, 200));
+  if (!parsed) {
+    console.warn('[aiController:reschedule] JSON parse failed:', rawText.slice(0, 200));
     return res.status(500).json({ error: 'Failed to parse rescheduled date. Please try again.' });
   }
 
@@ -683,14 +737,11 @@ Return ONLY a raw JSON object:
     return res.status(500).json({ error: err.message || 'Failed to split task. Please try again.' });
   }
 
-  const rawText  = data?.choices?.[0]?.message?.content || '';
-  const stripped = rawText.trim().replace(/^```(?:json)?\s*|```\s*$/gm, '').trim();
+  const rawText = data?.choices?.[0]?.message?.content || '';
+  const parsed = parseJsonResponse(rawText);
 
-  let parsed;
-  try {
-    parsed = JSON.parse(stripped);
-  } catch {
-    console.warn('[aiController:suggestSplit] JSON parse failed:', stripped.slice(0, 200));
+  if (!parsed) {
+    console.warn('[aiController:suggestSplit] JSON parse failed:', rawText.slice(0, 200));
     return res.status(500).json({ error: 'Failed to parse split tasks. Please try again.' });
   }
 
@@ -804,14 +855,11 @@ Only use IDs from the list above. reasoning must have one entry per orderedTaskI
     return res.status(500).json({ error: err.message || 'Failed to generate daily plan. Please try again.' });
   }
 
-  const rawText  = data?.choices?.[0]?.message?.content || '';
-  const stripped = rawText.trim().replace(/^```(?:json)?\s*|```\s*$/gm, '').trim();
+  const rawText = data?.choices?.[0]?.message?.content || '';
+  const parsed = parseJsonResponse(rawText);
 
-  let parsed;
-  try {
-    parsed = JSON.parse(stripped);
-  } catch {
-    console.warn('[aiController:getDailyPlan] JSON parse failed:', stripped.slice(0, 200));
+  if (!parsed) {
+    console.warn('[aiController:getDailyPlan] JSON parse failed:', rawText.slice(0, 200));
     return res.status(500).json({ error: 'Failed to parse daily plan. Please try again.' });
   }
 
