@@ -4,14 +4,14 @@ FROM node:20-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy backend package files
+COPY backend/package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production
 
-# Copy source code
-COPY src/ ./src/
+# Copy backend source code
+COPY backend/src/ ./src/
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

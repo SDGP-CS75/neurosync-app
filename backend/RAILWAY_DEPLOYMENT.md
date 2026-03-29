@@ -19,8 +19,9 @@ This guide explains how to deploy the NeuroSync backend to Railway.
    - Connect your GitHub account and select the repository
 
 2. **Configure the backend service**
-   - Railway will automatically detect the `railway.json` configuration
-   - The service will be built using the Dockerfile
+   - Railway will automatically detect the `railway.json` configuration at the root
+   - The service will be built using the Dockerfile at the root
+   - The Dockerfile is configured to only deploy the backend directory
 
 3. **Set environment variables**
    - Go to your service's "Variables" tab
@@ -44,7 +45,7 @@ This guide explains how to deploy the NeuroSync backend to Railway.
 
 3. **Initialize project**
    ```bash
-   cd backend
+   # From the root of your repository (neurosync-app)
    railway init
    ```
 
