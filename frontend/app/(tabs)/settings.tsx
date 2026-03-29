@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, TextInput, Alert, Image, useWindowDimensions } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, TextInput, Alert, Image, useWindowDimensions, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -9,15 +9,112 @@ import { useUser } from '../../context/UserContext';
 import { useAppTheme } from '../../context/ThemeContext';
 import ThemePicker from '../../components/ThemePicker';
 import { logoutUser } from '../../services/auth';
+import { Easings } from '../../utils/animations';
 
 const BASE_WIDTH = 390;
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { profile, updateProfile, setProfileImage, resetProfile } = useUser();
+  const { profile, updateProfile, setProfileImage, resetProfile, saveHapticFeedbackPreference, hapticFeedbackEnabled } = useUser();
   const { palette } = useAppTheme();
   const { width } = useWindowDimensions();
   const activeColor = palette.primary;
+  
+  // Animation values
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const profileCardFade = useRef(new Animated.Value(0)).current;
+  const profileCardSlide = useRef(new Animated.Value(30)).current;
+  const themeCardFade = useRef(new Animated.Value(0)).current;
+  const themeCardSlide = useRef(new Animated.Value(30)).current;
+  const prefsCardFade = useRef(new Animated.Value(0)).current;
+  const prefsCardSlide = useRef(new Animated.Value(30)).current;
+  const accountCardFade = useRef(new Animated.Value(0)).current;
+  const accountCardSlide = useRef(new Animated.Value(30)).current;
+  
+  // Entrance animations
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerFade, {
+          toValue: 1,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerSlide, {
+          toValue: 0,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(profileCardFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(profileCardSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(themeCardFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(themeCardSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(prefsCardFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(prefsCardSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(accountCardFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(accountCardSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
   
   // RESPONSIVE SCALING LOGIC
   // Calculates a dynamic scale multiplier based on the device's screen width.
@@ -32,7 +129,6 @@ export default function SettingsScreen() {
   // Enforces a 1:1 aspect ratio crop so the image fits perfectly into the circular avatar UI.
   // Updates the global UserContext upon successful selection.
   const [dailyReminders, setDailyReminders] = useState(true);
-  const [hapticFeedback, setHapticFeedback] = useState(true);
   const [strictFocus, setStrictFocus] = useState(false);
 
   // Function to open the phone gallery
@@ -119,7 +215,15 @@ export default function SettingsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         
         {/* Header */}
-        <View style={styles.header}>
+        <Animated.View 
+          style={[
+            styles.header,
+            {
+              opacity: headerFade,
+              transform: [{ translateY: headerSlide }],
+            },
+          ]}
+        >
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={20 * scale} color="#1F2937" />
           </TouchableOpacity>
@@ -127,11 +231,19 @@ export default function SettingsScreen() {
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
              <Text style={[styles.saveButtonText, { color: activeColor }]}>Save</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         {/* --- USER PROFILE SECTION --- */}
         <Text style={[styles.sectionSubtitle, { color: activeColor }]}>USER PROFILE</Text>
-        <View style={styles.card}>
+        <Animated.View 
+          style={[
+            styles.card,
+            {
+              opacity: profileCardFade,
+              transform: [{ translateY: profileCardSlide }],
+            },
+          ]}
+        >
           
           {/* Profile Photo Area */}
           <View style={styles.profileImageContainer}>
@@ -199,17 +311,33 @@ export default function SettingsScreen() {
             />
           </View>
 
-        </View>
+        </Animated.View>
 
         {/* --- THEME PICKER SECTION --- */}
         <Text style={[styles.sectionSubtitle, { color: activeColor, marginTop: 10 * scale }]}>APP COLOUR THEME</Text>
-        <View style={styles.card}>
+        <Animated.View 
+          style={[
+            styles.card,
+            {
+              opacity: themeCardFade,
+              transform: [{ translateY: themeCardSlide }],
+            },
+          ]}
+        >
           <ThemePicker />
-        </View>
+        </Animated.View>
 
         {/* --- PREFERENCES SECTION --- */}
         <Text style={[styles.sectionSubtitle, { color: activeColor, marginTop: 10 * scale }]}>PREFERENCES</Text>
-        <View style={styles.card}>
+        <Animated.View 
+          style={[
+            styles.card,
+            {
+              opacity: prefsCardFade,
+              transform: [{ translateY: prefsCardSlide }],
+            },
+          ]}
+        >
           
           <TouchableOpacity 
             style={styles.settingRow}
@@ -247,10 +375,10 @@ export default function SettingsScreen() {
               <Text style={styles.settingText}>Haptic Feedback</Text>
             </View>
             <Switch 
-              value={hapticFeedback} 
-              onValueChange={setHapticFeedback}
+              value={hapticFeedbackEnabled} 
+              onValueChange={saveHapticFeedbackPreference}
               trackColor={{ false: "#E5E7EB", true: activeColor + '80' }}
-              thumbColor={hapticFeedback ? activeColor : "#f4f3f4"}
+              thumbColor={hapticFeedbackEnabled ? activeColor : "#f4f3f4"}
             />
           </View>
 
@@ -271,11 +399,19 @@ export default function SettingsScreen() {
               thumbColor={strictFocus ? "#EF4444" : "#f4f3f4"}
             />
           </View>
-        </View>
+        </Animated.View>
 
         {/* --- ACCOUNT SECTION --- */}
         <Text style={[styles.sectionSubtitle, { color: activeColor, marginTop: 10 * scale }]}>ACCOUNT</Text>
-        <View style={styles.card}>
+        <Animated.View 
+          style={[
+            styles.card,
+            {
+              opacity: accountCardFade,
+              transform: [{ translateY: accountCardSlide }],
+            },
+          ]}
+        >
           <TouchableOpacity 
             style={[styles.settingRow, { borderBottomWidth: 0 }]}
             onPress={handleLogout}
@@ -288,7 +424,7 @@ export default function SettingsScreen() {
             </View>
             <Ionicons name="chevron-forward" size={18 * scale} color="#9CA3AF" />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
       </ScrollView>
       <Nav />

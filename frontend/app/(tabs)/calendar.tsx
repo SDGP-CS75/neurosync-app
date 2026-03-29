@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,14 @@ import {
   FlatList,
   ScrollView,
   Dimensions,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks, Task } from "../../context/TasksContext";
+import { Easings } from "../../utils/animations";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CELL_SIZE = Math.floor((SCREEN_WIDTH - 32) / 7);
@@ -92,10 +94,41 @@ const badgeStyles = StyleSheet.create({
 
 // ─── Task row ────────────────────────────────────────────────────────────────
 
-function TaskRow({ task, theme }: { task: Task; theme: any }) {
+function TaskRow({ task, theme, index }: { task: Task; theme: any; index: number }) {
   const timeStr = formatTimeDisplay(task);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 120,
+        delay: index * 50,
+        easing: Easings.easeOut,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 120,
+        delay: index * 50,
+        easing: Easings.easeOut,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
   return (
-    <View style={[taskRowStyles.row, { backgroundColor: theme.colors.surface }]}>
+    <Animated.View
+      style={[
+        taskRowStyles.row,
+        {
+          backgroundColor: theme.colors.surface,
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
       <View style={[taskRowStyles.emoji, { backgroundColor: task.iconBg }]}>
         <Text style={taskRowStyles.emojiText}>{task.icon}</Text>
       </View>
@@ -110,7 +143,7 @@ function TaskRow({ task, theme }: { task: Task; theme: any }) {
         ) : null}
       </View>
       <StatusBadge status={task.status} theme={theme} />
-    </View>
+    </Animated.View>
   );
 }
 const taskRowStyles = StyleSheet.create({
@@ -180,58 +213,89 @@ function MonthGrid({
 
   return (
     <View style={gridStyles.grid}>
-      {cells.map((cell, idx) => (
-        <TouchableOpacity
-          key={idx}
-          style={[
-            gridStyles.cell,
-            { width: CELL_SIZE, height: CELL_SIZE },
-            cell.isSelected && { backgroundColor: primaryColor, borderRadius: CELL_SIZE / 2 },
-            !cell.isSelected && cell.isToday && {
-              borderRadius: CELL_SIZE / 2,
-              borderWidth: 1.5,
-              borderColor: primaryColor,
-            },
-          ]}
-          onPress={() => cell.valid && cell.key && onSelectDay(cell.key)}
-          activeOpacity={cell.valid ? 0.75 : 1}
-        >
-          <Text
-            style={[
-              gridStyles.cellText,
-              {
-                color: !cell.valid
-                  ? "transparent"
-                  : cell.isSelected
-                  ? "#fff"
-                  : cell.isToday
-                  ? primaryColor
-                  : theme.colors.onBackground,
-              },
-              (cell.isSelected || cell.isToday) && { fontWeight: "700" },
-            ]}
-          >
-            {cell.valid ? cell.day : ""}
-          </Text>
+      {cells.map((cell, idx) => {
+        const fadeAnim = useRef(new Animated.Value(0)).current;
+        const scaleAnim = useRef(new Animated.Value(0.8)).current;
 
-          {/* Dots */}
-          {cell.valid && cell.dots.length > 0 && (
-            <View style={gridStyles.dotRow}>
-              {cell.dots.slice(0, 3).map((color, di) => (
-                <View
-                  key={di}
-                  style={[
-                    gridStyles.dot,
-                    {
-                      backgroundColor: cell.isSelected ? "rgba(255,255,255,0.85)" : color,
-                    },
-                  ]}
-                />
-              ))}
-            </View>
-          )}
-        </TouchableOpacity>
-      ))}
+        useEffect(() => {
+          Animated.parallel([
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 200,
+              delay: idx * 20,
+              easing: Easings.easeOut,
+              useNativeDriver: true,
+            }),
+            Animated.timing(scaleAnim, {
+              toValue: 1,
+              duration: 200,
+              delay: idx * 20,
+              easing: Easings.easeOut,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }, []);
+
+        return (
+          <Animated.View
+            key={idx}
+            style={{
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            }}
+          >
+            <TouchableOpacity
+              style={[
+                gridStyles.cell,
+                { width: CELL_SIZE, height: CELL_SIZE },
+                cell.isSelected && { backgroundColor: primaryColor, borderRadius: CELL_SIZE / 2 },
+                !cell.isSelected && cell.isToday && {
+                  borderRadius: CELL_SIZE / 2,
+                  borderWidth: 1.5,
+                  borderColor: primaryColor,
+                },
+              ]}
+              onPress={() => cell.valid && cell.key && onSelectDay(cell.key)}
+              activeOpacity={cell.valid ? 0.75 : 1}
+            >
+              <Text
+                style={[
+                  gridStyles.cellText,
+                  {
+                    color: !cell.valid
+                      ? "transparent"
+                      : cell.isSelected
+                      ? "#fff"
+                      : cell.isToday
+                      ? primaryColor
+                      : theme.colors.onBackground,
+                  },
+                  (cell.isSelected || cell.isToday) && { fontWeight: "700" },
+                ]}
+              >
+                {cell.valid ? cell.day : ""}
+              </Text>
+
+              {/* Dots */}
+              {cell.valid && cell.dots.length > 0 && (
+                <View style={gridStyles.dotRow}>
+                  {cell.dots.slice(0, 3).map((color, di) => (
+                    <View
+                      key={di}
+                      style={[
+                        gridStyles.dot,
+                        {
+                          backgroundColor: cell.isSelected ? "rgba(255,255,255,0.85)" : color,
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+        );
+      })}
     </View>
   );
 }
@@ -284,7 +348,7 @@ function WeekStrip({
 }: WeekStripProps) {
   return (
     <View style={weekStyles.strip}>
-      {weekDates.map((date) => {
+      {weekDates.map((date, idx) => {
         const key = toDateKey(date.getFullYear(), date.getMonth(), date.getDate());
         const isSelected = key === selectedKey;
         const isToday = key === todayKey;
@@ -292,61 +356,91 @@ function WeekStrip({
         const dayNum = date.getDate();
         const dayLabel = WEEKDAYS[date.getDay()];
 
+        const fadeAnim = useRef(new Animated.Value(0)).current;
+        const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+        useEffect(() => {
+          Animated.parallel([
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 200,
+              delay: idx * 30,
+              easing: Easings.easeOut,
+              useNativeDriver: true,
+            }),
+            Animated.timing(scaleAnim, {
+              toValue: 1,
+              duration: 200,
+              delay: idx * 30,
+              easing: Easings.easeOut,
+              useNativeDriver: true,
+            }),
+          ]).start();
+        }, []);
+
         return (
-          <TouchableOpacity
+          <Animated.View
             key={key}
-            style={[
-              weekStyles.dayCol,
-              isSelected && { backgroundColor: primaryColor, borderRadius: 14 },
-            ]}
-            onPress={() => onSelectDay(key)}
-            activeOpacity={0.8}
+            style={{
+              flex: 1,
+              opacity: fadeAnim,
+              transform: [{ scale: scaleAnim }],
+            }}
           >
-            <Text
+            <TouchableOpacity
               style={[
-                weekStyles.dayLabel,
-                {
-                  color: isSelected
-                    ? "rgba(255,255,255,0.8)"
-                    : theme.colors.onSurfaceVariant,
-                },
+                weekStyles.dayCol,
+                isSelected && { backgroundColor: primaryColor, borderRadius: 14 },
               ]}
+              onPress={() => onSelectDay(key)}
+              activeOpacity={0.8}
             >
-              {dayLabel}
-            </Text>
-            <Text
-              style={[
-                weekStyles.dayNum,
-                {
-                  color: isSelected
-                    ? "#fff"
-                    : isToday
-                    ? primaryColor
-                    : theme.colors.onBackground,
-                },
-                (isSelected || isToday) && { fontWeight: "700" },
-              ]}
-            >
-              {dayNum}
-            </Text>
-            {dots.length > 0 && (
-              <View style={weekStyles.dotRow}>
-                {dots.slice(0, 3).map((color, di) => (
-                  <View
-                    key={di}
-                    style={[
-                      weekStyles.dot,
-                      {
-                        backgroundColor: isSelected
-                          ? "rgba(255,255,255,0.7)"
-                          : color,
-                      },
-                    ]}
-                  />
-                ))}
-              </View>
-            )}
-          </TouchableOpacity>
+              <Text
+                style={[
+                  weekStyles.dayLabel,
+                  {
+                    color: isSelected
+                      ? "rgba(255,255,255,0.8)"
+                      : theme.colors.onSurfaceVariant,
+                  },
+                ]}
+              >
+                {dayLabel}
+              </Text>
+              <Text
+                style={[
+                  weekStyles.dayNum,
+                  {
+                    color: isSelected
+                      ? "#fff"
+                      : isToday
+                      ? primaryColor
+                      : theme.colors.onBackground,
+                  },
+                  (isSelected || isToday) && { fontWeight: "700" },
+                ]}
+              >
+                {dayNum}
+              </Text>
+              {dots.length > 0 && (
+                <View style={weekStyles.dotRow}>
+                  {dots.slice(0, 3).map((color, di) => (
+                    <View
+                      key={di}
+                      style={[
+                        weekStyles.dot,
+                        {
+                          backgroundColor: isSelected
+                            ? "rgba(255,255,255,0.7)"
+                            : color,
+                        },
+                      ]}
+                    />
+                  ))}
+                </View>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
         );
       })}
     </View>
@@ -395,6 +489,84 @@ export default function CalendarScreen() {
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [selectedKey, setSelectedKey] = useState(todayKey);
+
+  // Animation values
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const toggleFade = useRef(new Animated.Value(0)).current;
+  const toggleSlide = useRef(new Animated.Value(20)).current;
+  const calendarFade = useRef(new Animated.Value(0)).current;
+  const calendarSlide = useRef(new Animated.Value(30)).current;
+  const tasksFade = useRef(new Animated.Value(0)).current;
+  const tasksSlide = useRef(new Animated.Value(30)).current;
+
+  // Entrance animations
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerFade, {
+          toValue: 1,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerSlide, {
+          toValue: 0,
+          duration: 300,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(toggleFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(toggleSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(calendarFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(calendarSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(tasksFade, {
+          toValue: 1,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tasksSlide, {
+          toValue: 0,
+          duration: 300,
+          delay: 50,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   // Week view: which Monday anchor
   const [weekAnchor, setWeekAnchor] = useState<Date>(() => {
@@ -489,7 +661,15 @@ export default function CalendarScreen() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <Animated.View
+        style={[
+          styles.header,
+          {
+            opacity: headerFade,
+            transform: [{ translateY: headerSlide }],
+          },
+        ]}
+      >
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.onBackground} />
         </TouchableOpacity>
@@ -497,10 +677,18 @@ export default function CalendarScreen() {
         <TouchableOpacity onPress={goToToday} style={styles.todayBtn}>
           <Text style={[styles.todayBtnText, { color: primaryColor }]}>Today</Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
 
       {/* View mode toggle */}
-      <View style={styles.toggleRow}>
+      <Animated.View
+        style={[
+          styles.toggleRow,
+          {
+            opacity: toggleFade,
+            transform: [{ translateY: toggleSlide }],
+          },
+        ]}
+      >
         <View style={styles.togglePill}>
           <TouchableOpacity
             style={[styles.toggleOpt, viewMode === "month" && { backgroundColor: primaryColor }]}
@@ -519,11 +707,19 @@ export default function CalendarScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </Animated.View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Month / Week Nav row */}
-        <View style={styles.navRow}>
+        <Animated.View
+          style={[
+            styles.navRow,
+            {
+              opacity: calendarFade,
+              transform: [{ translateY: calendarSlide }],
+            },
+          ]}
+        >
           <TouchableOpacity
             onPress={viewMode === "month" ? prevMonth : prevWeek}
             hitSlop={12}
@@ -545,46 +741,69 @@ export default function CalendarScreen() {
           >
             <Ionicons name="chevron-forward" size={22} color={theme.colors.onBackground} />
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         {/* Weekday header row */}
-        <View style={styles.weekdayRow}>
+        <Animated.View
+          style={[
+            styles.weekdayRow,
+            {
+              opacity: calendarFade,
+              transform: [{ translateY: calendarSlide }],
+            },
+          ]}
+        >
           {WEEKDAYS.map((d) => (
             <Text key={d} style={[styles.weekdayLabel, { color: theme.colors.onSurfaceVariant }]}>
               {d}
             </Text>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Calendar */}
-        {viewMode === "month" ? (
-          <MonthGrid
-            viewYear={viewYear}
-            viewMonth={viewMonth}
-            selectedKey={selectedKey}
-            dotMap={dotMap}
-            todayKey={todayKey}
-            onSelectDay={handleSelectDay}
-            theme={theme}
-            primaryColor={primaryColor}
-          />
-        ) : (
-          <WeekStrip
-            weekDates={weekDates}
-            selectedKey={selectedKey}
-            dotMap={dotMap}
-            todayKey={todayKey}
-            onSelectDay={handleSelectDay}
-            theme={theme}
-            primaryColor={primaryColor}
-          />
-        )}
+        <Animated.View
+          style={{
+            opacity: calendarFade,
+            transform: [{ translateY: calendarSlide }],
+          }}
+        >
+          {viewMode === "month" ? (
+            <MonthGrid
+              viewYear={viewYear}
+              viewMonth={viewMonth}
+              selectedKey={selectedKey}
+              dotMap={dotMap}
+              todayKey={todayKey}
+              onSelectDay={handleSelectDay}
+              theme={theme}
+              primaryColor={primaryColor}
+            />
+          ) : (
+            <WeekStrip
+              weekDates={weekDates}
+              selectedKey={selectedKey}
+              dotMap={dotMap}
+              todayKey={todayKey}
+              onSelectDay={handleSelectDay}
+              theme={theme}
+              primaryColor={primaryColor}
+            />
+          )}
+        </Animated.View>
 
         {/* Divider */}
         <View style={[styles.divider, { backgroundColor: theme.colors.surface }]} />
 
         {/* Selected day heading */}
-        <View style={styles.dayHeadingRow}>
+        <Animated.View
+          style={[
+            styles.dayHeadingRow,
+            {
+              opacity: tasksFade,
+              transform: [{ translateY: tasksSlide }],
+            },
+          ]}
+        >
           <Text style={[styles.dayHeading, { color: theme.colors.onBackground }]}>
             {selectedDateDisplay}
           </Text>
@@ -594,23 +813,30 @@ export default function CalendarScreen() {
               {selectedDayTasks.length === 1 ? "task" : "tasks"}
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Task list */}
-        {selectedDayTasks.length === 0 ? (
-          <View style={styles.emptyDay}>
-            <Text style={styles.emptyDayEmoji}>📭</Text>
-            <Text style={[styles.emptyDayText, { color: theme.colors.onSurfaceVariant }]}>
-              Nothing scheduled
-            </Text>
-          </View>
-        ) : (
-          <View style={styles.taskList}>
-            {selectedDayTasks.map((task) => (
-              <TaskRow key={task.id} task={task} theme={theme} />
-            ))}
-          </View>
-        )}
+        <Animated.View
+          style={{
+            opacity: tasksFade,
+            transform: [{ translateY: tasksSlide }],
+          }}
+        >
+          {selectedDayTasks.length === 0 ? (
+            <View style={styles.emptyDay}>
+              <Text style={styles.emptyDayEmoji}>📭</Text>
+              <Text style={[styles.emptyDayText, { color: theme.colors.onSurfaceVariant }]}>
+                Nothing scheduled
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.taskList}>
+              {selectedDayTasks.map((task, index) => (
+                <TaskRow key={task.id} task={task} theme={theme} index={index} />
+              ))}
+            </View>
+          )}
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );

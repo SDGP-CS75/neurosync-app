@@ -4,15 +4,18 @@
 
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ImageBackground, StyleSheet, View, Platform } from "react-native";
+import { ImageBackground, StyleSheet, View, Platform, Text } from "react-native";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useEffect, useState } from "react";
+import NetInfo from "@react-native-community/netinfo";
 
 import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
 import { UserProvider, useUser } from "../context/UserContext";
 import { TasksProvider } from "../context/TasksContext";
 import UndoSnackbar from "../components/UndoSnackbar";
+import { requestNotificationPermissions } from "../services/notifications";
 
 // Clear localStorage on web to prevent Firebase token refresh errors
 // This runs before React renders to ensure clean auth state
@@ -35,6 +38,28 @@ if (Platform.OS === "web" && typeof window !== "undefined") {
 
 function AppShell() {
   const { theme } = useAppTheme();
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Request notification permissions on app start
+  useEffect(() => {
+    requestNotificationPermissions().catch((error) => {
+      console.error('Failed to request notification permissions:', error);
+    });
+  }, []);
+
+  // Monitor network connectivity
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setIsOffline(!state.isConnected);
+    });
+
+    // Check initial state
+    NetInfo.fetch().then((state) => {
+      setIsOffline(!state.isConnected);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <PaperProvider theme={theme}>
@@ -45,6 +70,16 @@ function AppShell() {
       >
         <View style={styles.content}>
           <StatusBar style="dark" />
+          
+          {/* Offline warning banner */}
+          {isOffline && (
+            <View style={styles.offlineBanner}>
+              <Text style={styles.offlineBannerText}>
+                ⚠️ You are offline. Changes will sync when you reconnect.
+              </Text>
+            </View>
+          )}
+
           <Stack
             screenOptions={{
               headerShown: false,
@@ -127,4 +162,16 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   background: { flex: 1 },
   content:    { flex: 1 },
+  offlineBanner: {
+    backgroundColor: '#FFA500',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  offlineBannerText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Text,
   View,
@@ -7,6 +7,7 @@ import {
   Dimensions,
   ScrollView,
   TextInput,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +16,7 @@ import Nav from "../../components/Nav";
 import { useAppTheme } from "../../context/ThemeContext";
 import TaskPicker from "../../components/TaskPicker";
 import { Task, useTasks } from "../../context/TasksContext";
+import { Easings } from "../../utils/animations";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -42,6 +44,156 @@ export default function FocusTimer() {
   const [linkedTask, setLinkedTask] = useState<Task | null | undefined>(
     undefined
   );
+
+  // Animation values
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const descriptionFade = useRef(new Animated.Value(0)).current;
+  const descriptionSlide = useRef(new Animated.Value(20)).current;
+  const workingOnFade = useRef(new Animated.Value(0)).current;
+  const workingOnSlide = useRef(new Animated.Value(30)).current;
+  const modeFade = useRef(new Animated.Value(0)).current;
+  const modeSlide = useRef(new Animated.Value(30)).current;
+  const durationFade = useRef(new Animated.Value(0)).current;
+  const durationSlide = useRef(new Animated.Value(30)).current;
+  const previewFade = useRef(new Animated.Value(0)).current;
+  const previewSlide = useRef(new Animated.Value(30)).current;
+  const startFade = useRef(new Animated.Value(0)).current;
+  const startSlide = useRef(new Animated.Value(30)).current;
+  const tipsFade = useRef(new Animated.Value(0)).current;
+  const tipsSlide = useRef(new Animated.Value(30)).current;
+
+  // Entrance animations
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerFade, {
+          toValue: 1,
+          duration: 120,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerSlide, {
+          toValue: 0,
+          duration: 120,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(descriptionFade, {
+          toValue: 1,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(descriptionSlide, {
+          toValue: 0,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(workingOnFade, {
+          toValue: 1,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(workingOnSlide, {
+          toValue: 0,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(modeFade, {
+          toValue: 1,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(modeSlide, {
+          toValue: 0,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(durationFade, {
+          toValue: 1,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(durationSlide, {
+          toValue: 0,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(previewFade, {
+          toValue: 1,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(previewSlide, {
+          toValue: 0,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(startFade, {
+          toValue: 1,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(startSlide, {
+          toValue: 0,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(tipsFade, {
+          toValue: 1,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(tipsSlide, {
+          toValue: 0,
+          duration: 120,
+          delay: 0,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   // Pre-fill linked task from daily plan navigation  ← moved inside component
   useEffect(() => {
@@ -151,15 +303,39 @@ export default function FocusTimer() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.header}>
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerFade,
+              transform: [{ translateY: headerSlide }],
+            },
+          ]}
+        >
           <Text style={styles.title}>Focus Timer</Text>
-        </View>
+        </Animated.View>
 
-        <Text style={styles.description}>
+        <Animated.Text
+          style={[
+            styles.description,
+            {
+              opacity: descriptionFade,
+              transform: [{ translateY: descriptionSlide }],
+            },
+          ]}
+        >
           Set up your focus and break durations, then start your session.
-        </Text>
+        </Animated.Text>
 
-        <View style={styles.workingOnSection}>
+        <Animated.View
+          style={[
+            styles.workingOnSection,
+            {
+              opacity: workingOnFade,
+              transform: [{ translateY: workingOnSlide }],
+            },
+          ]}
+        >
           <Text style={styles.sectionTitle}>Working on</Text>
           <TouchableOpacity
             style={styles.workingOnRow}
@@ -216,9 +392,17 @@ export default function FocusTimer() {
               <Text style={styles.clearTaskText}>Clear</Text>
             </TouchableOpacity>
           )}
-        </View>
+        </Animated.View>
 
-        <View style={styles.modeContainer}>
+        <Animated.View
+          style={[
+            styles.modeContainer,
+            {
+              opacity: modeFade,
+              transform: [{ translateY: modeSlide }],
+            },
+          ]}
+        >
           <TouchableOpacity
             style={[
               styles.modeButton,
@@ -278,9 +462,17 @@ export default function FocusTimer() {
               {breakDuration} min
             </Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
-        <View style={styles.durationSection}>
+        <Animated.View
+          style={[
+            styles.durationSection,
+            {
+              opacity: durationFade,
+              transform: [{ translateY: durationSlide }],
+            },
+          ]}
+        >
           <Text style={styles.sectionTitle}>
             {mode === "focus" ? "Focus Duration" : "Break Duration"}
           </Text>
@@ -349,9 +541,17 @@ export default function FocusTimer() {
               <Text style={styles.customInputUnit}>min</Text>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
-        <View style={styles.previewSection}>
+        <Animated.View
+          style={[
+            styles.previewSection,
+            {
+              opacity: previewFade,
+              transform: [{ translateY: previewSlide }],
+            },
+          ]}
+        >
           <Text style={styles.sectionTitle}>Session Preview</Text>
           <View style={styles.previewCard}>
             <View style={styles.previewRow}>
@@ -376,19 +576,36 @@ export default function FocusTimer() {
               </View>
             </View>
           </View>
-        </View>
+        </Animated.View>
 
-        <TouchableOpacity style={styles.startButton} onPress={handleStartTimer}>
-          <Ionicons name="play" size={24} color="#fff" />
-          <Text style={styles.startButtonText}>Start Focus Session</Text>
-        </TouchableOpacity>
+        <Animated.View
+          style={[
+            {
+              opacity: startFade,
+              transform: [{ translateY: startSlide }],
+            },
+          ]}
+        >
+          <TouchableOpacity style={styles.startButton} onPress={handleStartTimer}>
+            <Ionicons name="play" size={24} color="#fff" />
+            <Text style={styles.startButtonText}>Start Focus Session</Text>
+          </TouchableOpacity>
+        </Animated.View>
 
-        <View style={styles.tipsSection}>
+        <Animated.View
+          style={[
+            styles.tipsSection,
+            {
+              opacity: tipsFade,
+              transform: [{ translateY: tipsSlide }],
+            },
+          ]}
+        >
           <Text style={styles.tipsTitle}>💡 Tips for better focus</Text>
           <Text style={styles.tipText}>• Put your phone on Do Not Disturb</Text>
           <Text style={styles.tipText}>• Close unnecessary tabs and apps</Text>
           <Text style={styles.tipText}>• Have water nearby to stay hydrated</Text>
-        </View>
+        </Animated.View>
       </ScrollView>
 
       <Nav />

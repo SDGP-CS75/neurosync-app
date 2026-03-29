@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { SafeAreaView, View, Text, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { SafeAreaView, View, Text, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Image, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from 'react-native-paper';
 import Nav from '../../components/Nav';
 import { useUser } from '../../context/UserContext';
+import { useFadeIn, useSlideUp, useStaggerAnimation } from '../../utils/animations';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
@@ -11,6 +12,12 @@ export default function MoodAnalysis() {
   const { colors } = useTheme() as any;
   const [entries, setEntries] = useState<any[]>([]);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+  
+  // Animation hooks
+  const headerFade = useFadeIn(300, 0);
+  const analyticsSlide = useSlideUp(400, 100);
+  const chartFade = useFadeIn(400, 200);
+  const feedbackSlide = useSlideUp(400, 300);
 
   useEffect(() => {
     const load = async () => {
@@ -122,7 +129,7 @@ export default function MoodAnalysis() {
       <ScrollView contentContainerStyle={styles.content}>
 
         {/* header with greeting + profile */}
-        <View style={[styles.headerRow, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+        <Animated.View style={[styles.headerRow, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', opacity: headerFade }]}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.greeting, { color: colors.onBackground }]}>Hey, {useUser()?.profile?.name?.split(' ')[0] || 'You'}! <Text style={{ fontSize: 20 }}>👋</Text></Text>
             <Text style={[styles.subtitle, { color: colors.textMuted }]}>Mood Analysis</Text>
@@ -137,10 +144,10 @@ export default function MoodAnalysis() {
             )}
             <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 6 }}>{useUser()?.profile?.name || 'You'}</Text>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Analytics summary cards */}
-        <View style={styles.analyticsRow}>
+        <Animated.View style={[styles.analyticsRow, { opacity: analyticsSlide.fadeAnim, transform: [{ translateY: analyticsSlide.slideAnim }] }]}>
           <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
             <Text style={[styles.statLabel, { color: colors.onSurfaceVariant }]}>Avg Energy</Text>
             <Text style={[styles.statValue, { color: colors.primary }]}>{averageEnergy}/10</Text>
@@ -150,7 +157,7 @@ export default function MoodAnalysis() {
             <Text style={[styles.statLabel, { color: colors.onSurfaceVariant }]}>Avg Mood</Text>
             <Text style={[styles.statValue, { color: colors.primary }]}>{getMoodEmoji(averageMoodIndex)} {getMoodLabel(averageMoodIndex)}</Text>
           </View>
-        </View>
+        </Animated.View>
 
         <View style={styles.analyticsRow}>
           <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
@@ -197,7 +204,7 @@ export default function MoodAnalysis() {
         )}
 
         {/* Mood chart (counts per emoji for selected day) */}
-        <View style={[styles.chartWrap, { backgroundColor: colors.surface }]}> 
+        <Animated.View style={[styles.chartWrap, { backgroundColor: colors.surface, opacity: chartFade, transform: [{ translateY: chartFade.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }] }]}> 
           <Text style={[styles.cardTitle, { color: colors.onBackground }]}>Mood chart</Text>
 
           <View style={[styles.chartBg]}> 
@@ -221,10 +228,10 @@ export default function MoodAnalysis() {
               )}
             </View>
           </View>
-        </View>
+        </Animated.View>
 
         {/* Entries for selected day (or all recent if none) */}
-        <View style={[styles.listCard, { backgroundColor: colors.surface }]}> 
+        <Animated.View style={[styles.listCard, { backgroundColor: colors.surface, opacity: chartFade, transform: [{ translateY: chartFade.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }] }]}> 
           <Text style={[styles.cardTitle, { color: colors.onBackground }]}>{selectedDay ? `Check-ins — ${selectedDay.dateKey}` : 'Recent check-ins'}</Text>
 
           {(!selectedDay || selectedDay.items.length === 0) && entries.length === 0 && (
@@ -256,7 +263,7 @@ export default function MoodAnalysis() {
             </TouchableOpacity>
           )}
 
-        </View>
+        </Animated.View>
 
         {/* Quick feedback summary at the end */}
         <View style={[styles.feedbackSummary, { backgroundColor: colors.surface }]}> 

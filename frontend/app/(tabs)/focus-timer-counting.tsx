@@ -25,6 +25,8 @@ import { useAppTheme } from "../../context/ThemeContext";
 import BreakActivityModal from "../../components/BreakActivityModal";
 import { useTasks, SubTask } from "../../context/TasksContext";
 import { writeSession, FocusSession } from "../../services/sessionStorage";
+import { scheduleTaskNotification, cancelTaskNotification } from "../../services/notifications";
+import { Easings } from "../../utils/animations";
 
 // ─── Animated Circular Progress ──────────────────────────────────────────────
 
@@ -455,6 +457,120 @@ export default function FocusTimerCounting() {
   // Animation refs
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const loadingAnim = useRef(new Animated.Value(0)).current;
+  
+  // Entrance animations
+  const headerFade = useRef(new Animated.Value(0)).current;
+  const headerSlide = useRef(new Animated.Value(-20)).current;
+  const modeFade = useRef(new Animated.Value(0)).current;
+  const modeSlide = useRef(new Animated.Value(20)).current;
+  const timerFade = useRef(new Animated.Value(0)).current;
+  const timerSlide = useRef(new Animated.Value(30)).current;
+  const controlsFade = useRef(new Animated.Value(0)).current;
+  const controlsSlide = useRef(new Animated.Value(30)).current;
+  const musicFade = useRef(new Animated.Value(0)).current;
+  const musicSlide = useRef(new Animated.Value(30)).current;
+  const stopFade = useRef(new Animated.Value(0)).current;
+  const stopSlide = useRef(new Animated.Value(30)).current;
+  
+  // Entrance animations
+  useEffect(() => {
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(headerFade, {
+          toValue: 1,
+          duration: 170,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerSlide, {
+          toValue: 0,
+          duration: 170,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(modeFade, {
+          toValue: 1,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(modeSlide, {
+          toValue: 0,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(timerFade, {
+          toValue: 1,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(timerSlide, {
+          toValue: 0,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(controlsFade, {
+          toValue: 1,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(controlsSlide, {
+          toValue: 0,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(musicFade, {
+          toValue: 1,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(musicSlide, {
+          toValue: 0,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+      Animated.parallel([
+        Animated.timing(stopFade, {
+          toValue: 1,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+        Animated.timing(stopSlide, {
+          toValue: 0,
+          duration: 170,
+          delay: 20,
+          easing: Easings.easeOut,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   // ── Screen saver ────────────────────────────────────────────────────────────
 
@@ -678,6 +794,21 @@ export default function FocusTimerCounting() {
         setCompletedFocusMinutes(focusMins);
         setSessionsCompleted((prev) => prev + 1);
         logCompletedSession(focusMins);
+
+        // Schedule notification for focus completion
+        if (linkedTaskId && linkedTaskTitle) {
+          scheduleTaskNotification(
+            {
+              id: `focus-complete-${Date.now()}`,
+              title: `Focus session complete! 🎯`,
+              dueDate: new Date().toISOString(),
+              reminder: '0',
+            },
+            { sound: 'default', vibration: 'default', priority: 'high' }
+          ).catch((error) => {
+            console.error('Failed to schedule focus completion notification:', error);
+          });
+        }
 
         // Show subtask prompt if there's a linked task with subtasks
         if (linkedTask && linkedTask.subtasks && linkedTask.subtasks.length > 0) {
@@ -929,7 +1060,15 @@ export default function FocusTimerCounting() {
           showsVerticalScrollIndicator={false}
         >
           {/* Header */}
-          <View style={styles.header}>
+          <Animated.View
+            style={[
+              styles.header,
+              {
+                opacity: headerFade,
+                transform: [{ translateY: headerSlide }],
+              },
+            ]}
+          >
             <TouchableOpacity onPress={handleStop} style={styles.backButton}>
               <Ionicons
                 name="arrow-back"
@@ -951,10 +1090,18 @@ export default function FocusTimerCounting() {
               <Ionicons name="flame" size={16} color={theme.colors.primary} />
               <Text style={styles.sessionText}>{sessionsCompleted}</Text>
             </View>
-          </View>
+          </Animated.View>
 
           {/* Mode Indicator */}
-          <View style={styles.modeIndicator}>
+          <Animated.View
+            style={[
+              styles.modeIndicator,
+              {
+                opacity: modeFade,
+                transform: [{ translateY: modeSlide }],
+              },
+            ]}
+          >
             <View
               style={[
                 styles.modeIcon,
@@ -984,10 +1131,18 @@ export default function FocusTimerCounting() {
                 }
               />
             </View>
-          </View>
+          </Animated.View>
 
           {/* Timer Circle */}
-          <View style={styles.timerContainer}>
+          <Animated.View
+            style={[
+              styles.timerContainer,
+              {
+                opacity: timerFade,
+                transform: [{ translateY: timerSlide }],
+              },
+            ]}
+          >
             <Animated.View
               style={[
                 styles.timerCircle,
@@ -1025,10 +1180,18 @@ export default function FocusTimerCounting() {
                 </View>
               </CustomAnimatedCircularProgress>
             </Animated.View>
-          </View>
+          </Animated.View>
 
           {/* Controls */}
-          <View style={styles.controlsContainer}>
+          <Animated.View
+            style={[
+              styles.controlsContainer,
+              {
+                opacity: controlsFade,
+                transform: [{ translateY: controlsSlide }],
+              },
+            ]}
+          >
             <TouchableOpacity style={styles.secondaryButton} onPress={handleReset}>
               <Ionicons name="refresh" size={24} color={theme.colors.onSurface} />
               <Text style={styles.buttonLabel}>Reset</Text>
@@ -1056,10 +1219,18 @@ export default function FocusTimerCounting() {
               />
               <Text style={styles.buttonLabel}>Skip</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
 
           {/* Music Controls */}
-          <View style={styles.musicControlsContainer}>
+          <Animated.View
+            style={[
+              styles.musicControlsContainer,
+              {
+                opacity: musicFade,
+                transform: [{ translateY: musicSlide }],
+              },
+            ]}
+          >
             <TouchableOpacity
               style={[
                 styles.musicToggleButton,
@@ -1110,9 +1281,15 @@ export default function FocusTimerCounting() {
               />
               <Text style={styles.musicButtonLabel}>{selectedStream.name}</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
 
           {/* Stop Button */}
+          <Animated.View
+            style={{
+              opacity: stopFade,
+              transform: [{ translateY: stopSlide }],
+            }}
+          >
           <TouchableOpacity style={styles.stopButton} onPress={handleStop}>
             <Ionicons
               name="stop-circle-outline"
@@ -1121,6 +1298,7 @@ export default function FocusTimerCounting() {
             />
             <Text style={styles.stopButtonText}>End Session</Text>
           </TouchableOpacity>
+          </Animated.View>
         </ScrollView>
 
         <Nav />

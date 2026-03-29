@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   SectionList,
   Dimensions,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +16,7 @@ import { useRouter } from "expo-router";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks } from "../../context/TasksContext";
 import { getSessions, FocusSession } from "../../services/sessionStorage";
+import { useFadeIn, useSlideUp } from "../../utils/animations";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -410,6 +412,10 @@ export default function SessionHistory() {
   const { theme } = useAppTheme();
   const router = useRouter();
   const { userId } = useTasks();
+  
+  // Animation hooks
+  const fadeAnim = useFadeIn(300, 100);
+  const { slideAnim } = useSlideUp(400, 200);
 
   const [activeTab, setActiveTab] = useState<Tab>("log");
   const [sessions, setSessions] = useState<FocusSession[]>([]);
@@ -455,6 +461,7 @@ export default function SessionHistory() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
@@ -545,6 +552,7 @@ export default function SessionHistory() {
       ) : (
         <ByTaskTab sessions={sessions} theme={theme} />
       )}
+      </Animated.View>
     </SafeAreaView>
   );
 }
