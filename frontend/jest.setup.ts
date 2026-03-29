@@ -57,6 +57,7 @@ jest.mock("@expo/vector-icons", () => {
   return {
     Ionicons: Icon,
     MaterialCommunityIcons: Icon,
+    MaterialIcons: Icon,
     FontAwesome5: Icon,
   };
 });
@@ -201,7 +202,7 @@ jest.mock("firebase/auth", () => ({
   getAuth: jest.fn(() => ({ currentUser: null })),
   initializeAuth: jest.fn(() => ({ currentUser: null })),
   getReactNativePersistence: jest.fn(() => ({})),
-  onAuthStateChanged: jest.fn((_auth, callback) => {
+  onAuthStateChanged: jest.fn((_auth: unknown, callback: (user: null) => void) => {
     callback(null);
     return jest.fn();
   }),
@@ -211,12 +212,12 @@ jest.mock("firebase/auth", () => ({
 }));
 
 jest.mock("firebase/firestore", () => ({
-  arrayUnion: jest.fn((value) => ({ __arrayUnion: value })),
+  arrayUnion: jest.fn((value: unknown) => ({ __arrayUnion: value })),
   collection: jest.fn(),
   deleteDoc: jest.fn(),
   doc: jest.fn(),
-  getDoc: jest.fn().mockResolvedValue({ exists: () => false, data: () => ({}) }),
-  getDocs: jest.fn().mockResolvedValue({ docs: [], forEach: jest.fn() }),
+  getDoc: jest.fn().mockResolvedValue({ exists: () => false, data: () => ({}) } as never),
+  getDocs: jest.fn().mockResolvedValue({ docs: [], forEach: jest.fn() } as never),
   getFirestore: jest.fn(() => ({ db: true })),
   orderBy: jest.fn(),
   query: jest.fn(),
@@ -234,15 +235,15 @@ jest.mock("expo-audio", () => ({
     seekTo: jest.fn(),
     remove: jest.fn(),
   })),
-  setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
+  setAudioModeAsync: jest.fn().mockResolvedValue(undefined as never),
 }));
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
   __esModule: true,
   default: {
-    getItem: jest.fn().mockResolvedValue(null),
-    setItem: jest.fn().mockResolvedValue(undefined),
-    removeItem: jest.fn().mockResolvedValue(undefined),
+    getItem: jest.fn().mockResolvedValue(null as never),
+    setItem: jest.fn().mockResolvedValue(undefined as never),
+    removeItem: jest.fn().mockResolvedValue(undefined as never),
   },
 }));
 
@@ -254,7 +255,7 @@ jest.mock("expo-av", () => ({
           playAsync: jest.fn(),
           unloadAsync: jest.fn(),
         },
-      }),
+      } as never),
     },
   },
 }));
@@ -272,8 +273,8 @@ jest.mock("expo-linear-gradient", () => {
 });
 
 jest.mock("expo-image-picker", () => ({
-  launchImageLibraryAsync: jest.fn().mockResolvedValue({ canceled: true }),
-  requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),
+  launchImageLibraryAsync: jest.fn().mockResolvedValue({ canceled: true } as never),
+  requestMediaLibraryPermissionsAsync: jest.fn().mockResolvedValue({ granted: true } as never),
   MediaTypeOptions: { Images: "Images" },
 }));
 
@@ -290,16 +291,16 @@ jest.mock("expo-notifications", () => ({
   getPermissionsAsync: jest.fn().mockResolvedValue({
     status: "granted",
     canAskAgain: true,
-  }),
+  } as never),
   requestPermissionsAsync: jest.fn().mockResolvedValue({
     status: "granted",
     canAskAgain: true,
-  }),
-  setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined),
-  scheduleNotificationAsync: jest.fn().mockResolvedValue("notification-id"),
-  cancelScheduledNotificationAsync: jest.fn().mockResolvedValue(undefined),
-  cancelAllScheduledNotificationsAsync: jest.fn().mockResolvedValue(undefined),
-  getAllScheduledNotificationsAsync: jest.fn().mockResolvedValue([]),
+  } as never),
+  setNotificationChannelAsync: jest.fn().mockResolvedValue(undefined as never),
+  scheduleNotificationAsync: jest.fn().mockResolvedValue("notification-id" as never),
+  cancelScheduledNotificationAsync: jest.fn().mockResolvedValue(undefined as never),
+  cancelAllScheduledNotificationsAsync: jest.fn().mockResolvedValue(undefined as never),
+  getAllScheduledNotificationsAsync: jest.fn().mockResolvedValue([] as never),
   AndroidImportance: {
     HIGH: "high",
   },
@@ -326,14 +327,14 @@ jest.mock("expo-speech-recognition", () => ({
 jest.mock("@react-native-community/netinfo", () => ({
   __esModule: true,
   default: {
-    addEventListener: jest.fn((callback) => {
+    addEventListener: jest.fn((callback: (state: { isConnected: boolean; isInternetReachable: boolean }) => void) => {
       callback({ isConnected: true, isInternetReachable: true });
       return jest.fn();
     }),
     fetch: jest.fn().mockResolvedValue({
       isConnected: true,
       isInternetReachable: true,
-    }),
+    } as never),
   },
 }));
 

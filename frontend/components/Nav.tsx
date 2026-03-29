@@ -31,8 +31,6 @@ import {
 import Svg, { Path } from "react-native-svg";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { MaterialIcons } from '@expo/vector-icons';
-import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
-import ImportContactsRoundedIcon from '@mui/icons-material/ImportContactsRounded';
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router, useSegments } from "expo-router";
 import { useAppTheme } from "../context/ThemeContext";
