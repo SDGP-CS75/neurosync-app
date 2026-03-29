@@ -1,5 +1,5 @@
 import React from "react";
-import { render } from "@testing-library/react-native";
+import TestRenderer, { act } from "react-test-renderer";
 
 import RootLayout from "../../app/_layout";
 import AuthLayout from "../../app/(auth)/_layout";
@@ -31,13 +31,31 @@ jest.setTimeout(60000);
 
 describe("screen coverage", () => {
   function renderAndUnmount(screens: React.ComponentType[]) {
-    const renderedScreens = screens.map((Screen) => render(<Screen />));
-    renderedScreens.forEach(({ unmount }) => unmount());
+    const renderedScreens = screens.map((Screen) => {
+      let tree: TestRenderer.ReactTestRenderer | null = null;
+      act(() => {
+        tree = TestRenderer.create(<Screen />);
+      });
+      return tree;
+    });
+
+    renderedScreens.forEach((tree) => {
+      if (!tree) return;
+      act(() => {
+        tree.unmount();
+      });
+    });
   }
 
   function renderSingle(Screen: React.ComponentType) {
-    const rendered = render(<Screen />);
-    rendered.unmount();
+    let tree: TestRenderer.ReactTestRenderer | null = null;
+    act(() => {
+      tree = TestRenderer.create(<Screen />);
+    });
+    if (!tree) return;
+    act(() => {
+      tree.unmount();
+    });
   }
 
   beforeEach(() => {
