@@ -10,10 +10,6 @@ import { useAppTheme } from "../../context/ThemeContext";
 
 type FormData = { email: string };
 
-const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 30 },
-});
-
 export default function ForgotPassword() {
   const { theme } = useAppTheme();
   const [sent, setSent] = React.useState(false);
@@ -35,16 +31,12 @@ export default function ForgotPassword() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={{
-        fontSize: 30, fontWeight: "bold",
-        marginBottom: 40, textAlign: "center",
-        color: theme.colors.onBackground,
-      }}>
+      <Text style={[styles.title, { color: theme.colors.onBackground }]}>
         Reset Password
       </Text>
 
       {sent ? (
-        <Text style={{ textAlign: "center", color: theme.colors.onBackground, marginBottom: 30 }}>
+        <Text style={[styles.successMessage, { color: theme.colors.onBackground }]}>
           ✅ Password reset email sent! Check your inbox.
         </Text>
       ) : (
@@ -73,7 +65,7 @@ export default function ForgotPassword() {
 
           <Button
             mode="contained"
-            style={{ marginTop: 10, paddingVertical: 7 }}
+            style={styles.button}
             onPress={handleSubmit(onSubmit)}
           >
             Send Reset Email
@@ -83,13 +75,37 @@ export default function ForgotPassword() {
 
       <Text
         onPress={() => router.push("/(auth)/signIn")}
-        style={{
-          color: theme.colors.primary, fontWeight: "600",
-          textAlign: "center", marginTop: 30,
-        }}
+        style={[styles.backLink, { color: theme.colors.primary }]}
       >
         Back to Sign In
       </Text>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 30,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: "bold",
+    marginBottom: 40,
+    textAlign: "center",
+  },
+  successMessage: {
+    textAlign: "center",
+    marginBottom: 30,
+  },
+  button: {
+    marginTop: 10,
+    paddingVertical: 7,
+  },
+  backLink: {
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 30,
+  },
+});

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput, Button, HelperText, Text } from "react-native-paper";
 import { StyleSheet, useWindowDimensions } from "react-native";
@@ -17,14 +17,6 @@ type FormData = {
   password: string;
   confirmPassword: string;
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 30,
-  },
-});
 
 export default function SignUp() {
   const { width } = useWindowDimensions();
@@ -72,17 +64,27 @@ export default function SignUp() {
     }
   };
 
+  const dynamicStyles = useMemo(() => ({
+    title: {
+      fontSize: isSmallScreen ? 24 : 30,
+      marginBottom: isSmallScreen ? 40 : 60,
+    },
+    button: {
+      paddingVertical:   isSmallScreen ? 5 : 7,
+      paddingHorizontal: isSmallScreen ? 5 : 7,
+      marginBottom:      isSmallScreen ? 10 : 15,
+    },
+    signInText: {
+      fontSize: isSmallScreen ? 14 : 16,
+      marginTop: isSmallScreen ? 30 : 40,
+    },
+  }), [isSmallScreen]);
+
   return (
     <SafeAreaView style={styles.container}>
       <>
         {/* ── Title ── */}
-        <Text style={{
-          fontSize:     30,
-          fontWeight:   "bold",
-          marginBottom: 60,
-          textAlign:    "center",
-          color:        theme.colors.onBackground,
-        }}>
+        <Text style={[styles.title, dynamicStyles.title, { color: theme.colors.onBackground }]}>
           Create Your Account
         </Text>
 
@@ -203,27 +205,14 @@ export default function SignUp() {
         {/* ── Sign up button ── */}
         <Button
           mode="contained"
-          style={{
-            paddingVertical:   isSmallScreen ? 5 : 7,
-            paddingHorizontal: isSmallScreen ? 5 : 7,
-            width:             "100%",
-            marginTop:         "auto",
-            marginBottom:      isSmallScreen ? 10 : 15,
-            maxWidth:          400,
-          }}
+          style={[styles.button, dynamicStyles.button]}
           onPress={handleSubmit(onSubmit)}
         >
           Sign Up
         </Button>
 
         {/* ── Sign in link ── */}
-        <Text style={{
-          fontSize:   isSmallScreen ? 14 : 16,
-          color:      theme.colors.textMuted,
-          textAlign:  "center",
-          fontWeight: "bold",
-          marginTop:  40,
-        }}>
+        <Text style={[styles.signInText, dynamicStyles.signInText, { color: theme.colors.textMuted }]}>
           Already have an account?{" "}
           <Text
             onPress={() => router.push("/(auth)/signIn")}
@@ -236,3 +225,24 @@ export default function SignUp() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 30,
+  },
+  title: {
+    fontWeight:   "bold",
+    textAlign:    "center",
+  },
+  button: {
+    width:             "100%",
+    marginTop:         "auto",
+    maxWidth:          400,
+  },
+  signInText: {
+    textAlign:  "center",
+    fontWeight: "bold",
+  },
+});

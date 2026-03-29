@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TextInput, Button, HelperText, Text } from "react-native-paper";
 import { StyleSheet, useWindowDimensions, Platform } from "react-native";
@@ -24,14 +24,6 @@ type FormData = {
   email:    string;
   password: string;
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex:           1,
-    justifyContent: "center",
-    padding:        30,
-  },
-});
 
 export default function SignIn() {
   const { width }     = useWindowDimensions();
@@ -186,24 +178,39 @@ export default function SignIn() {
     }
   };
 
+  const dynamicStyles = useMemo(() => ({
+    title: {
+      fontSize: isSmallScreen ? 24 : 30,
+      marginBottom: isSmallScreen ? 40 : 60,
+    },
+    divider: {
+      fontSize: isSmallScreen ? 14 : 16,
+      marginTop: isSmallScreen ? 8 : 10,
+      marginBottom: isSmallScreen ? 20 : 30,
+    },
+    button: {
+      paddingVertical:   isSmallScreen ? 5 : 7,
+      paddingHorizontal: isSmallScreen ? 5 : 7,
+      marginBottom:      isSmallScreen ? 10 : 15,
+    },
+    signUpText: {
+      fontSize: isSmallScreen ? 14 : 16,
+      marginTop: isSmallScreen ? 30 : 40,
+    },
+  }), [isSmallScreen]);
+
   return (
     <SafeAreaView style={styles.container}>
       <>
         {/* ── Title ── */}
-        <Text style={{
-          fontSize:     30,
-          fontWeight:   "bold",
-          marginBottom: 60,
-          textAlign:    "center",
-          color:        theme.colors.onBackground,
-        }}>
+        <Text style={[styles.title, dynamicStyles.title, { color: theme.colors.onBackground }]}>
           Welcome Back!
         </Text>
 
         {/* ── Google button ── */}
         <Button
           mode="outlined"
-          style={{ borderRadius: 55, padding: 5 }}
+          style={styles.googleButton}
           loading={googleLoading}
           disabled={googleLoading || (!request && Platform.OS !== "web")}
           icon={() => (
@@ -220,14 +227,7 @@ export default function SignIn() {
         </HelperText>
 
         {/* ── Divider ── */}
-        <Text style={{
-          fontSize:     isSmallScreen ? 14 : 16,
-          color:        theme.colors.textMuted,
-          textAlign:    "center",
-          fontWeight:   "bold",
-          marginTop:    10,
-          marginBottom: 30,
-        }}>
+        <Text style={[styles.divider, dynamicStyles.divider, { color: theme.colors.textMuted }]}>
           OR LOG IN WITH EMAIL
         </Text>
 
@@ -280,14 +280,7 @@ export default function SignIn() {
         {/* ── Login button ── */}
         <Button
           mode="contained"
-          style={{
-            paddingVertical:   isSmallScreen ? 5 : 7,
-            paddingHorizontal: isSmallScreen ? 5 : 7,
-            width:             "100%",
-            marginTop:         "auto",
-            marginBottom:      isSmallScreen ? 10 : 15,
-            maxWidth:          400,
-          }}
+          style={[styles.button, dynamicStyles.button]}
           onPress={handleSubmit(onSubmit)}
         >
           Login
@@ -296,24 +289,13 @@ export default function SignIn() {
         {/* ── Forgot password ── */}
         <Text
           onPress={() => router.push("/(auth)/forgotPassword")}
-          style={{
-            color:      theme.colors.textMuted,
-            fontWeight: "600",
-            textAlign:  "center",
-            marginTop:  5,
-          }}
+          style={[styles.forgotPassword, { color: theme.colors.textMuted }]}
         >
           Forgot Password
         </Text>
 
         {/* ── Sign up link ── */}
-        <Text style={{
-          fontSize:   isSmallScreen ? 14 : 16,
-          color:      theme.colors.textMuted,
-          textAlign:  "center",
-          fontWeight: "bold",
-          marginTop:  40,
-        }}>
+        <Text style={[styles.signUpText, dynamicStyles.signUpText, { color: theme.colors.textMuted }]}>
           Don't have an account?{" "}
           <Text
             onPress={() => router.push("/(auth)/signUp")}
@@ -326,3 +308,37 @@ export default function SignIn() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex:           1,
+    justifyContent: "center",
+    padding:        30,
+  },
+  title: {
+    fontWeight:   "bold",
+    textAlign:    "center",
+  },
+  googleButton: {
+    borderRadius: 55,
+    padding: 5,
+  },
+  divider: {
+    textAlign:    "center",
+    fontWeight:   "bold",
+  },
+  button: {
+    width:             "100%",
+    marginTop:         "auto",
+    maxWidth:          400,
+  },
+  forgotPassword: {
+    fontWeight: "600",
+    textAlign:  "center",
+    marginTop:  5,
+  },
+  signUpText: {
+    textAlign:  "center",
+    fontWeight: "bold",
+  },
+});

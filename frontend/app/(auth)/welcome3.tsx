@@ -1,23 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Image, StyleSheet, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Button, Text } from "react-native-paper";
 import { router } from "expo-router";
 import { useAppTheme } from "../../context/ThemeContext";
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  image: {
-    width:      450,
-    height:     450,
-    resizeMode: "contain",
-  },
-});
 
 // ⚠️ Fixed: was exported as `welcome2` — renamed to `Welcome3`
 export default function Welcome3() {
@@ -26,65 +12,54 @@ export default function Welcome3() {
 
   const isSmallScreen = width < 375;
 
+  const dynamicStyles = useMemo(() => ({
+    image: {
+      width:  isSmallScreen ? 300 : 450,
+      height: isSmallScreen ? 300 : 450,
+    },
+    title: {
+      fontSize: isSmallScreen ? 22 : 25,
+    },
+    subtitle: {
+      fontSize: isSmallScreen ? 14 : 16,
+    },
+    button: {
+      paddingVertical:   isSmallScreen ? 5 : 7,
+      paddingHorizontal: isSmallScreen ? 5 : 7,
+      marginBottom:      isSmallScreen ? 10 : 15,
+    },
+    loginText: {
+      fontSize: isSmallScreen ? 14 : 16,
+    },
+  }), [isSmallScreen]);
+
   return (
     <SafeAreaView style={styles.container}>
 
       <Image
         source={require("../../assets/welcome/welcome3.png")}
-        style={[
-          styles.image,
-          {
-            width:  isSmallScreen ? 300 : 450,
-            height: isSmallScreen ? 300 : 450,
-          },
-        ]}
+        style={[styles.image, dynamicStyles.image]}
+        resizeMode="contain"
+        fadeDuration={0}
       />
 
-      <Text style={{
-        fontSize:     isSmallScreen ? 22 : 25,
-        fontWeight:   "bold",
-        marginBottom: 10,
-        marginLeft:   20,
-        marginRight:  20,
-        textAlign:    "center",
-        color:        theme.colors.onBackground,
-      }}>
+      <Text style={[styles.title, dynamicStyles.title, { color: theme.colors.onBackground }]}>
         Quick and Easy
       </Text>
 
-      <Text style={{
-        fontSize:     isSmallScreen ? 14 : 16,
-        color:        theme.colors.textMuted,
-        marginBottom: 80,
-        marginLeft:   20,
-        marginRight:  20,
-        textAlign:    "center",
-      }}>
+      <Text style={[styles.subtitle, dynamicStyles.subtitle, { color: theme.colors.textMuted }]}>
         Short daily exercises that integrate into your life
       </Text>
 
       <Button
         mode="contained"
-        style={{
-          paddingVertical:   isSmallScreen ? 5 : 7,
-          paddingHorizontal: isSmallScreen ? 5 : 7,
-          width:             "100%",
-          marginTop:         "auto",
-          marginBottom:      isSmallScreen ? 10 : 15,
-          maxWidth:          400,
-        }}
+        style={[styles.button, dynamicStyles.button]}
         onPress={() => router.push("/(auth)/signIn")}
       >
         Let's Start
       </Button>
 
-      <Text style={{
-        fontSize:   isSmallScreen ? 14 : 16,
-        color:      theme.colors.textMuted,
-        textAlign:  "center",
-        fontWeight: "bold",
-        marginTop:  10,
-      }}>
+      <Text style={[styles.loginText, dynamicStyles.loginText, { color: theme.colors.textMuted }]}>
         Already have an account?{" "}
         <Text
           onPress={() => router.push("/(auth)/signIn")}
@@ -97,3 +72,38 @@ export default function Welcome3() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  image: {
+    // resizeMode is set as prop on Image component
+  },
+  title: {
+    fontWeight: "bold",
+    marginBottom: 10,
+    marginLeft: 20,
+    marginRight: 20,
+    textAlign: "center",
+  },
+  subtitle: {
+    marginBottom: 80,
+    marginLeft: 20,
+    marginRight: 20,
+    textAlign: "center",
+  },
+  button: {
+    width: "100%",
+    marginTop: "auto",
+    maxWidth: 400,
+  },
+  loginText: {
+    textAlign: "center",
+    fontWeight: "bold",
+    marginTop: 10,
+  },
+});
