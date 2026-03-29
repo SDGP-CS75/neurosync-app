@@ -598,7 +598,7 @@ export default function HomeScreen() {
           </Animated.View>
 
           {/* Bottom spacing for nav */}
-          <View style={{ height: 100 }} />
+          <View style={{ height: 120 }} />
         </ScrollView>
       </SafeAreaView>
       <Nav />
