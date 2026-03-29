@@ -40,19 +40,13 @@ jobs:
       - name: Authenticate EAS
         run: eas whoami
 
-      - name: Start EAS build
-        id: build
+      - name: Build APK with EAS
         run: |
-          BUILD_ID=$(eas build --platform android --profile production --non-interactive --json | jq -r '.[0].id // .id')
-          echo "BUILD_ID=$BUILD_ID" >> "$GITHUB_ENV"
-
-      - name: Wait for build to finish
-        run: |
-          eas build:wait "$BUILD_ID" --non-interactive --json > result.json
+          eas build --platform android --profile production --non-interactive --wait --json > result.json
 
       - name: Get APK URL
         run: |
-          APK_URL=$(jq -r '.artifacts.buildUrl' result.json)
+          APK_URL=$(jq -r '.[0].artifacts.buildUrl // .artifacts.buildUrl' result.json)
           echo "APK_URL=$APK_URL" >> "$GITHUB_ENV"
 
       - name: Clone website repo
