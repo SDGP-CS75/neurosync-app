@@ -94,7 +94,7 @@ const badgeStyles = StyleSheet.create({
 
 // ─── Task row ────────────────────────────────────────────────────────────────
 
-function TaskRow({ task, theme, index }: { task: Task; theme: any; index: number }) {
+function TaskRow({ task, theme, index, onPress }: { task: Task; theme: any; index: number; onPress: () => void }) {
   const timeStr = formatTimeDisplay(task);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(20)).current;
@@ -119,31 +119,33 @@ function TaskRow({ task, theme, index }: { task: Task; theme: any; index: number
   }, []);
 
   return (
-    <Animated.View
-      style={[
-        taskRowStyles.row,
-        {
-          backgroundColor: theme.colors.surface,
-          opacity: fadeAnim,
-          transform: [{ translateY: slideAnim }],
-        },
-      ]}
-    >
-      <View style={[taskRowStyles.emoji, { backgroundColor: task.iconBg }]}>
-        <Text style={taskRowStyles.emojiText}>{task.icon}</Text>
-      </View>
-      <View style={taskRowStyles.textWrap}>
-        <Text style={[taskRowStyles.title, { color: theme.colors.onSurface }]} numberOfLines={1}>
-          {task.title}
-        </Text>
-        {timeStr ? (
-          <Text style={[taskRowStyles.time, { color: theme.colors.onSurfaceVariant }]}>
-            {timeStr}
+    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+      <Animated.View
+        style={[
+          taskRowStyles.row,
+          {
+            backgroundColor: theme.colors.surface,
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        <View style={[taskRowStyles.emoji, { backgroundColor: task.iconBg }]}>
+          <Text style={taskRowStyles.emojiText}>{task.icon}</Text>
+        </View>
+        <View style={taskRowStyles.textWrap}>
+          <Text style={[taskRowStyles.title, { color: theme.colors.onSurface }]} numberOfLines={1}>
+            {task.title}
           </Text>
-        ) : null}
-      </View>
-      <StatusBadge status={task.status} theme={theme} />
-    </Animated.View>
+          {timeStr ? (
+            <Text style={[taskRowStyles.time, { color: theme.colors.onSurfaceVariant }]}>
+              {timeStr}
+            </Text>
+          ) : null}
+        </View>
+        <StatusBadge status={task.status} theme={theme} />
+      </Animated.View>
+    </TouchableOpacity>
   );
 }
 const taskRowStyles = StyleSheet.create({
@@ -647,6 +649,14 @@ export default function CalendarScreen() {
     // If switching in month view, keep month in sync if user taps a different month's overflow
   };
 
+  const handleTaskPress = (task: Task) => {
+    // Navigate to todo-list screen with selected date
+    router.push({
+      pathname: "/(tabs)/todo-list",
+      params: { selectedDate: selectedKey },
+    });
+  };
+
   const goToToday = () => {
     setSelectedKey(todayKey);
     setViewYear(today.getFullYear());
@@ -832,7 +842,7 @@ export default function CalendarScreen() {
           ) : (
             <View style={styles.taskList}>
               {selectedDayTasks.map((task, index) => (
-                <TaskRow key={task.id} task={task} theme={theme} index={index} />
+                <TaskRow key={task.id} task={task} theme={theme} index={index} onPress={() => handleTaskPress(task)} />
               ))}
             </View>
           )}

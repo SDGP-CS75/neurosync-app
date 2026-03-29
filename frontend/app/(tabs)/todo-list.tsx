@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks, type Task, type TaskStatus, } from "../../context/TasksContext";
 import Nav from "../../components/Nav";
@@ -69,6 +69,7 @@ const todayDateKey = () => new Date().toISOString().slice(0, 10);
 export default function TodoListScreen() {
   const { theme } = useAppTheme();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { tasks, isLoading, removeTask, toggleSubtaskDone, toggleTaskStatus } = useTasks();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -81,7 +82,9 @@ export default function TodoListScreen() {
       : Math.max(insets.bottom, 8);
   const bottomPadding = NAV_HEIGHT + safeBottom + 80;
 
-  const [selectedDate, setSelectedDate] = useState<string>(todayDateKey());
+  const [selectedDate, setSelectedDate] = useState<string | null>(
+    params.selectedDate ? String(params.selectedDate) : null
+  );
   const [filter, setFilter] = useState<"all" | TaskStatus>("all");
   
   // Animation values for entrance
@@ -172,7 +175,21 @@ export default function TodoListScreen() {
   const cardPadding   = isSmallScreen ? 14 : 18;
 
   const dateItems = getDatesAroundToday();
-  const tasksForDate = tasks.filter((t) => t.dateKey === selectedDate);
+  
+  // Helper to extract date from dueDate (same as calendar)
+  const getTaskDateKey = (task: Task): string | null => {
+    if (task.dueDate) {
+      const d = new Date(task.dueDate);
+      if (!isNaN(d.getTime())) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      }
+    }
+    return null;
+  };
+  
+  const tasksForDate = selectedDate 
+    ? tasks.filter((t) => getTaskDateKey(t) === selectedDate) 
+    : tasks;
   const filteredTasks =
     filter === "all"
       ? [...tasksForDate].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status])
@@ -306,7 +323,7 @@ export default function TodoListScreen() {
                 style={{ flex: 1, transform: [{ scale: scaleAnim }] }}
               >
                 <TouchableOpacity
-                  onPress={() => setSelectedDate(date.dateKey)}
+                  onPress={() => setSelectedDate(isSelected ? null : date.dateKey)}
                   onPressIn={() => handleDateCardPressIn(index)}
                   onPressOut={() => handleDateCardPressOut(index)}
                   activeOpacity={1}
