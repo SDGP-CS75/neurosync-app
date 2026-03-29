@@ -27,15 +27,15 @@ export type AppPalette = {
 export const COLOR_PALETTES: AppPalette[] = [
   {
     name: "Violet",
-    primary: "#6C5BA1",
-    secondary: "#8d87b1ff",
-    background: "#F3F0FF",
-    surface: "#FFFFFF",
-    text: "#1A1726",
-    textMuted: "#6E6A7C",
-    statusDone: "#E8F5E9",
-    statusInProgress: "#FFF3E0",
-    statusTodo: "#E3F2FD",
+    primary: "#8263fd",           // richer, more vibrant violet for main accents
+    secondary: "#B0A5FF",         // slightly deeper secondary violet for contrast
+    background: "#e8e4fd",        // soft lilac background to keep eyes relaxed
+    surface: "#FFFFFF",            // cards and surfaces
+    text: "#1E1B3C",               // strong, high-contrast text
+    textMuted: "#6E6A8F",          // muted grey-purple for secondary text
+    statusDone: "#C8E6C9",         // calming green for completed tasks
+    statusInProgress: "#FFE082",   // gentle amber for in-progress tasks
+    statusTodo: "#BBDEFB",         // soft blue for to-do tasks
   },
   {
     name: "Ocean",
@@ -50,16 +50,16 @@ export const COLOR_PALETTES: AppPalette[] = [
     statusTodo: "#BBDEFB",
   },
   {
-    name: "Forest",
-    primary: "#538856ff",
-    secondary: "#91ba93ff",
-    background: "#F1F8F1",
+    name: "Forest Calm",
+    primary: "#388E3C",      // strong green for focus
+    secondary: "#81C784",    // lighter green for secondary
+    background: "#F1F8E9",   // very soft green background
     surface: "#FFFFFF",
-    text: "#1B2E1C",
-    textMuted: "#607060",
-    statusDone: "#a5cca6ff",
-    statusInProgress: "#FFCCBC",
-    statusTodo: "#B3E5FC",
+    text: "#1B2E1C",         // dark green text
+    textMuted: "#607060",     // muted green-grey
+    statusDone: "#A5D6A7",   // calming green
+    statusInProgress: "#FFCC80", // gentle orange for tasks
+    statusTodo: "#B3E5FC",   // soft blue for todo
   },
   {
     name: "Rose",
@@ -96,6 +96,43 @@ export const COLOR_PALETTES: AppPalette[] = [
     statusDone: "#B2DFDB",
     statusInProgress: "#FFE0B2",
     statusTodo: "#B0BEC5",
+  },
+  {
+    name: "Calm Ocean",
+    primary: "#0077b6",      // bright but not harsh blue
+    secondary: "#4FC3F7",    // lighter blue for accents
+    background: "#E1F5FE",   // soft sky-blue background
+    surface: "#FFFFFF",
+    text: "#0D1B2A",         // dark text for readability
+    textMuted: "#607D8B",     // muted grey-blue
+    statusDone: "#A5D6A7",   // soft green for completed
+    statusInProgress: "#FFE082", // gentle yellow/orange
+    statusTodo: "#B3E5FC",   // soft blue
+  },
+
+  {
+    name: "Vivid Coral",
+    primary: "#E64A19",           // strong coral, grabs attention
+    secondary: "#FF8A65",         // lighter coral for highlights
+    background: "#FFF3E0",        // soft peachy background
+    surface: "#FFFFFF",
+    text: "#3E2723",              // dark brown text, easy on eyes
+    textMuted: "#8D6E63",         // muted brown for secondary text
+    statusDone: "#C8E6C9",        // soft green for completed tasks
+    statusInProgress: "#FFD54F",  // amber/orange for in-progress
+    statusTodo: "#FFCCBC",        // soft peach for todo
+  },
+  {
+    name: "Calm Teal",
+    primary: "#00796B",           // strong teal for main focus
+    secondary: "#4DB6AC",         // soft teal for accents
+    background: "#E0F2F1",        // pale teal background
+    surface: "#FFFFFF",
+    text: "#004D40",              // dark teal text
+    textMuted: "#607D73",         // muted teal-grey
+    statusDone: "#A5D6A7",        // calming green for done
+    statusInProgress: "#FFB74D",  // gentle orange for active tasks
+    statusTodo: "#80CBC4",        // light teal for todo
   },
 ];
 
