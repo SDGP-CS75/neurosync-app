@@ -25,6 +25,7 @@ import { useAppTheme } from "../../context/ThemeContext";
 import BreakActivityModal from "../../components/BreakActivityModal";
 import { useTasks, SubTask } from "../../context/TasksContext";
 import { writeSession, FocusSession } from "../../services/sessionStorage";
+import { logActualDuration } from "../../services/calibration";
 import { scheduleTaskNotification, cancelTaskNotification } from "../../services/notifications";
 import { Easings } from "../../utils/animations";
 
@@ -750,9 +751,22 @@ export default function FocusTimerCounting() {
 
       if (linkedTaskId) {
         logFocusSession(linkedTaskId, durationMinutes, sessionId);
+        if (userId) {
+          const linked = tasks.find((t) => t.id === linkedTaskId);
+          if (linked && linked.durationMinutes && linked.durationMinutes > 0) {
+            const totalActual = (linked.sessionTime ?? 0) + durationMinutes;
+            logActualDuration(
+              userId,
+              linkedTaskId,
+              linked.category || "Other",
+              linked.durationMinutes,
+              totalActual
+            ).catch(console.warn);
+          }
+        }
       }
     },
-    [linkedTaskId, linkedTaskTitle, userId, logFocusSession]
+    [linkedTaskId, linkedTaskTitle, userId, logFocusSession, tasks]
   );
 
   // ── Animations ──────────────────────────────────────────────────────────────

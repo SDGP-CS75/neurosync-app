@@ -14,6 +14,7 @@ import { useRouter } from "expo-router";
 import { useAppTheme } from "../context/ThemeContext";
 import { useTasks, Task } from "../context/TasksContext";
 import { API_BASE } from "../constants/api";
+import { apiRequest } from "../services/apiClient";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -274,9 +275,11 @@ export default function DailyPlanScreen() {
     setError(null);
 
     try {
-      const res = await fetch(`${API_BASE}/api/ai/daily-plan`, {
+      const data = await apiRequest<{
+        orderedTaskIds?: string[];
+        reasoning?: Record<string, string>;
+      }>("/api/ai/daily-plan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tasks: incompleteTasks.map((t) => ({
             id:           t.id,
@@ -291,9 +294,6 @@ export default function DailyPlanScreen() {
           userId: userId ?? undefined,
         }),
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to generate plan");
 
       setPlan({
         orderedTaskIds: Array.isArray(data.orderedTaskIds) ? data.orderedTaskIds : [],
@@ -313,7 +313,7 @@ export default function DailyPlanScreen() {
   // Navigate to focus timer with task pre-linked
   const handleStartTask = (task: Task) => {
     router.push({
-      pathname: "/focus-timer",
+      pathname: "/(tabs)/focus-timer",
       params: {
         preselectedTaskId:    task.id,
         preselectedTaskTitle: task.title,

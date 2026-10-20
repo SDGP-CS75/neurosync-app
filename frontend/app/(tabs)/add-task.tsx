@@ -37,6 +37,7 @@ import DraggableFlatList, {
 import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks } from "../../context/TasksContext";
 import { API_BASE } from "../../constants/api";
+import { apiRequest } from "../../services/apiClient";
 import Nav from "../../components/Nav";
 import InputDialog from "../../components/InputDialog";
 import { TextInput } from "react-native-paper";
@@ -711,7 +712,7 @@ export default function AddTaskScreen() {
   // ── Navigation
   const handleBack = () => {
     if (router.canGoBack()) router.back();
-    else router.replace("/(tabs)");
+    else router.replace("/(tabs)/home");
   };
 
   // ── Sub-task helpers
@@ -745,13 +746,19 @@ export default function AddTaskScreen() {
     const startTime = Date.now();
 
     try {
-      const res = await fetch(`${API_BASE}/api/ai/breakdown`, {
+      const data = await apiRequest<{
+        steps?: string[];
+        stepDurations?: number[];
+        totalDurationMinutes?: number;
+        title?: string;
+        category?: string;
+        emoji?: string;
+        iconBg?: string;
+        when?: string;
+      }>("/api/ai/breakdown", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ task: taskText }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to break into steps");
 
       const steps: string[] = Array.isArray(data?.steps) ? data.steps : [];
       const stepDurations: number[] = Array.isArray(data?.stepDurations) ? data.stepDurations : [];
@@ -807,24 +814,23 @@ export default function AddTaskScreen() {
     setSplitLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/ai/suggest-split`, {
+      const data = await apiRequest<{
+        splitTasks: Array<{
+          title: string;
+          steps: string[];
+          stepDurations: number[];
+          totalDurationMinutes: number;
+        }>;
+      }>("/api/ai/suggest-split", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           task: mainTask.trim(),
           steps: aiSteps,
           totalDurationMinutes: aiMeta.totalDurationMinutes,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to split task");
 
-      const splitTasks: Array<{
-        title: string;
-        steps: string[];
-        stepDurations: number[];
-        totalDurationMinutes: number;
-      }> = Array.isArray(data?.splitTasks) ? data.splitTasks : [];
+      const splitTasks = Array.isArray(data?.splitTasks) ? data.splitTasks : [];
 
       if (splitTasks.length === 0) throw new Error("No split tasks returned");
 
@@ -854,7 +860,7 @@ export default function AddTaskScreen() {
 
       setShowSplitCard(false);
       if (router.canGoBack()) router.back();
-      else router.replace("/(tabs)");
+      else router.replace("/(tabs)/home");
 
     } catch (e) {
       setSplitError(e instanceof Error ? e.message : "Something went wrong");
@@ -871,16 +877,13 @@ export default function AddTaskScreen() {
     setRescheduleLoading(true);
 
     try {
-      const res = await fetch(`${API_BASE}/api/ai/reschedule`, {
+      const data = await apiRequest<{ newDueDate: string }>("/api/ai/reschedule", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           instruction,
           currentDueDate: whenDate.toISOString(),
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || "Failed to reschedule");
 
       const newDate = parseAiDate(data.newDueDate);
       if (newDate) {
@@ -926,7 +929,7 @@ export default function AddTaskScreen() {
     setShowSplitCard(false); setAiSteps([]);
 
     if (router.canGoBack()) router.back();
-    else router.replace("/(tabs)");
+    else router.replace("/(tabs)/home");
   };
 
   const handleSaveAsTemplate = async () => {

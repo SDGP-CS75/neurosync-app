@@ -21,6 +21,7 @@ import {
   cancelTaskNotification,
   rescheduleAllNotifications,
 } from "../services/notifications";
+import { logActualDuration } from "../services/calibration";
 
 const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
 
@@ -535,6 +536,12 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
           cancelTaskNotification(taskId).catch((error) => {
             console.error('Failed to cancel notification:', error);
           });
+
+          if (userId && task.durationMinutes && task.durationMinutes > 0 && task.sessionTime && task.sessionTime > 0) {
+            logActualDuration(userId, task.id, task.category || "Other", task.durationMinutes, task.sessionTime).catch((err) => {
+              console.warn("Failed to log task calibration on complete:", err);
+            });
+          }
         }
         
         // Reschedule notification when task is moved back to todo/in-progress
