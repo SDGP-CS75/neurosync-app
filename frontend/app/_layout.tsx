@@ -17,25 +17,6 @@ import { TasksProvider } from "../context/TasksContext";
 import UndoSnackbar from "../components/UndoSnackbar";
 import { requestNotificationPermissions } from "../services/notifications";
 
-// Clear localStorage on web to prevent Firebase token refresh errors
-// This runs before React renders to ensure clean auth state
-if (Platform.OS === "web" && typeof window !== "undefined") {
-  // Check if we're not in a server-side rendering context
-  try {
-    // Clear any corrupted Firebase auth tokens that cause 400 errors
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && key.startsWith("firebase:")) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-  } catch (e) {
-    // Ignore localStorage errors
-  }
-}
-
 function AppShell() {
   const { theme } = useAppTheme();
   const [isOffline, setIsOffline] = useState(false);

@@ -8,9 +8,14 @@ import Constants from "expo-constants";
  * - No trailing slash.
  */
 function getApiBase(): string {
-  const envUrl =
+  let envUrl =
     typeof process !== "undefined" && process.env?.EXPO_PUBLIC_API_URL?.trim();
   if (envUrl) {
+    // Strip trailing slashes and redundant trailing '/api'
+    envUrl = envUrl.replace(/\/+$/, "");
+    if (envUrl.endsWith("/api")) {
+      envUrl = envUrl.slice(0, -4);
+    }
     return envUrl;
   }
 

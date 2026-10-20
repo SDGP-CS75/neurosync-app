@@ -1,6 +1,5 @@
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-
-const auth = getAuth();
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { auth } from './firebase';
 
 export const logoutUser = async () => {
   try {
