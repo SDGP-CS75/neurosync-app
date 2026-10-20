@@ -9,7 +9,6 @@ import SignUp from "../../app/(auth)/signUp";
 import Welcome from "../../app/(auth)/welcome";
 import Welcome2 from "../../app/(auth)/welcome2";
 import Welcome3 from "../../app/(auth)/welcome3";
-import DashboardIndex from "../../app/dashboard/index";
 import DailyPlanScreen from "../../app/daily-plan";
 import Index from "../../app/index";
 import TemplatesScreen from "../../app/templates";
@@ -42,7 +41,7 @@ describe("screen coverage", () => {
     renderedScreens.forEach((tree) => {
       if (!tree) return;
       act(() => {
-        tree.unmount();
+        (tree as any).unmount();
       });
     });
   }
@@ -54,7 +53,7 @@ describe("screen coverage", () => {
     });
     if (!tree) return;
     act(() => {
-      tree.unmount();
+      (tree as any).unmount();
     });
   }
 
@@ -84,7 +83,6 @@ describe("screen coverage", () => {
 
   it("renders top-level and productivity screens without crashing", () => {
     renderAndUnmount([
-      DashboardIndex,
       DailyPlanScreen,
       Index,
       TemplatesScreen,

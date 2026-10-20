@@ -247,19 +247,6 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   },
 }));
 
-jest.mock("expo-av", () => ({
-  Audio: {
-    Sound: {
-      createAsync: jest.fn().mockResolvedValue({
-        sound: {
-          playAsync: jest.fn(),
-          unloadAsync: jest.fn(),
-        },
-      } as never),
-    },
-  },
-}));
-
 jest.mock("expo-blur", () => {
   const React = require("react");
   const { View } = require("react-native");
@@ -348,16 +335,6 @@ jest.mock("@react-native-community/slider", () => {
   const React = require("react");
   const { View } = require("react-native");
   return ({ children }: { children?: React.ReactNode }) => React.createElement(View, null, children);
-});
-
-jest.mock("react-native-chart-kit", () => {
-  const React = require("react");
-  const { View } = require("react-native");
-  return {
-    LineChart: () => React.createElement(View, null),
-    BarChart: () => React.createElement(View, null),
-    PieChart: () => React.createElement(View, null),
-  };
 });
 
 jest.mock("react-native-circular-progress", () => ({
