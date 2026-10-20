@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { SafeAreaView, View, Text, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Image, Animated } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Image, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from 'react-native-paper';
 import Nav from '../../components/Nav';
 import { useUser } from '../../context/UserContext';
+import { auth } from '../../services/firebase';
 import { useFadeIn, useSlideUp, useStaggerAnimation } from '../../utils/animations';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function MoodAnalysis() {
   const { colors } = useTheme() as any;
+  const { profile } = useUser();
   const [entries, setEntries] = useState<any[]>([]);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   
@@ -22,7 +25,13 @@ export default function MoodAnalysis() {
   useEffect(() => {
     const load = async () => {
       try {
-        const raw = await AsyncStorage.getItem('mood_entries');
+        const uid = auth.currentUser?.uid;
+        const storageKey = uid ? `@neurosync_mood_entries_${uid}` : 'mood_entries';
+        let raw = await AsyncStorage.getItem(storageKey);
+        // Fallback to legacy key if user-specific key is empty
+        if (!raw && uid) {
+          raw = await AsyncStorage.getItem('mood_entries');
+        }
         const arr = raw ? JSON.parse(raw) : [];
         setEntries(arr);
       } catch (e) {
@@ -41,10 +50,10 @@ export default function MoodAnalysis() {
       (map[key] = map[key] || []).push(e);
     });
     const arr = Object.keys(map).map((key) => {
-      const items = (map[key] || []).slice().sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+      const items = (map[key] || []).slice().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       return { dateKey: key, dateObj: new Date(items[0]?.timestamp || Date.now()), items };
     });
-    arr.sort((a, b) => Number(b.dateObj) - Number(a.dateObj));
+    arr.sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
     return arr;
   }, [entries]);
 
@@ -131,18 +140,18 @@ export default function MoodAnalysis() {
         {/* header with greeting + profile */}
         <Animated.View style={[styles.headerRow, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', opacity: headerFade }]}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.greeting, { color: colors.onBackground }]}>Hey, {useUser()?.profile?.name?.split(' ')[0] || 'You'}! <Text style={{ fontSize: 20 }}>👋</Text></Text>
+            <Text style={[styles.greeting, { color: colors.onBackground }]}>Hey, {profile?.name?.split(' ')[0] || 'You'}! <Text style={{ fontSize: 20 }}>👋</Text></Text>
             <Text style={[styles.subtitle, { color: colors.textMuted }]}>Mood Analysis</Text>
           </View>
           <View style={{ alignItems: 'center' }}>
-            {useUser()?.profile?.profileImage ? (
-              <Image source={{ uri: useUser()?.profile?.profileImage }} style={styles.headerAvatar} />
+            {profile?.profileImage ? (
+              <Image source={{ uri: profile.profileImage }} style={styles.headerAvatar} />
             ) : (
               <View style={[styles.avatarPlaceholder, { backgroundColor: colors.primary }]}>
-                <Text style={styles.avatarInitials}>{(useUser()?.profile?.name || 'You').split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</Text>
+                <Text style={styles.avatarInitials}>{(profile?.name || 'You').split(' ').map((p: string) => p[0]).slice(0, 2).join('')}</Text>
               </View>
             )}
-            <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 6 }}>{useUser()?.profile?.name || 'You'}</Text>
+            <Text style={{ color: colors.textMuted, fontSize: 12, marginTop: 6 }}>{profile?.name || 'You'}</Text>
           </View>
         </Animated.View>
 

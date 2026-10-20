@@ -5,6 +5,8 @@ import Slider from "@react-native-community/slider";
 import { useTheme } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { collection, addDoc } from 'firebase/firestore';
+import { auth, db } from "../../services/firebase";
 import Nav from "../../components/Nav";
 import { useFadeIn, useSlideUp } from "../../utils/animations";
 
@@ -60,6 +62,7 @@ export default function MoodTracking() {
 
   const saveEntry = () => {
     const entry = {
+      id: `mood_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       mood,
       energyLevel,
       note,
@@ -68,13 +71,23 @@ export default function MoodTracking() {
     };
 
     console.log("Mood Entry:", entry);
-    // persist entry to AsyncStorage
+    // persist entry to AsyncStorage with user scoping
     (async () => {
       try {
-        const raw = await AsyncStorage.getItem('mood_entries');
+        const uid = auth.currentUser?.uid;
+        const storageKey = uid ? `@neurosync_mood_entries_${uid}` : 'mood_entries';
+        const raw = await AsyncStorage.getItem(storageKey);
         const arr = raw ? JSON.parse(raw) : [];
         arr.unshift(entry); // newest first
-        await AsyncStorage.setItem('mood_entries', JSON.stringify(arr));
+        await AsyncStorage.setItem(storageKey, JSON.stringify(arr));
+
+        // Sync to Firestore if user is authenticated
+        if (uid) {
+          addDoc(collection(db, 'users', uid, 'moods'), entry).catch((e) =>
+            console.warn('Failed to sync mood entry to Firestore:', e)
+          );
+        }
+
         // reset inputs so next entry is fresh
         setNote('');
         setSelectedTags([]);
