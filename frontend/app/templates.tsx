@@ -337,7 +337,7 @@ export default function TemplatesScreen() {
   // Navigate to AddTaskScreen with template data pre-filled
   const handleUseTemplate = (template: TaskTemplate) => {
     router.push({
-      pathname: "/add-task",
+      pathname: "/(tabs)/add-task",
       params: {
         templateId:    template.id,
         templateTitle: template.title,

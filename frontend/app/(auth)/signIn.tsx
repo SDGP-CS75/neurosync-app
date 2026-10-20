@@ -33,6 +33,8 @@ export default function SignIn() {
 
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError,   setGoogleError]   = useState<string | null>(null);
+  const [emailLoading,  setEmailLoading]  = useState(false);
+  const [authError,     setAuthError]     = useState<string | null>(null);
 
   // ── Google OAuth request ──────────────────────────────────────────────────
   // Using platform-specific client IDs from Firebase Console.
@@ -148,6 +150,8 @@ export default function SignIn() {
   });
 
   const onSubmit = async (data: FormData) => {
+    setAuthError(null);
+    setEmailLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
       const user           = userCredential.user;
@@ -174,6 +178,22 @@ export default function SignIn() {
       router.push("/(tabs)/home");
     } catch (error: unknown) {
       console.error("Login error:", error instanceof Error ? error.message : error);
+      const code = (error as { code?: string })?.code || "";
+      if (
+        code === "auth/invalid-credential" ||
+        code === "auth/user-not-found" ||
+        code === "auth/wrong-password"
+      ) {
+        setAuthError("Incorrect email or password. Please try again.");
+      } else if (code === "auth/too-many-requests") {
+        setAuthError("Too many unsuccessful attempts. Please try again later.");
+      } else if (error instanceof Error) {
+        setAuthError(error.message);
+      } else {
+        setAuthError("Login failed. Please try again.");
+      }
+    } finally {
+      setEmailLoading(false);
     }
   };
 
@@ -276,9 +296,16 @@ export default function SignIn() {
           )}
         />
 
+        {/* ── Auth error ── */}
+        <HelperText type="error" visible={!!authError}>
+          {authError}
+        </HelperText>
+
         {/* ── Login button ── */}
         <Button
           mode="contained"
+          loading={emailLoading}
+          disabled={emailLoading}
           style={[styles.button, dynamicStyles.button]}
           onPress={handleSubmit(onSubmit)}
         >

@@ -22,6 +22,8 @@ export default function SignUp() {
   const { width } = useWindowDimensions();
   const { theme } = useAppTheme();
   const { updateProfile } = useUser();
+  const [loading, setLoading] = React.useState(false);
+  const [signUpError, setSignUpError] = React.useState<string | null>(null);
 
   const isSmallScreen = width < 375;
 
@@ -37,6 +39,8 @@ export default function SignUp() {
   const passwordValue = watch("password");
 
   const onSubmit = async (data: FormData) => {
+    setSignUpError(null);
+    setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
       const user = userCredential.user;
@@ -61,6 +65,20 @@ export default function SignUp() {
       } else {
         console.error("Sign up error:", error);
       }
+      const code = (error as { code?: string })?.code || "";
+      if (code === "auth/email-already-in-use") {
+        setSignUpError("An account with this email already exists.");
+      } else if (code === "auth/weak-password") {
+        setSignUpError("Password should be at least 6 characters.");
+      } else if (code === "auth/invalid-email") {
+        setSignUpError("Please enter a valid email address.");
+      } else if (error instanceof Error) {
+        setSignUpError(error.message);
+      } else {
+        setSignUpError("Failed to create account. Please try again.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -202,9 +220,16 @@ export default function SignUp() {
           )}
         />
 
+        {/* ── Sign up error ── */}
+        <HelperText type="error" visible={!!signUpError}>
+          {signUpError}
+        </HelperText>
+
         {/* ── Sign up button ── */}
         <Button
           mode="contained"
+          loading={loading}
+          disabled={loading}
           style={[styles.button, dynamicStyles.button]}
           onPress={handleSubmit(onSubmit)}
         >

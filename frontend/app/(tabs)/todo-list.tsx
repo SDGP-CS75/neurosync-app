@@ -277,7 +277,7 @@ export default function TodoListScreen() {
           },
         ]}
       >
-        <TouchableOpacity activeOpacity={0.7}>
+        <TouchableOpacity activeOpacity={0.7} onPress={() => router.back()}>
           <Ionicons name="chevron-back" size={28} color={theme.colors.text} />
         </TouchableOpacity>
 
@@ -288,7 +288,7 @@ export default function TodoListScreen() {
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity 
             activeOpacity={0.7}
-            onPress={() => router.push('./calendar')}
+            onPress={() => router.push('/(tabs)/calendar')}
           >
             <Ionicons name="calendar-outline" size={26} color={theme.colors.primary} />
           </TouchableOpacity>

@@ -404,27 +404,31 @@ export async function scheduleRecurringNotification(
  */
 export async function cancelTaskNotification(taskId: string): Promise<void> {
   try {
-    // Cancel single notification
     const singleId = getNotificationId(taskId);
-    try {
-      await Notifications.cancelScheduledNotificationAsync(singleId);
-      console.log(`Cancelled notification ${singleId}`);
-    } catch (error) {
-      // Notification might not exist, that's okay
-      console.log(`Notification ${singleId} not found or already cancelled`);
-    }
+    await Notifications.cancelScheduledNotificationAsync(singleId).catch(() => {});
 
-    // Cancel recurring notifications (up to 365 occurrences)
-    // Don't break on first error - continue trying to cancel all
-    for (let i = 0; i < 365; i++) {
-      const recurringId = getNotificationId(taskId, i);
-      try {
-        await Notifications.cancelScheduledNotificationAsync(recurringId);
-        console.log(`Cancelled recurring notification ${recurringId}`);
-      } catch (error) {
-        // Notification doesn't exist, continue to next one
-        // Don't break - there might be gaps in the sequence
+    try {
+      // Query currently scheduled notifications and cancel only matching IDs
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      const prefix = `task-reminder-${taskId}`;
+      const toCancel = scheduled.filter(
+        (n) => n.identifier === prefix || n.identifier.startsWith(`${prefix}-`)
+      );
+      if (toCancel.length > 0) {
+        await Promise.all(
+          toCancel.map((n) =>
+            Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {})
+          )
+        );
       }
+    } catch {
+      // Fallback for environments where getAllScheduledNotificationsAsync is unsupported
+      const fallbackIds = Array.from({ length: 30 }, (_, i) => getNotificationId(taskId, i));
+      await Promise.all(
+        fallbackIds.map((id) =>
+          Notifications.cancelScheduledNotificationAsync(id).catch(() => {})
+        )
+      );
     }
   } catch (error) {
     console.error('Error canceling notification:', error);

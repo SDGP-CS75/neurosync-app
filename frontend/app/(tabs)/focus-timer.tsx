@@ -231,7 +231,7 @@ export default function FocusTimer() {
 
   const handleStartTimer = () => {
     router.push({
-      pathname: "/focus-timer-counting",
+      pathname: "/(tabs)/focus-timer-counting",
       params: {
         mode,
         focusDuration: focusDuration.toString(),
