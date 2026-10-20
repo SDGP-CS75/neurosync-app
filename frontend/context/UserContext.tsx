@@ -16,6 +16,7 @@ interface UserProfile {
 interface UserContextType {
   profile: UserProfile;
   updateProfile: (updates: Partial<UserProfile>) => void;
+  updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
   setProfileImage: (uri: string) => void;
   resetProfile: () => void;
   isLoading: boolean;
@@ -131,9 +132,41 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setProfile((prev) => ({ ...prev, ...updates }));
   };
 
-  const setProfileImage = (uri: string) => {
+  const updateUserProfile = useCallback(async (updates: Partial<UserProfile>) => {
+    setProfile((prev) => ({ ...prev, ...updates }));
+
+    if (!userId) return;
+
+    try {
+      const userDocRef = doc(db, 'users', userId);
+      const firestoreData: Record<string, unknown> = {};
+
+      if (updates.name !== undefined) {
+        const parts = updates.name.trim().split(/\s+/);
+        firestoreData.firstName = parts[0] || '';
+        firestoreData.lastName = parts.slice(1).join(' ') || '';
+      }
+      if (updates.email !== undefined) firestoreData.email = updates.email.trim();
+      if (updates.age !== undefined) firestoreData.age = updates.age.trim();
+      if (updates.about !== undefined) firestoreData.about = updates.about.trim();
+      if (updates.profileImage !== undefined) firestoreData.photoURL = updates.profileImage;
+
+      await setDoc(userDocRef, firestoreData, { merge: true });
+    } catch (error) {
+      console.error('Error saving user profile to Firestore:', error);
+      throw error;
+    }
+  }, [userId]);
+
+  const setProfileImage = useCallback((uri: string) => {
     setProfile((prev) => ({ ...prev, profileImage: uri }));
-  };
+    if (userId) {
+      const userDocRef = doc(db, 'users', userId);
+      setDoc(userDocRef, { photoURL: uri }, { merge: true }).catch((err) =>
+        console.error('Failed to sync profile image to Firestore:', err)
+      );
+    }
+  }, [userId]);
 
   const resetProfile = () => {
     setProfile(defaultProfile);
@@ -170,7 +203,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [userId]);
 
   return (
-    <UserContext.Provider value={{ profile, updateProfile, setProfileImage, resetProfile, isLoading, saveThemePreference, themePreference, saveHapticFeedbackPreference, hapticFeedbackEnabled }}>
+    <UserContext.Provider value={{ profile, updateProfile, updateUserProfile, setProfileImage, resetProfile, isLoading, saveThemePreference, themePreference, saveHapticFeedbackPreference, hapticFeedbackEnabled }}>
       {children}
     </UserContext.Provider>
   );

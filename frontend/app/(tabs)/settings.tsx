@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, TextInput, Alert, Image, useWindowDimensions, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, TextInput, Alert, Image, useWindowDimensions, Animated, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -16,10 +16,11 @@ const BASE_WIDTH = 390;
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { profile, updateProfile, setProfileImage, resetProfile, saveHapticFeedbackPreference, hapticFeedbackEnabled } = useUser();
+  const { profile, updateProfile, updateUserProfile, setProfileImage, resetProfile, saveHapticFeedbackPreference, hapticFeedbackEnabled } = useUser();
   const { palette } = useAppTheme();
   const { width } = useWindowDimensions();
   const activeColor = palette.primary;
+  const [isSaving, setIsSaving] = useState(false);
   
   // Animation values
   const headerFade = useRef(new Animated.Value(0)).current;
@@ -150,12 +151,28 @@ export default function SettingsScreen() {
   // Triggers a native confirmation modal to prevent accidental logouts.
   // If confirmed, it clears the auth session, resets local profile state, 
   // and redirects the user back to the Welcome/Login screen.
-  const handleSave = () => {
-    Alert.alert(
-      "Settings Saved",
-      "Your profile and app preferences have been updated successfully.",
-      [{ text: "Awesome!", style: "default" }]
-    );
+  const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await updateUserProfile({
+        name: profile.name,
+        email: profile.email,
+        age: profile.age,
+        about: profile.about,
+        profileImage: profile.profileImage,
+      });
+      Alert.alert(
+        "Settings Saved",
+        "Your profile and app preferences have been updated successfully.",
+        [{ text: "Awesome!", style: "default" }]
+      );
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+      Alert.alert("Error", "Failed to save settings to the cloud. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Handle Logout
@@ -259,8 +276,12 @@ export default function SettingsScreen() {
             <Ionicons name="arrow-back" size={20 * scale} color="#1F2937" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Settings</Text>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-             <Text style={[styles.saveButtonText, { color: activeColor }]}>Save</Text>
+          <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <ActivityIndicator size="small" color={activeColor} />
+            ) : (
+              <Text style={[styles.saveButtonText, { color: activeColor }]}>Save</Text>
+            )}
           </TouchableOpacity>
         </Animated.View>
 
