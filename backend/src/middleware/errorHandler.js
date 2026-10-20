@@ -1,5 +1,4 @@
 import express from 'express';
-const { Request, Response, NextFunction } = express;
 
 /**
  * Enhanced error handler with better classification and logging

@@ -7,13 +7,15 @@ import admin from 'firebase-admin';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import userRoutes from './routes/users.js';
 import aiRoutes from './routes/ai.js';
-import fs from 'fs';
 import { errorHandler } from './middleware/errorHandler.js';
 
+// Load environment variables immediately before any configuration checks
+dotenv.config();
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DEBUG_LOG_PATH = path.join(__dirname, '..', '..', '.cursor', 'debug.log');
 
 // Initialize Firebase Admin with credentials from environment variable or file
 let serviceAccount;
@@ -34,8 +36,6 @@ try {
       process.exit(1);
     }
   }
-
-  dotenv.config();
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -69,25 +69,6 @@ app.use('/api/', limiter);
 app.use(bodyParser.json({ limit: '1mb' }));
 app.use(bodyParser.urlencoded({ extended: true, limit: '1mb' }));
 
-// Request-level debug logging for all backend calls (async to avoid blocking)
-app.use((req, res, next) => {
-  const logEntry = JSON.stringify({
-    location: 'server.js:request',
-    message: 'Incoming request',
-    data: { method: req.method, url: req.originalUrl, ip: req.ip },
-    timestamp: Date.now(),
-    hypothesisId: 'E',
-  }) + '\n';
-  
-  // Non-blocking async write
-  const dir = path.dirname(DEBUG_LOG_PATH);
-  fs.promises.mkdir(dir, { recursive: true })
-    .then(() => fs.promises.appendFile(DEBUG_LOG_PATH, logEntry))
-    .catch(() => {}); // Silently fail to avoid blocking requests
-  
-  next();
-});
-
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/ai', aiRoutes);
@@ -103,19 +84,6 @@ app.get('/health', (req, res) => {
 
 app.get('/', (req, res) => {
   res.send('Server is running!');
-});
-
-// Debug relay: app sends logs here when running on device (so they get written on dev machine)
-app.post('/api/debug-log', (req, res) => {
-  const logEntry = JSON.stringify(req.body) + '\n';
-  const dir = path.dirname(DEBUG_LOG_PATH);
-  
-  // Non-blocking async write
-  fs.promises.mkdir(dir, { recursive: true })
-    .then(() => fs.promises.appendFile(DEBUG_LOG_PATH, logEntry))
-    .catch(() => {});
-  
-  res.status(204).end();
 });
 
 // Error handling middleware
