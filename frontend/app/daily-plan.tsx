@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -254,7 +254,10 @@ export default function DailyPlanScreen() {
   const [plan, setPlan] = useState<DailyPlanResponse | null>(null);
 
   // Incomplete tasks only
-  const incompleteTasks = tasks.filter((t) => t.status !== "done");
+  const incompleteTasks = useMemo(
+    () => tasks.filter((t) => t.status !== "done"),
+    [tasks]
+  );
 
   // Ordered tasks from plan (fall back to original order if plan not loaded)
   const orderedTasks: Task[] = plan
@@ -303,11 +306,11 @@ export default function DailyPlanScreen() {
     } finally {
       setLoading(false);
     }
-  }, [incompleteTasks.length, userId]);
+  }, [incompleteTasks, userId]);
 
   useEffect(() => {
     fetchPlan();
-  }, []);
+  }, [fetchPlan]);
 
   // Navigate to focus timer with task pre-linked
   const handleStartTask = (task: Task) => {

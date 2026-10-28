@@ -168,7 +168,16 @@ export default function TodoListScreen() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [
+    dateRowFade,
+    dateRowSlide,
+    filterFade,
+    filterSlide,
+    headerFade,
+    headerSlide,
+    taskListFade,
+    taskListSlide,
+  ]);
 
   const isSmallScreen = width < 375;
   const cardPadding   = isSmallScreen ? 14 : 18;

@@ -668,7 +668,20 @@ export default function AddTaskScreen() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [
+    aiButtonFade,
+    aiButtonSlide,
+    detailsFade,
+    detailsSlide,
+    headerFade,
+    headerSlide,
+    inputFade,
+    inputSlide,
+    saveFade,
+    saveSlide,
+    subtasksFade,
+    subtasksSlide,
+  ]);
 
   useEffect(() => {
     if (params.templateTitle) {
@@ -689,7 +702,13 @@ export default function AddTaskScreen() {
         }
       } catch { }
     }
-  }, []);
+  }, [
+    params.templateCategory,
+    params.templateIcon,
+    params.templateIconBg,
+    params.templateSubtasks,
+    params.templateTitle,
+  ]);
 
   // ── Subtask note modal state
   const [noteModal, setNoteModal] = useState<{

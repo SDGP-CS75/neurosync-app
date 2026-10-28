@@ -26,7 +26,7 @@ export default function AuthLayout() {
       console.log('[AuthLayout] User already authenticated, redirecting to tabs...');
       router.replace('/(tabs)/home');
     }
-  }, [isCheckingAuth, isAuthenticated]);
+  }, [isCheckingAuth, isAuthenticated, router]);
 
   if (isCheckingAuth) {
     return (

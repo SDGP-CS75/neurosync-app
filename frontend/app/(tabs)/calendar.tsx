@@ -114,7 +114,7 @@ function TaskRow({ task, theme, index, onPress }: { task: Task; theme: any; inde
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, index, slideAnim]);
 
   return (
     <TouchableOpacity
@@ -637,7 +637,16 @@ export default function CalendarScreen() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [
+    calendarFade,
+    calendarSlide,
+    headerFade,
+    headerSlide,
+    tasksFade,
+    tasksSlide,
+    toggleFade,
+    toggleSlide,
+  ]);
 
   // Week view: which Monday anchor
   const [weekAnchor, setWeekAnchor] = useState<Date>(() => {

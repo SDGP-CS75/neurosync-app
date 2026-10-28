@@ -21,7 +21,7 @@ export default function TabsLayout() {
     if (!isCheckingAuth && !isAuthenticated) {
       router.replace('/(auth)/welcome');
     }
-  }, [isCheckingAuth, isAuthenticated]);
+  }, [isCheckingAuth, isAuthenticated, router]);
 
   if (isCheckingAuth) {
     return (

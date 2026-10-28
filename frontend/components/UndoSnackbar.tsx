@@ -53,7 +53,7 @@ export default function UndoSnackbar() {
         useNativeDriver: true,
       }).start();
     }
-  }, [isVisible]);
+  }, [isVisible, progressAnim, slideAnim]);
 
 
 

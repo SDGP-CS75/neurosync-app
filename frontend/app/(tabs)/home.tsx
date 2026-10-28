@@ -165,7 +165,7 @@ export default function HomeScreen() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [cardsFade, cardsSlide, headerFade, headerSlide, sectionsFade, sectionsSlide]);
 
   const todayKey = getTodayKey();
   const displayName = profile.name || "You";

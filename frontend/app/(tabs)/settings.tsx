@@ -117,7 +117,18 @@ export default function SettingsScreen() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [
+    accountCardFade,
+    accountCardSlide,
+    headerFade,
+    headerSlide,
+    prefsCardFade,
+    prefsCardSlide,
+    profileCardFade,
+    profileCardSlide,
+    themeCardFade,
+    themeCardSlide,
+  ]);
   
   // RESPONSIVE SCALING LOGIC
   // Calculates a dynamic scale multiplier based on the device's screen width.

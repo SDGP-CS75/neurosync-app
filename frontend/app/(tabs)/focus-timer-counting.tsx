@@ -64,7 +64,7 @@ function CustomAnimatedCircularProgress({
       duration,
       useNativeDriver: false,
     }).start();
-  }, [fill, duration]);
+  }, [animatedValue, fill, duration]);
 
   const strokeDashoffset = animatedValue.interpolate({
     inputRange: [0, 100],
@@ -591,50 +591,59 @@ export default function FocusTimerCounting() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [
+    controlsFade,
+    controlsSlide,
+    headerFade,
+    headerSlide,
+    modeFade,
+    modeSlide,
+    musicFade,
+    musicSlide,
+    stopFade,
+    stopSlide,
+    timerFade,
+    timerSlide,
+  ]);
 
   // ── Screen saver ────────────────────────────────────────────────────────────
 
-  const resetScreenSaverTimeout = useCallback(() => {
+  const hideScreenSaver = useCallback(() => {
+    Animated.timing(screenSaverAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setShowScreenSaver(false));
+  }, [screenSaverAnim]);
+
+  const armScreenSaverTimer = useCallback(() => {
     if (screenSaverTimeout.current) clearTimeout(screenSaverTimeout.current);
 
-    if (showScreenSaver) {
+    if (!isRunning || showScreenSaver) return;
+    screenSaverTimeout.current = setTimeout(() => {
+      setShowScreenSaver(true);
       Animated.timing(screenSaverAnim, {
-        toValue: 0,
-        duration: 300,
+        toValue: 1,
+        duration: 500,
         useNativeDriver: true,
-      }).start(() => setShowScreenSaver(false));
-    }
+      }).start();
+    }, SCREEN_SAVER_TIMEOUT);
+  }, [isRunning, screenSaverAnim, showScreenSaver]);
 
-    if (isRunning) {
-      screenSaverTimeout.current = setTimeout(() => {
-        setShowScreenSaver(true);
-        Animated.timing(screenSaverAnim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }).start();
-      }, SCREEN_SAVER_TIMEOUT);
-    }
-  }, [showScreenSaver, isRunning, screenSaverAnim]);
+  const resetScreenSaverTimeout = useCallback(() => {
+    if (screenSaverTimeout.current) clearTimeout(screenSaverTimeout.current);
+    if (showScreenSaver) hideScreenSaver();
+    armScreenSaverTimer();
+  }, [armScreenSaverTimer, hideScreenSaver, showScreenSaver]);
 
   useEffect(() => {
-    if (isRunning) {
-      resetScreenSaverTimeout();
-    } else {
-      if (screenSaverTimeout.current) clearTimeout(screenSaverTimeout.current);
-      if (showScreenSaver) {
-        Animated.timing(screenSaverAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }).start(() => setShowScreenSaver(false));
-      }
-    }
+    armScreenSaverTimer();
+    if (!isRunning && showScreenSaver) hideScreenSaver();
+
     return () => {
       if (screenSaverTimeout.current) clearTimeout(screenSaverTimeout.current);
     };
-  }, [isRunning]);
+  }, [armScreenSaverTimer, hideScreenSaver, isRunning, showScreenSaver]);
 
   // ── Audio setup ─────────────────────────────────────────────────────────────
 

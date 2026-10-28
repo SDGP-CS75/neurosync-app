@@ -41,6 +41,7 @@ export default function FocusTimer() {
   const [linkedTask, setLinkedTask] = useState<Task | null | undefined>(
     undefined
   );
+  const preselectedTaskAppliedRef = useRef(false);
 
   // Animation values
   const headerFade = useRef(new Animated.Value(0)).current;
@@ -190,18 +191,38 @@ export default function FocusTimer() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [
+    descriptionFade,
+    descriptionSlide,
+    durationFade,
+    durationSlide,
+    headerFade,
+    headerSlide,
+    modeFade,
+    modeSlide,
+    previewFade,
+    previewSlide,
+    startFade,
+    startSlide,
+    tipsFade,
+    tipsSlide,
+    workingOnFade,
+    workingOnSlide,
+  ]);
 
   // Pre-fill linked task from daily plan navigation  ← moved inside component
   useEffect(() => {
     const preId = params.preselectedTaskId
       ? String(params.preselectedTaskId)
       : null;
-    if (preId) {
-      const found = tasks.find((t) => t.id === preId) ?? null;
+    if (!preId || preselectedTaskAppliedRef.current) return;
+
+    const found = tasks.find((t) => t.id === preId) ?? null;
+    if (found) {
       setLinkedTask(found);
+      preselectedTaskAppliedRef.current = true;
     }
-  }, []);
+  }, [params.preselectedTaskId, tasks]);
 
   // Auto-set focus duration when a task is selected
   useEffect(() => {

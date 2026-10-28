@@ -121,7 +121,7 @@ function BreathingActivity({ onDone, theme }: { onDone: () => void; theme: any }
       duration: currentPhase.duration * 1000,
       useNativeDriver: true,
     }).start();
-  }, [phaseIdx, finished]);
+  }, [circleAnim, currentPhase.duration, currentPhase.phase, phaseIdx, finished]);
 
   useEffect(() => {
     if (finished) return;
