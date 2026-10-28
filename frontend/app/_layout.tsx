@@ -26,6 +26,7 @@ import { requestNotificationPermissions } from "../services/notifications";
 import { auth } from "../services/firebase";
 import { syncPendingSessions } from "../services/sessionStorage";
 import { syncPendingMoods } from "../services/moodStorage";
+import AppErrorBoundary from "../components/AppErrorBoundary";
 
 function AppShell() {
   const { theme } = useAppTheme();
@@ -173,17 +174,19 @@ function ThemeAndUserProviders({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <UserProvider>
-          <ThemeAndUserProviders>
-            <TasksProvider>
-              <AppShell />
-            </TasksProvider>
-          </ThemeAndUserProviders>
-        </UserProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <AppErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <UserProvider>
+            <ThemeAndUserProviders>
+              <TasksProvider>
+                <AppShell />
+              </TasksProvider>
+            </ThemeAndUserProviders>
+          </UserProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </AppErrorBoundary>
   );
 }
 
