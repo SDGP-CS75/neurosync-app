@@ -30,6 +30,10 @@ export default function ThemePicker() {
               key={p.name}
               onPress={() => setPalette(p)}
               activeOpacity={0.8}
+              accessibilityRole="radio"
+              accessibilityLabel={`${p.name} color theme`}
+              accessibilityState={{ checked: isSelected }}
+              hitSlop={4}
               style={[
                 styles.swatchWrapper,
                 {

@@ -121,6 +121,9 @@ export default function AnimatedNavBar({
             onPress={() => handleItemPress(item.key, index)}
             activeOpacity={0.7}
             style={styles.item}
+            accessibilityRole="tab"
+            accessibilityLabel={item.label ?? item.key}
+            accessibilityState={{ selected: isActive }}
           >
             <Animated.View
               style={[

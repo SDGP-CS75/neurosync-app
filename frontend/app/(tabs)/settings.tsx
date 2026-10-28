@@ -292,11 +292,24 @@ export default function SettingsScreen() {
             },
           ]}
         >
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={12}
+          >
             <Ionicons name="arrow-back" size={20 * scale} color="#1F2937" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Settings</Text>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={isSaving}>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={isSaving}
+            accessibilityRole="button"
+            accessibilityLabel={isSaving ? "Saving profile" : "Save profile"}
+            accessibilityState={{ disabled: isSaving, busy: isSaving }}
+          >
             {isSaving ? (
               <ActivityIndicator size="small" color={activeColor} />
             ) : (
@@ -348,6 +361,14 @@ export default function SettingsScreen() {
                 onPress={pickImage}
                 activeOpacity={0.8}
                 disabled={isUploadingImage}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isUploadingImage ? "Uploading profile photo" : "Change profile photo"
+                }
+                accessibilityState={{
+                  disabled: isUploadingImage,
+                  busy: isUploadingImage,
+                }}
               >
                 <Ionicons name="camera" size={14 * scale} color="white" />
               </TouchableOpacity>
@@ -362,6 +383,7 @@ export default function SettingsScreen() {
               value={profile.name} 
               onChangeText={(text) => updateProfile({ name: text })}
               placeholder="Enter your name"
+              accessibilityLabel="Name"
             />
           </View>
 
@@ -374,6 +396,7 @@ export default function SettingsScreen() {
               onChangeText={(text) => updateProfile({ email: text })}
               keyboardType="email-address"
               autoCapitalize="none"
+              accessibilityLabel="Email"
             />
           </View>
 
@@ -385,6 +408,7 @@ export default function SettingsScreen() {
               value={profile.age} 
               onChangeText={(text) => updateProfile({ age: text })}
               keyboardType="numeric"
+              accessibilityLabel="Age"
             />
           </View>
 
@@ -398,6 +422,7 @@ export default function SettingsScreen() {
               multiline={true}
               numberOfLines={3}
               textAlignVertical="top"
+              accessibilityLabel="About me"
             />
           </View>
 
@@ -432,6 +457,8 @@ export default function SettingsScreen() {
           <TouchableOpacity 
             style={styles.settingRow}
             onPress={() => router.push('/(tabs)/session-history')}
+            accessibilityRole="button"
+            accessibilityLabel="Open session history"
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: activeColor + '15' }]}>
@@ -454,6 +481,7 @@ export default function SettingsScreen() {
               onValueChange={setDailyReminders}
               trackColor={{ false: "#E5E7EB", true: activeColor + '80' }}
               thumbColor={dailyReminders ? activeColor : "#f4f3f4"}
+              accessibilityLabel="Daily reminders"
             />
           </View>
 
@@ -469,6 +497,7 @@ export default function SettingsScreen() {
               onValueChange={saveHapticFeedbackPreference}
               trackColor={{ false: "#E5E7EB", true: activeColor + '80' }}
               thumbColor={hapticFeedbackEnabled ? activeColor : "#f4f3f4"}
+              accessibilityLabel="Haptic feedback"
             />
           </View>
 
@@ -487,6 +516,7 @@ export default function SettingsScreen() {
               onValueChange={setStrictFocus}
               trackColor={{ false: "#E5E7EB", true: "#FECACA" }}
               thumbColor={strictFocus ? "#EF4444" : "#f4f3f4"}
+              accessibilityLabel="Strict focus mode"
             />
           </View>
         </Animated.View>
@@ -505,6 +535,8 @@ export default function SettingsScreen() {
           <TouchableOpacity 
             style={styles.settingRow}
             onPress={handleResetData}
+            accessibilityRole="button"
+            accessibilityLabel="Reset all data"
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: '#FEE2E2' }]}>
@@ -521,6 +553,8 @@ export default function SettingsScreen() {
           <TouchableOpacity 
             style={[styles.settingRow, { borderBottomWidth: 0 }]}
             onPress={handleLogout}
+            accessibilityRole="button"
+            accessibilityLabel="Log out"
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: '#FEE2E2' }]}>
