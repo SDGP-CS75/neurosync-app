@@ -20,6 +20,7 @@ export const errorHandler = (err, req, res, next) => {
   
   // Rate limit error (AI quota)
   if (err.isQuota) {
+    res.set('Retry-After', String(err.retryAfter || 60));
     return res.status(429).json({ 
       error: err.message || 'AI quota exceeded. Try again later.',
       retryAfter: err.retryAfter || 60,

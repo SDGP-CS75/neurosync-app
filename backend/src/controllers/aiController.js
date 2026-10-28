@@ -3,6 +3,7 @@ import {
   buildDateContext,
   resolveRequestTimeZone,
 } from '../services/dateContext.js';
+import { recordGroqUsage } from '../services/aiUsage.js';
 
 const GROQ_URL         = 'https://api.groq.com/openai/v1/chat/completions';
 const MIN_TASK_LENGTH  = 3;
@@ -362,7 +363,12 @@ function fetchWithTimeout(url, options, timeoutMs) {
     .finally(() => clearTimeout(timer));
 }
 
-async function callGroqWithRetry(payload, apiKey, retries = MAX_RETRIES) {
+async function callGroqWithRetry(
+  payload,
+  apiKey,
+  retries = MAX_RETRIES,
+  onUsage
+) {
   let lastError;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
@@ -396,6 +402,7 @@ async function callGroqWithRetry(payload, apiKey, retries = MAX_RETRIES) {
         throw new Error(rawStr);
       }
 
+      if (onUsage) await onUsage(data);
       return data;
 
     } catch (err) {
@@ -480,7 +487,12 @@ export async function breakTaskIntoSteps(req, res) {
   const startTime = Date.now();
   let data;
   try {
-    data = await callGroqWithRetry(payload, apiKey, MAX_RETRIES);
+    data = await callGroqWithRetry(
+      payload,
+      apiKey,
+      MAX_RETRIES,
+      (usageData) => recordGroqUsage(req, usageData)
+    );
   } catch (err) {
     console.error('[aiController] Groq request failed', {
       operation: 'breakdown',
@@ -512,7 +524,12 @@ export async function breakTaskIntoSteps(req, res) {
     );
 
     try {
-      const retryData = await callGroqWithRetry(retryPayload, apiKey, 1);
+      const retryData = await callGroqWithRetry(
+        retryPayload,
+        apiKey,
+        1,
+        (usageData) => recordGroqUsage(req, usageData)
+      );
       const retried   = parseResponse(retryData?.choices?.[0]?.message?.content || '');
 
       if (retried.steps.length >= 1 && !retried._refusal) {
@@ -606,7 +623,12 @@ Rules:
   const startTime = Date.now();
   let data;
   try {
-    data = await callGroqWithRetry(payload, apiKey, MAX_RETRIES);
+    data = await callGroqWithRetry(
+      payload,
+      apiKey,
+      MAX_RETRIES,
+      (usageData) => recordGroqUsage(req, usageData)
+    );
   } catch (err) {
     console.error('[aiController] Groq request failed', {
       operation: 'reschedule',
@@ -685,7 +707,12 @@ Return ONLY a raw JSON object:
   const startTime = Date.now();
   let data;
   try {
-    data = await callGroqWithRetry(payload, apiKey, MAX_RETRIES);
+    data = await callGroqWithRetry(
+      payload,
+      apiKey,
+      MAX_RETRIES,
+      (usageData) => recordGroqUsage(req, usageData)
+    );
   } catch (err) {
     console.error('[aiController] Groq request failed', {
       operation: 'suggestSplit',
@@ -803,7 +830,12 @@ Only use IDs from the list above. reasoning must have one entry per orderedTaskI
   const startTime = Date.now();
   let data;
   try {
-    data = await callGroqWithRetry(payload, apiKey, MAX_RETRIES);
+    data = await callGroqWithRetry(
+      payload,
+      apiKey,
+      MAX_RETRIES,
+      (usageData) => recordGroqUsage(req, usageData)
+    );
   } catch (err) {
     console.error('[aiController] Groq request failed', {
       operation: 'getDailyPlan',
