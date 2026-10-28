@@ -16,7 +16,7 @@ planning features, and per-user AI spend controls.
 - Node.js 22 and npm
 - A Firebase service account for the project
 - A Groq API key for AI routes
-- Java 11 or newer only when running the Firestore/Storage emulator tests
+- Java 21 or newer only when running the Firestore/Storage emulator tests
 
 ## Local Setup
 
@@ -46,8 +46,8 @@ The API listens on `http://localhost:8080` by default.
 | `npm run test:rules` | Run Firestore/Storage rules against local emulators |
 | `npm run check` | Syntax-check entry points and run tests |
 
-`npm run test:rules` requires the Firebase CLI dependencies and Java. The normal
-`npm test` command deliberately excludes this emulator-only suite.
+`npm run test:rules` requires the Firebase CLI dependencies and Java 21 or newer.
+The normal `npm test` command deliberately excludes this emulator-only suite.
 
 ## API
 
