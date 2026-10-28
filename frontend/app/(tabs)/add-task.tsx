@@ -825,6 +825,10 @@ export default function AddTaskScreen() {
       const dateKey = getTodayKey();
 
       splitTasks.forEach((st) => {
+        const estimatedMinutes =
+          st.totalDurationMinutes > 0
+            ? st.totalDurationMinutes
+            : st.stepDurations.reduce((total, minutes) => total + minutes, 0);
         addTask({
           title: st.title,
           category: aiMeta.category,
@@ -834,6 +838,7 @@ export default function AddTaskScreen() {
           status: "todo",
           isSynced: false,
           dateKey,
+          durationMinutes: estimatedMinutes > 0 ? estimatedMinutes : undefined,
           subtasks: st.steps.map((text, i) => ({
             id: generateId(),
             text,
@@ -894,6 +899,13 @@ export default function AddTaskScreen() {
     if (!title) return;
 
     const dateKey = whenDate ? getLocalDateKey(whenDate) : getTodayKey();
+    const estimatedMinutes =
+      aiMeta.totalDurationMinutes > 0
+        ? aiMeta.totalDurationMinutes
+        : subTasks.reduce(
+            (total, subtask) => total + (subtask.durationMinutes ?? 0),
+            0
+          );
 
     addTask({
       title,
@@ -908,6 +920,7 @@ export default function AddTaskScreen() {
       isSynced: false,
       dateKey,
       subtasks: subTasks,
+      durationMinutes: estimatedMinutes > 0 ? estimatedMinutes : undefined,
     });
 
     setMainTask(""); setWhenDate(null); setLocation(""); setReminder("");
