@@ -10,10 +10,15 @@ import React, {
   useRef,
   useState,
 } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { onAuthStateChanged } from "firebase/auth";
-import { collection, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  setDoc,
+} from "firebase/firestore";
 import { auth, db } from "../services/firebase";
 import {
   scheduleTaskNotification,
@@ -22,15 +27,23 @@ import {
   rescheduleAllNotifications,
 } from "../services/notifications";
 import { logActualDuration } from "../services/calibration";
+import {
+  fromFirestoreTask,
+  loadTaskTombstones,
+  loadTasksForUser,
+  mergeTasks,
+  saveTaskTombstones,
+  saveTasksForUser,
+  toFirestoreTask,
+  type TaskTombstones,
+} from "../services/taskStorage";
 import type { SubTask, Task, TaskStatus } from "../types";
-
-const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
 
 export type { SubTask, Task, TaskStatus };
 
 type TasksContextType = {
   tasks: Task[];
-  addTask: (task: Omit<Task, "id">) => void;
+  addTask: (task: Omit<Task, "id">) => Task;
   updateTask: (id: string, updates: Partial<Task>) => void;
   removeTask: (id: string) => void;
   toggleSubtaskDone: (taskId: string, subtaskId: string) => void;
@@ -46,12 +59,6 @@ type TasksContextType = {
 
 const TasksContext = createContext<TasksContextType | null>(null);
 
-function omitUndefinedFields<T extends Record<string, unknown>>(value: T): T {
-  return Object.fromEntries(
-    Object.entries(value).filter(([, fieldValue]) => fieldValue !== undefined)
-  ) as T;
-}
-
 function getStatusFromSubtasks(subtasks?: SubTask[]): TaskStatus | null {
   if (!subtasks || subtasks.length === 0) return null;
 
@@ -61,34 +68,47 @@ function getStatusFromSubtasks(subtasks?: SubTask[]): TaskStatus | null {
   return "in-progress";
 }
 
-async function loadTasksForUser(userId: string): Promise<Task[]> {
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY_PREFIX + userId);
-    if (!raw) return [];
-
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-async function saveTasksForUser(userId: string, tasks: Task[]) {
-  try {
-    await AsyncStorage.setItem(STORAGE_KEY_PREFIX + userId, JSON.stringify(tasks));
-  } catch (e) {
-    console.warn("Persist failed:", e);
-  }
+function nextUpdatedAt(previous?: string): string {
+  const previousMs = previous ? Date.parse(previous) : Number.NaN;
+  const nextMs = Math.max(
+    Date.now(),
+    Number.isFinite(previousMs) ? previousMs + 1 : 0
+  );
+  return new Date(nextMs).toISOString();
 }
 
 export function TasksProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskState, setTaskState] = useState<{
+    tasks: Task[];
+    tombstones: TaskTombstones;
+  }>({ tasks: [], tombstones: {} });
+  const { tasks, tombstones } = taskState;
   const [isLoading, setIsLoading] = useState(true);
   const [lastDeleted, setLastDeleted] = useState<Task | null>(null);
-  const deletedTaskIdsRef = useRef<Set<string>>(new Set());
-  const hasHydratedFirebaseRef = useRef<string | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const setTasks = useCallback(
+    (action: React.SetStateAction<Task[]>) => {
+      setTaskState((prev) => ({
+        ...prev,
+        tasks:
+          typeof action === "function" ? action(prev.tasks) : action,
+      }));
+    },
+    []
+  );
+
+  const setTombstones = useCallback(
+    (action: React.SetStateAction<TaskTombstones>) => {
+      setTaskState((prev) => ({
+        ...prev,
+        tombstones:
+          typeof action === "function" ? action(prev.tombstones) : action,
+      }));
+    },
+    []
+  );
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -98,183 +118,162 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     return () => unsub();
   }, []);
 
-  const mergeTasksFromFirebase = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      const snapshot = await getDocs(collection(db, "users", userId, "tasks"));
-
-      setTasks((prev) => {
-        const localMap = new Map(prev.map((task) => [task.id, task]));
-        const newTasks: Task[] = [];
-        const updatedTasks = new Map<string, Task>();
-
-        snapshot.forEach((docSnap) => {
-          const firebaseTask = {
-            id: docSnap.id,
-            ...docSnap.data(),
-            isSynced: true,
-          } as Task;
-
-          const localTask = localMap.get(firebaseTask.id);
-          if (!localTask) {
-            newTasks.push(firebaseTask);
-            return;
-          }
-
-          if (!localTask.isSynced) {
-            updatedTasks.set(firebaseTask.id, firebaseTask);
-          }
-        });
-
-        if (newTasks.length === 0 && updatedTasks.size === 0) {
-          return prev;
-        }
-
-        const merged = [
-          ...prev.map((task) => updatedTasks.get(task.id) ?? task),
-          ...newTasks,
-        ];
-
-        saveTasksForUser(userId, merged);
-        return merged;
-      });
-    } catch (e) {
-      console.log("Merge failed:", e);
-    }
-  }, [userId]);
-
   const syncTasksToFirebase = useCallback(async () => {
     if (!userId) return;
 
     const pendingTasks = tasks.filter((task) => !task.isSynced);
     if (pendingTasks.length === 0) return;
 
-    const syncedTaskIds = new Set<string>();
-
     for (const task of pendingTasks) {
       try {
-        const { id, ...data } = task;
         await setDoc(
-          doc(db, "users", userId, "tasks", id),
-          omitUndefinedFields(data)
+          doc(db, "users", userId, "tasks", task.id),
+          toFirestoreTask(task)
         );
-        syncedTaskIds.add(id);
+        setTasks((prev) =>
+          prev.map((currentTask) =>
+            currentTask.id === task.id &&
+            currentTask.updatedAt === task.updatedAt
+              ? { ...currentTask, isSynced: true }
+              : currentTask
+          )
+        );
       } catch (e) {
         console.log("Sync failed:", e);
       }
     }
-
-    if (syncedTaskIds.size === 0) return;
-
-    setTasks((prev) =>
-      prev.map((task) =>
-        syncedTaskIds.has(task.id) ? { ...task, isSynced: true } : task
-      )
-    );
-  }, [tasks, userId]);
+  }, [setTasks, tasks, userId]);
 
   const syncDeletedTasksToFirebase = useCallback(async () => {
-    if (!userId || deletedTaskIdsRef.current.size === 0) return;
+    if (!userId) return;
+    const pendingDeletes = Object.entries(tombstones).filter(
+      ([, tombstone]) => !tombstone.synced
+    );
 
-    const deletedTaskIds = Array.from(deletedTaskIdsRef.current);
-
-    for (const taskId of deletedTaskIds) {
+    for (const [taskId, tombstone] of pendingDeletes) {
       try {
         await deleteDoc(doc(db, "users", userId, "tasks", taskId));
-        deletedTaskIdsRef.current.delete(taskId);
+        setTombstones((prev) => {
+          const current = prev[taskId];
+          if (!current || current.deletedAt !== tombstone.deletedAt) return prev;
+          return {
+            ...prev,
+            [taskId]: { ...current, synced: true },
+          };
+        });
       } catch (e) {
         console.log("Delete sync failed:", e);
       }
     }
-  }, [userId]);
+  }, [setTombstones, tombstones, userId]);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!userId) {
-      setTasks([]);
+      setTaskState({ tasks: [], tombstones: {} });
       setIsLoading(false);
-      hasHydratedFirebaseRef.current = null;
       return;
     }
 
     setIsLoading(true);
 
-    loadTasksForUser(userId).then((loaded) => {
-      setTasks(loaded);
-      setIsLoading(false);
-      
-      // Reschedule all notifications for existing tasks on app launch
-      // This ensures notifications are restored after app restart
-      rescheduleAllNotifications(loaded).catch((error) => {
-        console.error('Failed to reschedule notifications on app launch:', error);
+    Promise.all([
+      loadTasksForUser(userId),
+      loadTaskTombstones(userId),
+    ])
+      .then(([loadedTasks, loadedTombstones]) => {
+        if (cancelled) return;
+        setTaskState({
+          tasks: loadedTasks,
+          tombstones: loadedTombstones,
+        });
+        setIsLoading(false);
+
+        rescheduleAllNotifications(loadedTasks).catch((error) => {
+          console.error(
+            "Failed to reschedule notifications on app launch:",
+            error
+          );
+        });
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.warn("Failed to load local tasks:", error);
+        setTaskState({ tasks: [], tombstones: {} });
+        setIsLoading(false);
       });
-    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [userId]);
 
   useEffect(() => {
     if (userId && !isLoading) {
-      saveTasksForUser(userId, tasks);
+      void Promise.all([
+        saveTasksForUser(userId, tasks),
+        saveTaskTombstones(userId, tombstones),
+      ]);
     }
-  }, [isLoading, tasks, userId]);
+  }, [isLoading, tasks, tombstones, userId]);
 
   useEffect(() => {
     if (!userId || isLoading) return;
-    const needsInitialMerge = hasHydratedFirebaseRef.current !== userId;
-    if (
-      !needsInitialMerge &&
-      tasks.every((task) => task.isSynced) &&
-      deletedTaskIdsRef.current.size === 0
-    ) {
-      return;
-    }
 
+    const unsubscribe = onSnapshot(
+      collection(db, "users", userId, "tasks"),
+      (snapshot) => {
+        const remoteTasks = snapshot.docs.map((docSnap) =>
+          fromFirestoreTask(docSnap.id, docSnap.data())
+        );
+        setTaskState((prev) =>
+          mergeTasks(
+            prev.tasks,
+            remoteTasks,
+            prev.tombstones,
+            !snapshot.metadata.fromCache
+          )
+        );
+      },
+      (error) => {
+        console.warn("Task subscription failed:", error);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [isLoading, userId]);
+
+  useEffect(() => {
+    if (!userId || isLoading) return;
     let cancelled = false;
 
     const syncIfOnline = async () => {
       try {
         const state = await NetInfo.fetch();
         if (cancelled || !state.isConnected) return;
-
         await syncTasksToFirebase();
         await syncDeletedTasksToFirebase();
-        await mergeTasksFromFirebase();
-        hasHydratedFirebaseRef.current = userId;
-      } catch (e) {
-        console.log("Online sync check failed:", e);
+      } catch (error) {
+        console.log("Online task sync failed:", error);
       }
     };
 
-    syncIfOnline();
+    void syncIfOnline();
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      if (state.isConnected) void syncIfOnline();
+    });
 
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, [
     isLoading,
-    mergeTasksFromFirebase,
     syncDeletedTasksToFirebase,
     syncTasksToFirebase,
-    tasks,
     userId,
   ]);
-
-  const syncRef = useRef(syncTasksToFirebase);
-
-  useEffect(() => {
-    syncRef.current = syncTasksToFirebase;
-  }, [syncTasksToFirebase]);
-
-  useEffect(() => {
-    const unsub = NetInfo.addEventListener((state) => {
-      if (state.isConnected) {
-        syncRef.current();
-        syncDeletedTasksToFirebase();
-        mergeTasksFromFirebase();
-      }
-    });
-
-    return () => unsub();
-  }, [mergeTasksFromFirebase, syncDeletedTasksToFirebase]);
 
   // ── Existing methods ──────────────────────────────────────────────────────
 
@@ -283,10 +282,13 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
 
   const addTask = useCallback((task: Omit<Task, "id">) => {
     idCounterRef.current += 1;
+    const now = new Date().toISOString();
     const newTask: Task = {
       ...task,
       id: `${Date.now()}_${idCounterRef.current}_${Math.random().toString(36).slice(2, 7)}`,
       isSynced: false,
+      createdAt: task.createdAt ?? now,
+      updatedAt: now,
     };
 
     setTasks((prev) => [newTask, ...prev]);
@@ -326,7 +328,12 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       prev.map((task) => {
         if (task.id !== id) return task;
 
-        const updatedTask = { ...task, ...updates, isSynced: false };
+        const updatedTask = {
+          ...task,
+          ...updates,
+          isSynced: false,
+          updatedAt: nextUpdatedAt(task.updatedAt),
+        };
 
         // Handle notification updates
         const reminderChanged = updates.reminder !== undefined;
@@ -373,32 +380,31 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const removeTask = useCallback((id: string) => {
-    // Save the task for potential undo before removing
-    setTasks((prev) => {
-      const taskToDelete = prev.find((t) => t.id === id);
-      if (taskToDelete) {
-        setLastDeleted(taskToDelete);
+    const taskToDelete = tasks.find((task) => task.id === id);
+    if (!taskToDelete) return;
 
-        // Cancel notification for the deleted task
-        cancelTaskNotification(id).catch((error) => {
-          console.error('Failed to cancel notification:', error);
-        });
+    setTasks((prev) => prev.filter((task) => task.id !== id));
+    setTombstones((prev) => ({
+      ...prev,
+      [id]: {
+        deletedAt: new Date().toISOString(),
+        synced: false,
+      },
+    }));
+    setLastDeleted(taskToDelete);
 
-        // Clear any existing undo timer
-        if (undoTimerRef.current) {
-          clearTimeout(undoTimerRef.current);
-        }
-
-        // After 5 seconds, commit the delete to Firestore and clear lastDeleted
-        undoTimerRef.current = setTimeout(() => {
-          deletedTaskIdsRef.current.add(id);
-          setLastDeleted(null);
-        }, 5000);
-      }
-
-      return prev.filter((task) => task.id !== id);
+    cancelTaskNotification(id).catch((error) => {
+      console.error("Failed to cancel notification:", error);
     });
-  }, []);
+
+    if (undoTimerRef.current) {
+      clearTimeout(undoTimerRef.current);
+    }
+    undoTimerRef.current = setTimeout(() => {
+      setLastDeleted(null);
+      undoTimerRef.current = null;
+    }, 5000);
+  }, [setTombstones, tasks]);
 
   const undoDelete = useCallback((task: Task) => {
     // Cancel the pending Firestore delete
@@ -407,14 +413,25 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
       undoTimerRef.current = null;
     }
 
-    // Remove from the deleted set in case it was already added
-    deletedTaskIdsRef.current.delete(task.id);
+    setTombstones((prev) => {
+      if (!(task.id in prev)) return prev;
+      const next = { ...prev };
+      delete next[task.id];
+      return next;
+    });
 
     // Restore the task to the top of state, mark unsynced so it re-syncs
     setTasks((prev) => {
       // Guard against duplicates if undo fires twice
       if (prev.find((t) => t.id === task.id)) return prev;
-      return [{ ...task, isSynced: false }, ...prev];
+      return [
+        {
+          ...task,
+          isSynced: false,
+          updatedAt: nextUpdatedAt(task.updatedAt),
+        },
+        ...prev,
+      ];
     });
 
     // Reschedule notification for the restored task
@@ -446,7 +463,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
     }
 
     setLastDeleted(null);
-  }, []);
+  }, [setTombstones]);
 
   const toggleSubtaskDone = useCallback((taskId: string, subtaskId: string) => {
     setTasks((prev) =>
@@ -464,6 +481,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
         return {
           ...task,
           isSynced: false,
+          updatedAt: nextUpdatedAt(task.updatedAt),
           status: derivedStatus ?? task.status,
           subtasks: updatedSubtasks,
         };
@@ -539,10 +557,11 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
             isDone: newStatus === "done" ? true : subtask.isDone,
           })),
           isSynced: false,
+          updatedAt: nextUpdatedAt(task.updatedAt),
         };
       })
     );
-  }, []);
+  }, [userId]);
 
   // ── New methods ───────────────────────────────────────────────────────────
 
@@ -562,6 +581,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
             ...task,
             subtasks: reordered,
             isSynced: false,
+            updatedAt: nextUpdatedAt(task.updatedAt),
           };
         })
       );
@@ -578,6 +598,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
           return {
             ...task,
             isSynced: false,
+            updatedAt: nextUpdatedAt(task.updatedAt),
             subtasks: task.subtasks.map((subtask) =>
               subtask.id === subtaskId
                 ? { ...subtask, notes: note.trim() || undefined }
@@ -607,6 +628,7 @@ export function TasksProvider({ children }: { children: React.ReactNode }) {
             sessionTime: currentTime + minutes,
             linkedSessionIds: [...currentSessions, sessionId],
             isSynced: false,
+            updatedAt: nextUpdatedAt(task.updatedAt),
           };
         })
       );

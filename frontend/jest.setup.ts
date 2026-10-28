@@ -219,6 +219,7 @@ jest.mock("firebase/firestore", () => ({
   getDoc: jest.fn().mockResolvedValue({ exists: () => false, data: () => ({}) } as never),
   getDocs: jest.fn().mockResolvedValue({ docs: [], forEach: jest.fn() } as never),
   getFirestore: jest.fn(() => ({ db: true })),
+  onSnapshot: jest.fn(() => jest.fn()),
   orderBy: jest.fn(),
   query: jest.fn(),
   setDoc: jest.fn(),
