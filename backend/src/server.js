@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import admin from 'firebase-admin';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import fs from 'fs';
 import { createApp } from './app.js';
 
@@ -22,11 +22,11 @@ function loadServiceAccount() {
 }
 
 function initializeFirebase() {
-  if (admin.apps.length > 0) return;
+  if (getApps().length > 0) return;
 
   const serviceAccount = loadServiceAccount();
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+  initializeApp({
+    credential: cert(serviceAccount),
   });
 }
 

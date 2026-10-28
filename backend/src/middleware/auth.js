@@ -1,4 +1,4 @@
-import admin from 'firebase-admin';
+import { getAuth } from 'firebase-admin/auth';
 
 export function isAuthBypassEnabled(env = process.env) {
   return env.NODE_ENV !== 'production' && env.SKIP_AUTH === 'true';
@@ -6,7 +6,7 @@ export function isAuthBypassEnabled(env = process.env) {
 
 export function createAuthenticate({
   env = process.env,
-  verifyIdToken = (token) => admin.auth().verifyIdToken(token),
+  verifyIdToken = (token) => getAuth().verifyIdToken(token),
 } = {}) {
   return async (req, res, next) => {
     if (isAuthBypassEnabled(env)) {
