@@ -189,6 +189,111 @@ interface MonthGridProps {
   primaryColor: string;
 }
 
+function MonthCell({
+  cell,
+  index,
+  onSelectDay,
+  primaryColor,
+  theme,
+}: {
+  cell: {
+    day: number;
+    valid: boolean;
+    key: string | null;
+    isSelected: boolean;
+    isToday: boolean;
+    dots: string[];
+  };
+  index: number;
+  onSelectDay: (key: string) => void;
+  primaryColor: string;
+  theme: any;
+}) {
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        delay: index * 20,
+        easing: Easings.easeOut,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 200,
+        delay: index * 20,
+        easing: Easings.easeOut,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, index, scaleAnim]);
+
+  return (
+    <Animated.View
+      style={{
+        opacity: fadeAnim,
+        transform: [{ scale: scaleAnim }],
+      }}
+    >
+      <TouchableOpacity
+        style={[
+          gridStyles.cell,
+          { width: CELL_SIZE, height: CELL_SIZE },
+          cell.isSelected && { backgroundColor: primaryColor, borderRadius: CELL_SIZE / 2 },
+          !cell.isSelected && cell.isToday && {
+            borderRadius: CELL_SIZE / 2,
+            borderWidth: 1.5,
+            borderColor: primaryColor,
+          },
+        ]}
+        onPress={() => cell.valid && cell.key && onSelectDay(cell.key)}
+        activeOpacity={cell.valid ? 0.75 : 1}
+        accessibilityRole="button"
+        accessibilityLabel={cell.valid ? `Select ${cell.key}` : undefined}
+      >
+        <Text
+          style={[
+            gridStyles.cellText,
+            {
+              color: !cell.valid
+                ? "transparent"
+                : cell.isSelected
+                  ? "#fff"
+                  : cell.isToday
+                    ? primaryColor
+                    : theme.colors.onBackground,
+            },
+            (cell.isSelected || cell.isToday) && { fontWeight: "700" },
+          ]}
+        >
+          {cell.valid ? cell.day : ""}
+        </Text>
+
+        {cell.valid && cell.dots.length > 0 && (
+          <View style={gridStyles.dotRow}>
+            {cell.dots.slice(0, 3).map((color, dotIndex) => (
+              <View
+                key={dotIndex}
+                style={[
+                  gridStyles.dot,
+                  {
+                    backgroundColor: cell.isSelected
+                      ? "rgba(255,255,255,0.85)"
+                      : color,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 function MonthGrid({
   viewYear,
   viewMonth,
@@ -215,89 +320,16 @@ function MonthGrid({
 
   return (
     <View style={gridStyles.grid}>
-      {cells.map((cell, idx) => {
-        const fadeAnim = useRef(new Animated.Value(0)).current;
-        const scaleAnim = useRef(new Animated.Value(0.8)).current;
-
-        useEffect(() => {
-          Animated.parallel([
-            Animated.timing(fadeAnim, {
-              toValue: 1,
-              duration: 200,
-              delay: idx * 20,
-              easing: Easings.easeOut,
-              useNativeDriver: true,
-            }),
-            Animated.timing(scaleAnim, {
-              toValue: 1,
-              duration: 200,
-              delay: idx * 20,
-              easing: Easings.easeOut,
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }, []);
-
-        return (
-          <Animated.View
-            key={idx}
-            style={{
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            }}
-          >
-            <TouchableOpacity
-              style={[
-                gridStyles.cell,
-                { width: CELL_SIZE, height: CELL_SIZE },
-                cell.isSelected && { backgroundColor: primaryColor, borderRadius: CELL_SIZE / 2 },
-                !cell.isSelected && cell.isToday && {
-                  borderRadius: CELL_SIZE / 2,
-                  borderWidth: 1.5,
-                  borderColor: primaryColor,
-                },
-              ]}
-              onPress={() => cell.valid && cell.key && onSelectDay(cell.key)}
-              activeOpacity={cell.valid ? 0.75 : 1}
-            >
-              <Text
-                style={[
-                  gridStyles.cellText,
-                  {
-                    color: !cell.valid
-                      ? "transparent"
-                      : cell.isSelected
-                      ? "#fff"
-                      : cell.isToday
-                      ? primaryColor
-                      : theme.colors.onBackground,
-                  },
-                  (cell.isSelected || cell.isToday) && { fontWeight: "700" },
-                ]}
-              >
-                {cell.valid ? cell.day : ""}
-              </Text>
-
-              {/* Dots */}
-              {cell.valid && cell.dots.length > 0 && (
-                <View style={gridStyles.dotRow}>
-                  {cell.dots.slice(0, 3).map((color, di) => (
-                    <View
-                      key={di}
-                      style={[
-                        gridStyles.dot,
-                        {
-                          backgroundColor: cell.isSelected ? "rgba(255,255,255,0.85)" : color,
-                        },
-                      ]}
-                    />
-                  ))}
-                </View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        );
-      })}
+      {cells.map((cell, idx) => (
+        <MonthCell
+          key={`${viewYear}-${viewMonth}-${idx}`}
+          cell={cell}
+          index={idx}
+          onSelectDay={onSelectDay}
+          primaryColor={primaryColor}
+          theme={theme}
+        />
+      ))}
     </View>
   );
 }
@@ -339,6 +371,120 @@ interface WeekStripProps {
   primaryColor: string;
 }
 
+function WeekDay({
+  date,
+  index,
+  selectedKey,
+  dotMap,
+  todayKey,
+  onSelectDay,
+  theme,
+  primaryColor,
+}: {
+  date: Date;
+  index: number;
+  selectedKey: string;
+  dotMap: Map<string, string[]>;
+  todayKey: string;
+  onSelectDay: (key: string) => void;
+  theme: any;
+  primaryColor: string;
+}) {
+  const key = toDateKey(date.getFullYear(), date.getMonth(), date.getDate());
+  const isSelected = key === selectedKey;
+  const isToday = key === todayKey;
+  const dots = dotMap.get(key) ?? [];
+  const dayNum = date.getDate();
+  const dayLabel = WEEKDAYS[date.getDay()];
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        delay: index * 30,
+        easing: Easings.easeOut,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 200,
+        delay: index * 30,
+        easing: Easings.easeOut,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, index, scaleAnim]);
+
+  return (
+    <Animated.View
+      style={{
+        flex: 1,
+        opacity: fadeAnim,
+        transform: [{ scale: scaleAnim }],
+      }}
+    >
+      <TouchableOpacity
+        style={[
+          weekStyles.dayCol,
+          isSelected && { backgroundColor: primaryColor, borderRadius: 14 },
+        ]}
+        onPress={() => onSelectDay(key)}
+        activeOpacity={0.8}
+        accessibilityRole="button"
+        accessibilityLabel={`Select ${key}`}
+      >
+        <Text
+          style={[
+            weekStyles.dayLabel,
+            {
+              color: isSelected
+                ? "rgba(255,255,255,0.8)"
+                : theme.colors.onSurfaceVariant,
+            },
+          ]}
+        >
+          {dayLabel}
+        </Text>
+        <Text
+          style={[
+            weekStyles.dayNum,
+            {
+              color: isSelected
+                ? "#fff"
+                : isToday
+                  ? primaryColor
+                  : theme.colors.onBackground,
+            },
+            (isSelected || isToday) && { fontWeight: "700" },
+          ]}
+        >
+          {dayNum}
+        </Text>
+        {dots.length > 0 && (
+          <View style={weekStyles.dotRow}>
+            {dots.slice(0, 3).map((color, dotIndex) => (
+              <View
+                key={dotIndex}
+                style={[
+                  weekStyles.dot,
+                  {
+                    backgroundColor: isSelected
+                      ? "rgba(255,255,255,0.7)"
+                      : color,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 function WeekStrip({
   weekDates,
   selectedKey,
@@ -350,101 +496,19 @@ function WeekStrip({
 }: WeekStripProps) {
   return (
     <View style={weekStyles.strip}>
-      {weekDates.map((date, idx) => {
-        const key = toDateKey(date.getFullYear(), date.getMonth(), date.getDate());
-        const isSelected = key === selectedKey;
-        const isToday = key === todayKey;
-        const dots = dotMap.get(key) ?? [];
-        const dayNum = date.getDate();
-        const dayLabel = WEEKDAYS[date.getDay()];
-
-        const fadeAnim = useRef(new Animated.Value(0)).current;
-        const scaleAnim = useRef(new Animated.Value(0.8)).current;
-
-        useEffect(() => {
-          Animated.parallel([
-            Animated.timing(fadeAnim, {
-              toValue: 1,
-              duration: 200,
-              delay: idx * 30,
-              easing: Easings.easeOut,
-              useNativeDriver: true,
-            }),
-            Animated.timing(scaleAnim, {
-              toValue: 1,
-              duration: 200,
-              delay: idx * 30,
-              easing: Easings.easeOut,
-              useNativeDriver: true,
-            }),
-          ]).start();
-        }, []);
-
-        return (
-          <Animated.View
-            key={key}
-            style={{
-              flex: 1,
-              opacity: fadeAnim,
-              transform: [{ scale: scaleAnim }],
-            }}
-          >
-            <TouchableOpacity
-              style={[
-                weekStyles.dayCol,
-                isSelected && { backgroundColor: primaryColor, borderRadius: 14 },
-              ]}
-              onPress={() => onSelectDay(key)}
-              activeOpacity={0.8}
-            >
-              <Text
-                style={[
-                  weekStyles.dayLabel,
-                  {
-                    color: isSelected
-                      ? "rgba(255,255,255,0.8)"
-                      : theme.colors.onSurfaceVariant,
-                  },
-                ]}
-              >
-                {dayLabel}
-              </Text>
-              <Text
-                style={[
-                  weekStyles.dayNum,
-                  {
-                    color: isSelected
-                      ? "#fff"
-                      : isToday
-                      ? primaryColor
-                      : theme.colors.onBackground,
-                  },
-                  (isSelected || isToday) && { fontWeight: "700" },
-                ]}
-              >
-                {dayNum}
-              </Text>
-              {dots.length > 0 && (
-                <View style={weekStyles.dotRow}>
-                  {dots.slice(0, 3).map((color, di) => (
-                    <View
-                      key={di}
-                      style={[
-                        weekStyles.dot,
-                        {
-                          backgroundColor: isSelected
-                            ? "rgba(255,255,255,0.7)"
-                            : color,
-                        },
-                      ]}
-                    />
-                  ))}
-                </View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
-        );
-      })}
+      {weekDates.map((date, idx) => (
+        <WeekDay
+          key={toDateKey(date.getFullYear(), date.getMonth(), date.getDate())}
+          date={date}
+          index={idx}
+          selectedKey={selectedKey}
+          dotMap={dotMap}
+          todayKey={todayKey}
+          onSelectDay={onSelectDay}
+          theme={theme}
+          primaryColor={primaryColor}
+        />
+      ))}
     </View>
   );
 }

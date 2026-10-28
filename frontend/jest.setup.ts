@@ -382,12 +382,6 @@ jest.mock("react-native-svg", () => {
   };
 });
 
-jest.mock("lottie-react-native", () => {
-  const React = require("react");
-  const { View } = require("react-native");
-  return () => React.createElement(View, null);
-});
-
 jest.mock("lucide-react-native", () => {
   const React = require("react");
   const { Text } = require("react-native");

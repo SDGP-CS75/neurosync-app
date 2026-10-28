@@ -29,7 +29,7 @@
       "package": "com.nuerosync"
     },
     "web": {
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/icon.png"
     },
     "plugins": [
@@ -48,7 +48,8 @@
       ],
       "expo-web-browser",
       "@react-native-community/datetimepicker",
-      "expo-asset"
+      "expo-asset",
+      "expo-speech-recognition"
     ],
     "experiments": {
       "typedRoutes": true

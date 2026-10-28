@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
-import LottieView from "lottie-react-native";
 
 export default function Loader() {
   const dots = [
@@ -36,13 +35,6 @@ export default function Loader() {
 
   return (
     <View style={styles.container}>
-      <LottieView
-        source={require("../assets/lottie/generating.json")}
-        autoPlay
-        loop
-        style={styles.lottie}
-      />
-
       <View style={styles.textRow}>
         <Text style={styles.text}>Processing</Text>
 
@@ -68,13 +60,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  lottie: {
-    width: 200,
-    height: 200,
-  },
   textRow: {
     flexDirection: "row",
-    marginTop: 0,
     marginBottom: 120,
   },
   text: {
