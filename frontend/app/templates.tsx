@@ -7,8 +7,6 @@ import {
   FlatList,
   ActivityIndicator,
   Alert,
-  SectionList,
-  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,8 +18,6 @@ import {
   deleteTemplate,
   TaskTemplate,
 } from "../services/templateStorage";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // ─── Starter templates (hardcoded) ───────────────────────────────────────────
 

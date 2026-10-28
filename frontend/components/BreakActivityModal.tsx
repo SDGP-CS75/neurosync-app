@@ -6,12 +6,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   Animated,
-  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useAppTheme } from "../context/ThemeContext";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 interface BreakActivityModalProps {
   visible: boolean;

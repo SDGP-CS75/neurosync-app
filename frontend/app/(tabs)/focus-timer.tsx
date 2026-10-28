@@ -4,7 +4,6 @@ import {
   View,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
   ScrollView,
   TextInput,
   Animated,
@@ -17,8 +16,6 @@ import { useAppTheme } from "../../context/ThemeContext";
 import TaskPicker from "../../components/TaskPicker";
 import { Task, useTasks } from "../../context/TasksContext";
 import { Easings } from "../../utils/animations";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // Timer presets in minutes
 const FOCUS_PRESETS = [15, 25, 30, 45, 60];

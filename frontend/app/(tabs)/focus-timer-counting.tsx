@@ -459,9 +459,6 @@ export default function FocusTimerCounting() {
 
   // Subtask prompt state (shown when focus session ends)
   const [showSubtaskPrompt, setShowSubtaskPrompt] = useState(false);
-  const [pendingSubtaskToggles, setPendingSubtaskToggles] = useState<
-    Record<string, boolean>
-  >({});
   const [completedFocusMinutes, setCompletedFocusMinutes] = useState(0);
 
   // Break activity modal
@@ -481,7 +478,6 @@ export default function FocusTimerCounting() {
 
   // Animation refs
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const loadingAnim = useRef(new Animated.Value(0)).current;
   
   // Entrance animations
   const headerFade = useRef(new Animated.Value(0)).current;
@@ -691,13 +687,13 @@ export default function FocusTimerCounting() {
         try {
           cur.pause();
           await cur.seekTo(0);
-        } catch (e) {
+        } catch {
           // Ignore pause/seek errors
         }
 
         try {
           cur.remove();
-        } catch (e) {
+        } catch {
           // Ignore cleanup errors
         }
 
@@ -848,7 +844,6 @@ export default function FocusTimerCounting() {
         void presentTaskCompletionNotification(linkedTaskTitle);
 
         if (linkedTask?.subtasks?.length) {
-          setPendingSubtaskToggles({});
           setShowSubtaskPrompt(true);
         } else {
           setShowBreakActivity(true);
@@ -980,7 +975,6 @@ export default function FocusTimerCounting() {
 
       if (linkedTask?.subtasks?.length) {
         setCompletedFocusMinutes(elapsed);
-        setPendingSubtaskToggles({});
         setShowSubtaskPrompt(true);
       } else {
         setShowBreakActivity(true);
@@ -1011,20 +1005,7 @@ export default function FocusTimerCounting() {
     router.back();
   };
 
-  const loadingScale = loadingAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.1],
-  });
-
   const styles = createStyles(theme, mode);
-
-  // Header task label
-  const headerLabel =
-    linkedTaskTitle && linkedTaskTitle.length > 0
-      ? linkedTaskTitle
-      : mode === "focus"
-      ? "Focus Mode"
-      : "Break Time";
 
   return (
     <TouchableWithoutFeedback onPress={resetScreenSaverTimeout}>

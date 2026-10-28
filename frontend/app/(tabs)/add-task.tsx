@@ -52,6 +52,7 @@ import type { SubTask } from "../../types";
 let ExpoSpeechRecognitionModule: any = null;
 let useSpeechRecognitionEvent: (event: string, cb: (e: any) => void) => void = () => { };
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- Optional native module must not crash Expo Go.
   const mod = require("expo-speech-recognition");
   ExpoSpeechRecognitionModule = mod.ExpoSpeechRecognitionModule;
   useSpeechRecognitionEvent = mod.useSpeechRecognitionEvent;
@@ -509,7 +510,7 @@ const pickerStyles = StyleSheet.create({
 
 export default function AddTaskScreen() {
   const { theme } = useAppTheme();
-  const { addTask, reorderSubtasks, addSubtaskNote, userId } = useTasks();
+  const { addTask, userId } = useTasks();
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 

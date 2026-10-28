@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,8 +14,6 @@ import { useAppTheme } from "../context/ThemeContext";
 import { useTasks, Task } from "../context/TasksContext";
 import { apiRequest } from "../services/apiClient";
 import { getUserTimeZone } from "../utils/dates";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const DEFAULT_AVAILABLE_MINUTES = 480; // 8 hours
 

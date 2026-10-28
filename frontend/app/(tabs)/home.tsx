@@ -44,60 +44,6 @@ function getTaskProgress(task: {
   return 0;
 }
 
-// Circular Progress Component
-interface CircularProgressProps {
-  percentage: number;
-  size: number;
-  strokeWidth: number;
-  progressColor: string;
-  bgColor?: string;
-}
-
-function CircularProgress({
-  percentage,
-  size,
-  strokeWidth,
-  progressColor,
-  bgColor = "#E0E0E0",
-}: CircularProgressProps) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-  return (
-    <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size}>
-        <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={bgColor}
-            strokeWidth={strokeWidth}
-            fill="transparent"
-          />
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={progressColor}
-            strokeWidth={strokeWidth}
-            fill="transparent"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-          />
-        </G>
-      </Svg>
-      <View style={[StyleSheet.absoluteFill, styles.progressTextContainer]}>
-        <Text style={[styles.progressText, { color: "#fff" }]}>
-          {percentage}%
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 // Small Circular Progress for Task Groups
 interface SmallCircularProgressProps {
   percentage: number;
@@ -292,10 +238,6 @@ export default function HomeScreen() {
     try {
       const summaryTime = new Date();
       summaryTime.setHours(20, 0, 0, 0); // Schedule for 8 PM today
-
-      const taskList = todayTasks
-        .map((task) => `• ${task.title}`)
-        .join("\n");
 
       await scheduleTaskNotification(
         {

@@ -210,6 +210,7 @@ export default function SettingsScreen() {
               resetProfile();
               router.replace('/(auth)/welcome');
             } catch (error) {
+              console.warn("Failed to log out:", error);
               Alert.alert('Error', 'Failed to log out. Please try again.');
             }
           },
@@ -240,6 +241,7 @@ export default function SettingsScreen() {
                 Alert.alert('Error', result.error || 'Failed to reset data. Please try again.');
               }
             } catch (error) {
+              console.warn("Failed to reset user data:", error);
               Alert.alert('Error', 'An unexpected error occurred while resetting data.');
             }
           },
