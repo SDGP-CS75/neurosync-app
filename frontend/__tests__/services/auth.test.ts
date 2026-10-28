@@ -2,6 +2,7 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
+  updateProfile,
 } from "firebase/auth";
 
 import { loginUser, logoutUser, signUpUser } from "../../services/auth";
@@ -11,6 +12,7 @@ jest.mock("firebase/auth", () => ({
   signOut: jest.fn(),
   signInWithEmailAndPassword: jest.fn(),
   createUserWithEmailAndPassword: jest.fn(),
+  updateProfile: jest.fn(),
 }));
 
 describe("auth service", () => {
@@ -32,10 +34,18 @@ describe("auth service", () => {
     (createUserWithEmailAndPassword as jest.Mock).mockResolvedValue({
       user: { uid: "user-2" },
     });
+    (updateProfile as jest.Mock).mockResolvedValue(undefined);
 
-    await expect(signUpUser("test@example.com", "secret")).resolves.toEqual({
+    await expect(signUpUser("test@example.com", "secret", {
+      firstName: "Taylor",
+      lastName: "User",
+    })).resolves.toEqual({
       uid: "user-2",
     });
+    expect(updateProfile).toHaveBeenCalledWith(
+      { uid: "user-2" },
+      { displayName: "Taylor User" }
+    );
   });
 
   it("logs out a user", async () => {

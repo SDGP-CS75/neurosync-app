@@ -223,6 +223,7 @@ jest.mock("firebase/auth", () => ({
   signInWithEmailAndPassword: jest.fn(),
   createUserWithEmailAndPassword: jest.fn(),
   signOut: jest.fn(),
+  updateProfile: jest.fn(),
 }));
 
 jest.mock("firebase/firestore", () => ({
@@ -236,6 +237,7 @@ jest.mock("firebase/firestore", () => ({
   onSnapshot: jest.fn(() => jest.fn()),
   orderBy: jest.fn(),
   query: jest.fn(),
+  serverTimestamp: jest.fn(() => ({ __serverTimestamp: true })),
   setDoc: jest.fn(),
   updateDoc: jest.fn(),
   where: jest.fn(),

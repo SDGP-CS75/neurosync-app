@@ -4,9 +4,8 @@ import { TextInput, Button, HelperText, Text } from "react-native-paper";
 import { StyleSheet, useWindowDimensions } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { router } from "expo-router";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../../services/firebase";
+import { signUpUser } from "../../services/auth";
+import { ensureUserProfile } from "../../services/userProfile";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useUser } from "../../context/UserContext";
 
@@ -42,15 +41,24 @@ export default function SignUp() {
     setSignUpError(null);
     setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-      const user = userCredential.user;
-
-      await setDoc(doc(db, "users", user.uid), {
-        firstName: data.firstName,
-        lastName:  data.lastName,
-        email:     data.email,
-        createdAt: new Date(),
+      const user = await signUpUser(data.email, data.password, {
+        firstName: data.firstName.trim(),
+        lastName: data.lastName.trim(),
       });
+
+      try {
+        await ensureUserProfile(user, {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+        });
+      } catch (profileError) {
+        // Authentication succeeded; the provider retries profile creation on
+        // launch, resume, and reconnect instead of trapping the user here.
+        console.warn("Profile setup will retry:", {
+          name: profileError instanceof Error ? profileError.name : typeof profileError,
+        });
+      }
 
       // Update UserContext with profile data
       updateProfile({
@@ -58,7 +66,7 @@ export default function SignUp() {
         email: data.email,
       });
 
-      router.push("/(tabs)/home");
+      router.replace("/(tabs)/home");
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Sign up error:", error.message);

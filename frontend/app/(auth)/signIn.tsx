@@ -1,5 +1,5 @@
 import { SafeAreaView } from "react-native-safe-area-context";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { TextInput, Button, HelperText, Text } from "react-native-paper";
 import { StyleSheet, useWindowDimensions, Platform } from "react-native";
 import { useForm, Controller } from "react-hook-form";
@@ -11,10 +11,13 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
-import { auth, db } from "../../services/firebase";
+import { auth } from "../../services/firebase";
+import {
+  ensureUserProfile,
+  fallbackProfileFromUser,
+} from "../../services/userProfile";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useUser } from "../../context/UserContext";
 
@@ -40,10 +43,35 @@ export default function SignIn() {
   // Using platform-specific client IDs from Firebase Console.
   // webClientId: For web platform
   // androidClientId: For Android builds (APK)
+  // iosClientId: For iOS builds
   const [request, response, promptAsync] = Google.useAuthRequest({
     webClientId:     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    iosClientId:     process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
   });
+
+  const finishSignIn = useCallback(async (user: import("firebase/auth").User) => {
+    let userData;
+    try {
+      userData = await ensureUserProfile(user);
+    } catch (error) {
+      console.warn("Profile sync failed; using authentication data", {
+        name: error instanceof Error ? error.name : typeof error,
+      });
+      userData = fallbackProfileFromUser(user);
+    }
+
+    updateProfile({
+      name: `${userData.firstName} ${userData.lastName}`.trim(),
+      email: userData.email,
+      profileImage: userData.photoURL,
+      about: userData.about,
+      age: userData.age,
+      themeName: userData.themeName,
+      hapticFeedback: userData.hapticFeedback,
+    });
+    router.replace("/(tabs)/home");
+  }, [updateProfile]);
 
   // ── Handle native Google response ────────────────────────────────────────
   useEffect(() => {
@@ -53,44 +81,14 @@ export default function SignIn() {
 
       setGoogleLoading(true);
       signInWithCredential(auth, credential)
-        .then(async (userCredential) => {
-          const user    = userCredential.user;
-          const docRef  = doc(db, "users", user.uid);
-          const docSnap = await getDoc(docRef);
-
-          // Create Firestore profile on first Google sign-in
-          if (!docSnap.exists()) {
-            await setDoc(docRef, {
-              firstName: user.displayName?.split(" ")[0] ?? "",
-              lastName:  user.displayName?.split(" ").slice(1).join(" ") ?? "",
-              email:     user.email,
-              photoURL:  user.photoURL,
-              createdAt: new Date(),
-            });
-          }
-          
-          // Update UserContext with profile data
-          const userData = docSnap.exists() ? docSnap.data() : {
-            firstName: user.displayName?.split(" ")[0] ?? "",
-            lastName:  user.displayName?.split(" ").slice(1).join(" ") ?? "",
-            email:     user.email,
-            photoURL:  user.photoURL,
-          };
-          updateProfile({
-            name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-            email: userData.email || user.email || '',
-            profileImage: userData.photoURL || '',
-          });
-          
-          router.push("/(tabs)/home");
-        })
+        .then((userCredential) => finishSignIn(userCredential.user))
         .catch((err: Error) => setGoogleError(err.message))
         .finally(() => setGoogleLoading(false));
 
     } else if (response?.type === "error") {
       setGoogleError(response.error?.message ?? "Google sign-in failed");
     }
-  }, [response]);
+  }, [response, finishSignIn]);
 
   // ── Google button press ───────────────────────────────────────────────────
   const handleGoogleSignIn = async () => {
@@ -101,34 +99,7 @@ export default function SignIn() {
         setGoogleLoading(true);
         const provider = new GoogleAuthProvider();
         const result   = await signInWithPopup(auth, provider);
-        const user     = result.user;
-        const docRef   = doc(db, "users", user.uid);
-        const docSnap  = await getDoc(docRef);
-
-        if (!docSnap.exists()) {
-          await setDoc(docRef, {
-            firstName: user.displayName?.split(" ")[0] ?? "",
-            lastName:  user.displayName?.split(" ").slice(1).join(" ") ?? "",
-            email:     user.email,
-            photoURL:  user.photoURL,
-            createdAt: new Date(),
-          });
-        }
-        
-        // Update UserContext with profile data
-        const userData = docSnap.exists() ? docSnap.data() : {
-          firstName: user.displayName?.split(" ")[0] ?? "",
-          lastName:  user.displayName?.split(" ").slice(1).join(" ") ?? "",
-          email:     user.email,
-          photoURL:  user.photoURL,
-        };
-        updateProfile({
-          name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-          email: userData.email || user.email || '',
-          profileImage: userData.photoURL || '',
-        });
-        
-        router.push("/(tabs)/home");
+        await finishSignIn(result.user);
       } else {
         // Native / Expo Go: open browser redirect
         await promptAsync();
@@ -154,28 +125,7 @@ export default function SignIn() {
     setEmailLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-      const user           = userCredential.user;
-      const docRef         = doc(db, "users", user.uid);
-      const docSnap        = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        console.log("User profile:", userData);
-        // Update UserContext with profile data
-        updateProfile({
-          name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-          email: userData.email || user.email || '',
-          profileImage: userData.photoURL || '',
-          about: userData.about || '',
-          age: userData.age || '',
-        });
-      } else {
-        // If no profile exists, at least set email from auth
-        updateProfile({
-          email: user.email || '',
-        });
-      }
-      router.push("/(tabs)/home");
+      await finishSignIn(userCredential.user);
     } catch (error: unknown) {
       console.error("Login error:", error instanceof Error ? error.message : error);
       const code = (error as { code?: string })?.code || "";
