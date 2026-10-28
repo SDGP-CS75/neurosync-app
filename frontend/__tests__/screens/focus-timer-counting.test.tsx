@@ -1,6 +1,12 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import {
+  act,
+  cleanupAsync,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react-native";
 
 import FocusTimerCounting from "../../app/(tabs)/focus-timer-counting";
 
@@ -139,7 +145,8 @@ describe("FocusTimerCounting", () => {
     mockTasks = [];
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await cleanupAsync();
     jest.clearAllTimers();
     jest.useRealTimers();
   });
