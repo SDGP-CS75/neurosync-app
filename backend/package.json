@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node --test",
+    "test": "node --test test/*.test.js",
     "test:rules": "firebase emulators:exec --config ../firebase.json --only firestore,storage --project demo-neurosync \"node --test test/rules.test.mjs\"",
     "check": "node --check src/app.js && node --check src/server.js && npm test"
   },
