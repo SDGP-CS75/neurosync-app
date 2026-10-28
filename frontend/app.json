@@ -57,7 +57,8 @@
             "./assets/sounds/urgent.wav"
           ]
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
