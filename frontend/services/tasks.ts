@@ -3,6 +3,8 @@ import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getAuth } from 'firebase/auth';
 
+const TASKS_STORAGE_KEY = 'offline_tasks';
+
 interface Task {
   id: string;
   title: string;
@@ -15,8 +17,6 @@ interface Task {
   updatedAt: string;
   pendingSync?: boolean;
 }
-
-const TASKS_STORAGE_KEY = 'offline_tasks';
 
 const isOnline = async (): Promise<boolean> => {
   try {

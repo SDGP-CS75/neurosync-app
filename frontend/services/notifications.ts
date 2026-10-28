@@ -6,6 +6,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import type { Task } from '../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -22,23 +23,19 @@ export interface RecurringOptions {
   maxOccurrences?: number;
 }
 
-export interface Task {
-  id: string;
-  title: string;
-  dueDate?: string;
-  reminder?: string;
-  reminderSound?: 'default' | 'gentle' | 'urgent' | 'none';
-  reminderVibration?: 'default' | 'light' | 'heavy' | 'none';
-  reminderPriority?: 'default' | 'high' | 'low';
-  recurringReminder?: {
-    enabled: boolean;
-    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    interval: number;
-    endDate?: string;
-    maxOccurrences?: number;
-  };
-  status?: 'done' | 'in-progress' | 'todo';
-}
+export type NotificationTask = Pick<Task, 'id' | 'title'> &
+  Partial<
+    Pick<
+      Task,
+      | 'dueDate'
+      | 'reminder'
+      | 'reminderSound'
+      | 'reminderVibration'
+      | 'reminderPriority'
+      | 'recurringReminder'
+      | 'status'
+    >
+  >;
 
 // ─── Configuration ────────────────────────────────────────────────────────────
 
@@ -242,7 +239,7 @@ export async function getNotificationStatus(): Promise<{
  * Schedule a single notification for a task
  */
 export async function scheduleTaskNotification(
-  task: Task,
+  task: NotificationTask,
   options?: NotificationOptions
 ): Promise<string | null> {
   if (!task.reminder || !task.dueDate) {
@@ -307,7 +304,7 @@ export async function scheduleTaskNotification(
  * Schedule recurring notifications for a task
  */
 export async function scheduleRecurringNotification(
-  task: Task,
+  task: NotificationTask,
   recurringOptions: RecurringOptions,
   notificationOptions?: NotificationOptions
 ): Promise<string[] | null> {
@@ -648,7 +645,7 @@ export async function scheduleWeeklyProgressSummary(
  * Reschedule all notifications for existing tasks
  * This should be called on app launch to ensure notifications are restored
  */
-export async function rescheduleAllNotifications(tasks: Task[]): Promise<void> {
+export async function rescheduleAllNotifications(tasks: NotificationTask[]): Promise<void> {
   console.log(`Rescheduling notifications for ${tasks.length} tasks`);
   
   let scheduledCount = 0;

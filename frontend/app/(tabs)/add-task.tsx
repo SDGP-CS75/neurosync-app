@@ -46,6 +46,7 @@ import SubtaskNoteModal from "../../components/SubtaskNoteModal";
 import DependencyBadge from "../../components/DependencyBadge";
 import { saveTemplate } from "../../services/templateStorage";
 import { Easings } from "../../utils/animations";
+import type { SubTask } from "../../types";
 
 // ── Speech recognition — guarded for Expo Go ─────────────────────────────────
 let ExpoSpeechRecognitionModule: any = null;
@@ -60,20 +61,6 @@ let _idCounter = 0;
 function generateId(): string {
   _idCounter += 1;
   return `st_${Date.now()}_${_idCounter}_${Math.random().toString(36).slice(2, 7)}`;
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface SubTask {
-  id: string;
-  text: string;
-  isAdding: boolean;
-  isGenarated: boolean;
-  isDone: boolean;
-  durationMinutes?: number;
-  notes?: string;
-  order?: number;
-  dependsOn?: string[];
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────

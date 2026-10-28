@@ -10,19 +10,11 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { db } from "./firebase";
+import type { FocusSession } from "../types";
 
 const SESSIONS_STORAGE_KEY_PREFIX = "@neurosync_sessions_";
 
-export interface FocusSession {
-  id: string;
-  taskId: string | null;
-  taskTitle: string | null;
-  startedAt: string; // ISO timestamp
-  durationMinutes: number;
-  mode: "focus" | "break";
-  subtaskCompletedId?: string;
-  isSynced?: boolean;
-}
+export type { FocusSession };
 
 async function saveSessionsLocally(userId: string, sessions: FocusSession[]): Promise<void> {
   try {

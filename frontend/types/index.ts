@@ -75,6 +75,17 @@ export interface MoodEntry {
   tags?: string[];
   timestamp: string;
   date?: string;
+  isSynced?: boolean;
+}
+
+export interface TaskTemplate {
+  id: string;
+  title: string;
+  category: string;
+  icon: string;
+  iconBg: string;
+  subtasks: SubTask[];
+  createdAt: string;
 }
 
 export interface UserProfile {

@@ -22,52 +22,11 @@ import {
   rescheduleAllNotifications,
 } from "../services/notifications";
 import { logActualDuration } from "../services/calibration";
+import type { SubTask, Task, TaskStatus } from "../types";
 
 const STORAGE_KEY_PREFIX = "@neurosync_tasks_";
 
-export type TaskStatus = "done" | "in-progress" | "todo";
-
-export interface SubTask {
-  id: string;
-  text: string;
-  isAdding: boolean;
-  isGenarated: boolean;
-  isDone: boolean;
-  dependsOn?: string[];
-  notes?: string;
-  order?: number;
-  durationMinutes?: number;
-}
-
-export interface Task {
-  id: string;
-  category: string;
-  title: string;
-  time?: string;
-  status: TaskStatus;
-  dueDate?: string;
-  location?: string;
-  reminder?: string;
-  reminderSound?: 'default' | 'gentle' | 'urgent' | 'none';
-  reminderVibration?: 'default' | 'light' | 'heavy' | 'none';
-  reminderPriority?: 'default' | 'high' | 'low';
-  recurringReminder?: {
-    enabled: boolean;
-    frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-    interval: number;
-    endDate?: string;
-    maxOccurrences?: number;
-  };
-  icon: string;
-  iconBg: string;
-  dateKey: string;
-  subtasks?: SubTask[];
-  isSynced: boolean;
-  sessionTime?: number;
-  templateId?: string;
-  linkedSessionIds?: string[];
-  durationMinutes?: number;
-}
+export type { SubTask, Task, TaskStatus };
 
 type TasksContextType = {
   tasks: Task[];
