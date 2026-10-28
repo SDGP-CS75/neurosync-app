@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -244,6 +250,24 @@ interface DailyPlanResponse {
   reasoning: Record<string, string>;
 }
 
+function getPlanTaskPayload(tasks: Task[]) {
+  return tasks
+    .filter((task) => task.status !== "done")
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((task) => ({
+      id: task.id,
+      title: task.title,
+      category: task.category,
+      status: task.status,
+      dueDate: task.dueDate,
+      sessionTime: task.sessionTime,
+      subtasks: task.subtasks?.map((subtask) => ({
+        text: subtask.text,
+        isDone: subtask.isDone,
+      })),
+    }));
+}
+
 export default function DailyPlanScreen() {
   const { theme } = useAppTheme();
   const router = useRouter();
@@ -252,11 +276,23 @@ export default function DailyPlanScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<DailyPlanResponse | null>(null);
+  const latestTasksRef = useRef<Task[]>(tasks);
+  const requestIdRef = useRef(0);
+
+  latestTasksRef.current = tasks;
 
   // Incomplete tasks only
   const incompleteTasks = useMemo(
     () => tasks.filter((t) => t.status !== "done"),
     [tasks]
+  );
+  const planTaskPayload = useMemo(
+    () => getPlanTaskPayload(incompleteTasks),
+    [incompleteTasks]
+  );
+  const planTaskSignature = useMemo(
+    () => JSON.stringify(planTaskPayload),
+    [planTaskPayload]
   );
 
   // Ordered tasks from plan (fall back to original order if plan not loaded)
@@ -267,7 +303,12 @@ export default function DailyPlanScreen() {
     : incompleteTasks;
 
   const fetchPlan = useCallback(async () => {
-    if (incompleteTasks.length === 0) {
+    const requestId = ++requestIdRef.current;
+    const requestedTasks = getPlanTaskPayload(latestTasksRef.current);
+
+    if (requestedTasks.length === 0) {
+      setPlan(null);
+      setError(null);
       setLoading(false);
       return;
     }
@@ -282,35 +323,33 @@ export default function DailyPlanScreen() {
       }>("/api/ai/daily-plan", {
         method: "POST",
         body: JSON.stringify({
-          tasks: incompleteTasks.map((t) => ({
-            id:           t.id,
-            title:        t.title,
-            category:     t.category,
-            status:       t.status,
-            dueDate:      t.dueDate,
-            sessionTime:  t.sessionTime,
-            subtasks:     t.subtasks?.map((s) => ({ text: s.text, isDone: s.isDone })),
-          })),
+          tasks: requestedTasks,
           availableMinutes: DEFAULT_AVAILABLE_MINUTES,
           userId: userId ?? undefined,
           timeZone: getUserTimeZone(),
         }),
       });
 
+      if (requestId !== requestIdRef.current) return;
       setPlan({
         orderedTaskIds: Array.isArray(data.orderedTaskIds) ? data.orderedTaskIds : [],
         reasoning:      typeof data.reasoning === "object" ? data.reasoning : {},
       });
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
+      if (requestId !== requestIdRef.current) return;
       setLoading(false);
     }
-  }, [incompleteTasks, userId]);
+  }, [userId]);
 
   useEffect(() => {
-    fetchPlan();
-  }, [fetchPlan]);
+    void fetchPlan();
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [fetchPlan, planTaskSignature]);
 
   // Navigate to focus timer with task pre-linked
   const handleStartTask = (task: Task) => {
