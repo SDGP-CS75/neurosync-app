@@ -53,6 +53,11 @@ __pycache__/
 # Firebase admin SDK credentials (SENSITIVE!)
 **/firebase-adminsdk*.json
 **/*firebase-adminsdk*.json
+**/.firebase/
+firebase-debug.log
+firestore-debug.log
+storage-debug.log
+ui-debug.log
 
 # Expo
 .expo/

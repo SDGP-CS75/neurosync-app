@@ -4,24 +4,38 @@
   "description": "NeuroSync backend API server",
   "main": "src/server.js",
   "type": "module",
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "overrides": {
+    "@firebase/app": "0.16.2",
+    "@firebase/app-compat": "0.5.18",
+    "@grpc/grpc-js": "1.14.6",
+    "re2": "1.27.0"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node --test test/*.test.js",
+    "test:rules": "firebase emulators:exec --config ../firebase.json --only firestore,storage --project demo-neurosync \"node --test test/rules.test.mjs\"",
+    "check": "node --check src/app.js && node --check src/server.js && npm test"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "body-parser": "^2.2.2",
+    "body-parser": "^2.4.0",
     "compression": "^1.8.1",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.1",
-    "firebase-admin": "^12.7.0"
+    "firebase-admin": "^14.5.0"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "12.19.0",
+    "firebase-tools": "^15.34.1",
     "nodemon": "^3.1.14"
   }
 }

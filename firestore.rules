@@ -1,0 +1,209 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isText(value, maxLength) {
+      return value is string && value.size() > 0 && value.size() <= maxLength;
+    }
+
+    function optionalText(data, field, maxLength) {
+      return !(field in data) || data[field] == null ||
+        (data[field] is string && data[field].size() <= maxLength);
+    }
+
+    function optionalNumber(data, field, minValue, maxValue) {
+      return !(field in data) || data[field] == null ||
+        (data[field] is number && data[field] >= minValue && data[field] <= maxValue);
+    }
+
+    function validProfile(data) {
+      return data.keys().hasOnly([
+        'firstName',
+        'lastName',
+        'email',
+        'createdAt',
+        'photoURL',
+        'age',
+        'about',
+        'themeName',
+        'hapticFeedback'
+      ]) &&
+        optionalText(data, 'firstName', 100) &&
+        optionalText(data, 'lastName', 100) &&
+        optionalText(data, 'email', 254) &&
+        optionalText(data, 'photoURL', 2048) &&
+        optionalText(data, 'age', 10) &&
+        optionalText(data, 'about', 1000) &&
+        optionalText(data, 'themeName', 50) &&
+        (!('hapticFeedback' in data) || data.hapticFeedback is bool) &&
+        (!('createdAt' in data) ||
+          data.createdAt is timestamp ||
+          (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    function validTask(data) {
+      return data.keys().hasOnly([
+        'title',
+        'category',
+        'time',
+        'status',
+        'dueDate',
+        'location',
+        'reminder',
+        'reminderSound',
+        'reminderVibration',
+        'reminderPriority',
+        'recurringReminder',
+        'icon',
+        'iconBg',
+        'dateKey',
+        'subtasks',
+        'isSynced',
+        'sessionTime',
+        'templateId',
+        'linkedSessionIds',
+        'durationMinutes',
+        'description',
+        'priority',
+        'completed',
+        'createdAt',
+        'updatedAt',
+        'pendingSync'
+      ]) &&
+        isText(data.title, 500) &&
+        isText(data.category, 50) &&
+        data.status in ['todo', 'in-progress', 'done'] &&
+        isText(data.icon, 100) &&
+        isText(data.iconBg, 40) &&
+        data.dateKey is string &&
+        data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$') &&
+        optionalText(data, 'time', 100) &&
+        optionalText(data, 'dueDate', 64) &&
+        optionalText(data, 'location', 500) &&
+        optionalText(data, 'reminder', 50) &&
+        optionalText(data, 'description', 5000) &&
+        optionalText(data, 'templateId', 200) &&
+        optionalText(data, 'createdAt', 64) &&
+        optionalText(data, 'updatedAt', 64) &&
+        optionalNumber(data, 'sessionTime', 0, 1000000) &&
+        optionalNumber(data, 'durationMinutes', 0, 100000) &&
+        (!('subtasks' in data) || (data.subtasks is list && data.subtasks.size() <= 100)) &&
+        (!('linkedSessionIds' in data) ||
+          (data.linkedSessionIds is list && data.linkedSessionIds.size() <= 1000)) &&
+        (!('isSynced' in data) || data.isSynced is bool) &&
+        (!('completed' in data) || data.completed is bool) &&
+        (!('pendingSync' in data) || data.pendingSync is bool);
+    }
+
+    function validSession(data) {
+      return data.keys().hasOnly([
+        'id',
+        'taskId',
+        'taskTitle',
+        'startedAt',
+        'durationMinutes',
+        'mode',
+        'subtaskCompletedId',
+        'isSynced'
+      ]) &&
+        isText(data.id, 200) &&
+        isText(data.startedAt, 64) &&
+        data.durationMinutes is number &&
+        data.durationMinutes >= 0 &&
+        data.durationMinutes <= 100000 &&
+        data.mode in ['focus', 'break'] &&
+        (!('taskId' in data) || data.taskId == null || isText(data.taskId, 200)) &&
+        optionalText(data, 'taskTitle', 500) &&
+        optionalText(data, 'subtaskCompletedId', 200) &&
+        (!('isSynced' in data) || data.isSynced is bool);
+    }
+
+    function validMood(data) {
+      return data.keys().hasOnly([
+        'id',
+        'mood',
+        'energyLevel',
+        'note',
+        'notes',
+        'tags',
+        'timestamp',
+        'date',
+        'isSynced'
+      ]) &&
+        isText(data.id, 200) &&
+        (data.mood is number || data.mood is string) &&
+        isText(data.timestamp, 64) &&
+        optionalNumber(data, 'energyLevel', 0, 10) &&
+        optionalText(data, 'note', 5000) &&
+        optionalText(data, 'notes', 5000) &&
+        optionalText(data, 'date', 64) &&
+        (!('tags' in data) || (data.tags is list && data.tags.size() <= 20)) &&
+        (!('isSynced' in data) || data.isSynced is bool);
+    }
+
+    function validTemplate(data) {
+      return data.keys().hasOnly([
+        'id',
+        'title',
+        'category',
+        'icon',
+        'iconBg',
+        'subtasks',
+        'createdAt'
+      ]) &&
+        isText(data.id, 200) &&
+        isText(data.title, 500) &&
+        isText(data.category, 50) &&
+        isText(data.icon, 100) &&
+        isText(data.iconBg, 40) &&
+        isText(data.createdAt, 64) &&
+        (!('subtasks' in data) || (data.subtasks is list && data.subtasks.size() <= 100));
+    }
+
+    function validCalibration(data) {
+      return data.keys().hasOnly(['category', 'entries']) &&
+        isText(data.category, 50) &&
+        (!('entries' in data) || (data.entries is list && data.entries.size() <= 200));
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create, update: if isOwner(userId) && validProfile(request.resource.data);
+      allow delete: if false;
+
+      match /tasks/{taskId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validTask(request.resource.data);
+      }
+
+      match /sessions/{sessionId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validSession(request.resource.data);
+      }
+
+      match /moods/{moodId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validMood(request.resource.data);
+      }
+
+      match /templates/{templateId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validTemplate(request.resource.data);
+      }
+
+      match /calibration/{category} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validCalibration(request.resource.data);
+      }
+    }
+  }
+}

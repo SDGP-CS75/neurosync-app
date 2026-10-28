@@ -4,18 +4,29 @@
 
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ImageBackground, StyleSheet, View, Platform, Text } from "react-native";
+import {
+  AppState,
+  ImageBackground,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useEffect, useState } from "react";
 import NetInfo from "@react-native-community/netinfo";
+import { onAuthStateChanged } from "firebase/auth";
 
 import { ThemeProvider, useAppTheme } from "../context/ThemeContext";
 import { UserProvider, useUser } from "../context/UserContext";
 import { TasksProvider } from "../context/TasksContext";
 import UndoSnackbar from "../components/UndoSnackbar";
 import { requestNotificationPermissions } from "../services/notifications";
+import { auth } from "../services/firebase";
+import { syncPendingSessions } from "../services/sessionStorage";
+import { syncPendingMoods } from "../services/moodStorage";
+import AppErrorBoundary from "../components/AppErrorBoundary";
 
 function AppShell() {
   const { theme } = useAppTheme();
@@ -40,6 +51,43 @@ function AppShell() {
     });
 
     return () => unsubscribe();
+  }, []);
+
+  // Retry pending session writes after sign-in, reconnect, and app resume.
+  useEffect(() => {
+    let userId: string | null = null;
+    let appState = AppState.currentState;
+
+    const sync = () => {
+      if (!userId) return;
+      Promise.all([
+        syncPendingSessions(userId),
+        syncPendingMoods(userId),
+      ]).catch((error) => {
+        console.warn("Failed to sync pending user data:", error);
+      });
+    };
+
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      userId = user?.uid ?? null;
+      sync();
+    });
+    const unsubscribeNetwork = NetInfo.addEventListener((state) => {
+      if (state.isConnected) sync();
+    });
+    const appStateSubscription = AppState.addEventListener(
+      "change",
+      (nextState) => {
+        if (appState !== "active" && nextState === "active") sync();
+        appState = nextState;
+      }
+    );
+
+    return () => {
+      unsubscribeAuth();
+      unsubscribeNetwork();
+      appStateSubscription.remove();
+    };
   }, []);
 
   return (
@@ -126,17 +174,19 @@ function ThemeAndUserProviders({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <UserProvider>
-          <ThemeAndUserProviders>
-            <TasksProvider>
-              <AppShell />
-            </TasksProvider>
-          </ThemeAndUserProviders>
-        </UserProvider>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <AppErrorBoundary>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <UserProvider>
+            <ThemeAndUserProviders>
+              <TasksProvider>
+                <AppShell />
+              </TasksProvider>
+            </ThemeAndUserProviders>
+          </UserProvider>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </AppErrorBoundary>
   );
 }
 

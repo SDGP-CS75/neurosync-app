@@ -47,6 +47,20 @@ jest.mock("expo-router", () => {
   };
 });
 
+jest.mock("@react-navigation/native", () => {
+  const React = require("react");
+  const actual = jest.requireActual<Record<string, unknown>>(
+    "@react-navigation/native"
+  );
+
+  return {
+    ...actual,
+    useFocusEffect: (effect: () => void | (() => void)) => {
+      React.useEffect(effect, [effect]);
+    },
+  };
+});
+
 jest.mock("@expo/vector-icons", () => {
   const React = require("react");
   const { Text } = require("react-native");
@@ -209,6 +223,7 @@ jest.mock("firebase/auth", () => ({
   signInWithEmailAndPassword: jest.fn(),
   createUserWithEmailAndPassword: jest.fn(),
   signOut: jest.fn(),
+  updateProfile: jest.fn(),
 }));
 
 jest.mock("firebase/firestore", () => ({
@@ -219,11 +234,20 @@ jest.mock("firebase/firestore", () => ({
   getDoc: jest.fn().mockResolvedValue({ exists: () => false, data: () => ({}) } as never),
   getDocs: jest.fn().mockResolvedValue({ docs: [], forEach: jest.fn() } as never),
   getFirestore: jest.fn(() => ({ db: true })),
+  onSnapshot: jest.fn(() => jest.fn()),
   orderBy: jest.fn(),
   query: jest.fn(),
+  serverTimestamp: jest.fn(() => ({ __serverTimestamp: true })),
   setDoc: jest.fn(),
   updateDoc: jest.fn(),
   where: jest.fn(),
+}));
+
+jest.mock("firebase/storage", () => ({
+  getStorage: jest.fn(() => ({ storage: true })),
+  ref: jest.fn(() => ({ path: "profile-image" })),
+  uploadBytes: jest.fn().mockResolvedValue(undefined as never),
+  getDownloadURL: jest.fn().mockResolvedValue("https://example.com/avatar.png" as never),
 }));
 
 jest.mock("expo-audio", () => ({
@@ -244,6 +268,7 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
     getItem: jest.fn().mockResolvedValue(null as never),
     setItem: jest.fn().mockResolvedValue(undefined as never),
     removeItem: jest.fn().mockResolvedValue(undefined as never),
+    multiRemove: jest.fn().mockResolvedValue(undefined as never),
   },
 }));
 
@@ -251,12 +276,6 @@ jest.mock("expo-blur", () => {
   const React = require("react");
   const { View } = require("react-native");
   return { BlurView: ({ children }: { children?: React.ReactNode }) => React.createElement(View, null, children) };
-});
-
-jest.mock("expo-linear-gradient", () => {
-  const React = require("react");
-  const { View } = require("react-native");
-  return { LinearGradient: ({ children }: { children?: React.ReactNode }) => React.createElement(View, null, children) };
 });
 
 jest.mock("expo-image-picker", () => ({
@@ -325,12 +344,6 @@ jest.mock("@react-native-community/netinfo", () => ({
   },
 }));
 
-jest.mock("@react-native-community/datetimepicker", () => {
-  const React = require("react");
-  const { View } = require("react-native");
-  return ({ children }: { children?: React.ReactNode }) => React.createElement(View, null, children);
-});
-
 jest.mock("@react-native-community/slider", () => {
   const React = require("react");
   const { View } = require("react-native");
@@ -341,21 +354,6 @@ jest.mock("react-native-circular-progress", () => ({
   AnimatedCircularProgress: ({ children }: { children?: (fill: number) => React.ReactNode }) =>
     (children ? children(0) : null),
 }));
-
-jest.mock("react-native-circular-progress-indicator", () => {
-  const React = require("react");
-  const { View } = require("react-native");
-  return () => React.createElement(View, null);
-});
-
-jest.mock("react-native-progress", () => {
-  const React = require("react");
-  const { View } = require("react-native");
-
-  return {
-    Bar: () => React.createElement(View, null),
-  };
-});
 
 jest.mock("react-native-draggable-flatlist", () => {
   const React = require("react");
@@ -380,24 +378,6 @@ jest.mock("react-native-svg", () => {
     Rect: View,
     G: View,
   };
-});
-
-jest.mock("lottie-react-native", () => {
-  const React = require("react");
-  const { View } = require("react-native");
-  return () => React.createElement(View, null);
-});
-
-jest.mock("lucide-react-native", () => {
-  const React = require("react");
-  const { Text } = require("react-native");
-
-  return new Proxy(
-    {},
-    {
-      get: () => () => React.createElement(Text, null, "icon"),
-    }
-  );
 });
 
 beforeEach(() => {

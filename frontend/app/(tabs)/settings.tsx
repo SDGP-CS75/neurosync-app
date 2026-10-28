@@ -21,6 +21,7 @@ export default function SettingsScreen() {
   const { width } = useWindowDimensions();
   const activeColor = palette.primary;
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   // Animation values
   const headerFade = useRef(new Animated.Value(0)).current;
@@ -116,7 +117,18 @@ export default function SettingsScreen() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [
+    accountCardFade,
+    accountCardSlide,
+    headerFade,
+    headerSlide,
+    prefsCardFade,
+    prefsCardSlide,
+    profileCardFade,
+    profileCardSlide,
+    themeCardFade,
+    themeCardSlide,
+  ]);
   
   // RESPONSIVE SCALING LOGIC
   // Calculates a dynamic scale multiplier based on the device's screen width.
@@ -135,15 +147,33 @@ export default function SettingsScreen() {
 
   // Function to open the phone gallery
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    if (isUploadingImage) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Photo Access Needed", "Allow photo access to choose a profile image.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
 
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+    if (result.canceled) return;
+
+    setIsUploadingImage(true);
+    try {
+      await setProfileImage(result.assets[0]);
+    } catch (error) {
+      console.error("Failed to upload profile image:", {
+        name: error instanceof Error ? error.name : typeof error,
+      });
+      Alert.alert("Upload Failed", error instanceof Error ? error.message : "Please try again.");
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -191,6 +221,7 @@ export default function SettingsScreen() {
               resetProfile();
               router.replace('/(auth)/welcome');
             } catch (error) {
+              console.warn("Failed to log out:", error);
               Alert.alert('Error', 'Failed to log out. Please try again.');
             }
           },
@@ -221,6 +252,7 @@ export default function SettingsScreen() {
                 Alert.alert('Error', result.error || 'Failed to reset data. Please try again.');
               }
             } catch (error) {
+              console.warn("Failed to reset user data:", error);
               Alert.alert('Error', 'An unexpected error occurred while resetting data.');
             }
           },
@@ -245,6 +277,7 @@ export default function SettingsScreen() {
     
     profileImageContainer: { alignItems: 'center', marginBottom: 24 * scale, marginTop: 8 * scale },
     profileImage: { width: 100 * scale, height: 100 * scale, borderRadius: 50 * scale, borderWidth: 4 * scale },
+    profileImagePlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' },
     editImageBadge: { position: 'absolute', bottom: 0, right: 0, width: 32 * scale, height: 32 * scale, borderRadius: 16 * scale, justifyContent: 'center', alignItems: 'center', borderWidth: 3 * scale, borderColor: 'white', boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)', elevation: 3 },
     
     inputRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 * scale, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
@@ -272,11 +305,24 @@ export default function SettingsScreen() {
             },
           ]}
         >
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            hitSlop={12}
+          >
             <Ionicons name="arrow-back" size={20 * scale} color="#1F2937" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Settings</Text>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={isSaving}>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={isSaving}
+            accessibilityRole="button"
+            accessibilityLabel={isSaving ? "Saving profile" : "Save profile"}
+            accessibilityState={{ disabled: isSaving, busy: isSaving }}
+          >
             {isSaving ? (
               <ActivityIndicator size="small" color={activeColor} />
             ) : (
@@ -301,15 +347,41 @@ export default function SettingsScreen() {
           <View style={styles.profileImageContainer}>
             <View>
               {/* Image source now uses the context! */}
-              <Image
-                source={{ uri: profile.profileImage || 'https://via.placeholder.com/100' }}
-                style={[styles.profileImage, { borderColor: activeColor }]} 
-              />
+              {profile.profileImage ? (
+                <Image
+                  source={{ uri: profile.profileImage }}
+                  style={[styles.profileImage, { borderColor: activeColor }]}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.profileImage,
+                    styles.profileImagePlaceholder,
+                    { borderColor: activeColor },
+                  ]}
+                >
+                  <Ionicons name="person" size={42 * scale} color={activeColor} />
+                </View>
+              )}
+              {isUploadingImage ? (
+                <View style={[styles.profileImage, styles.profileImagePlaceholder, { position: 'absolute', opacity: 0.85 }]}>
+                  <ActivityIndicator color={activeColor} />
+                </View>
+              ) : null}
               {/* The button now triggers the pickImage function */}
               <TouchableOpacity 
                 style={[styles.editImageBadge, { backgroundColor: activeColor }]}
                 onPress={pickImage}
                 activeOpacity={0.8}
+                disabled={isUploadingImage}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isUploadingImage ? "Uploading profile photo" : "Change profile photo"
+                }
+                accessibilityState={{
+                  disabled: isUploadingImage,
+                  busy: isUploadingImage,
+                }}
               >
                 <Ionicons name="camera" size={14 * scale} color="white" />
               </TouchableOpacity>
@@ -324,6 +396,7 @@ export default function SettingsScreen() {
               value={profile.name} 
               onChangeText={(text) => updateProfile({ name: text })}
               placeholder="Enter your name"
+              accessibilityLabel="Name"
             />
           </View>
 
@@ -336,6 +409,7 @@ export default function SettingsScreen() {
               onChangeText={(text) => updateProfile({ email: text })}
               keyboardType="email-address"
               autoCapitalize="none"
+              accessibilityLabel="Email"
             />
           </View>
 
@@ -347,6 +421,7 @@ export default function SettingsScreen() {
               value={profile.age} 
               onChangeText={(text) => updateProfile({ age: text })}
               keyboardType="numeric"
+              accessibilityLabel="Age"
             />
           </View>
 
@@ -360,6 +435,7 @@ export default function SettingsScreen() {
               multiline={true}
               numberOfLines={3}
               textAlignVertical="top"
+              accessibilityLabel="About me"
             />
           </View>
 
@@ -394,6 +470,8 @@ export default function SettingsScreen() {
           <TouchableOpacity 
             style={styles.settingRow}
             onPress={() => router.push('/(tabs)/session-history')}
+            accessibilityRole="button"
+            accessibilityLabel="Open session history"
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: activeColor + '15' }]}>
@@ -416,6 +494,7 @@ export default function SettingsScreen() {
               onValueChange={setDailyReminders}
               trackColor={{ false: "#E5E7EB", true: activeColor + '80' }}
               thumbColor={dailyReminders ? activeColor : "#f4f3f4"}
+              accessibilityLabel="Daily reminders"
             />
           </View>
 
@@ -431,6 +510,7 @@ export default function SettingsScreen() {
               onValueChange={saveHapticFeedbackPreference}
               trackColor={{ false: "#E5E7EB", true: activeColor + '80' }}
               thumbColor={hapticFeedbackEnabled ? activeColor : "#f4f3f4"}
+              accessibilityLabel="Haptic feedback"
             />
           </View>
 
@@ -449,6 +529,7 @@ export default function SettingsScreen() {
               onValueChange={setStrictFocus}
               trackColor={{ false: "#E5E7EB", true: "#FECACA" }}
               thumbColor={strictFocus ? "#EF4444" : "#f4f3f4"}
+              accessibilityLabel="Strict focus mode"
             />
           </View>
         </Animated.View>
@@ -467,6 +548,8 @@ export default function SettingsScreen() {
           <TouchableOpacity 
             style={styles.settingRow}
             onPress={handleResetData}
+            accessibilityRole="button"
+            accessibilityLabel="Reset all data"
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: '#FEE2E2' }]}>
@@ -483,6 +566,8 @@ export default function SettingsScreen() {
           <TouchableOpacity 
             style={[styles.settingRow, { borderBottomWidth: 0 }]}
             onPress={handleLogout}
+            accessibilityRole="button"
+            accessibilityLabel="Log out"
           >
             <View style={styles.settingLeft}>
               <View style={[styles.iconWrapper, { backgroundColor: '#FEE2E2' }]}>

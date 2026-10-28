@@ -1,6 +1,12 @@
 import React from "react";
 import { Text, View } from "react-native";
-import { act, fireEvent, render, screen } from "@testing-library/react-native";
+import {
+  act,
+  cleanupAsync,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react-native";
 
 import FocusTimerCounting from "../../app/(tabs)/focus-timer-counting";
 
@@ -8,6 +14,7 @@ const mockBack = jest.fn();
 const mockWriteSession = jest.fn();
 const mockToggleSubtaskDone = jest.fn();
 const mockLogFocusSession = jest.fn();
+const mockPresentTaskCompletionNotification = jest.fn();
 
 let mockParams: Record<string, string> = {};
 let mockTasks: Array<{
@@ -78,6 +85,11 @@ jest.mock("../../services/sessionStorage", () => ({
   writeSession: (...args: unknown[]) => mockWriteSession(...args),
 }));
 
+jest.mock("../../services/notifications", () => ({
+  presentTaskCompletionNotification: (...args: unknown[]) =>
+    mockPresentTaskCompletionNotification(...args),
+}));
+
 jest.mock("expo-audio", () => ({
   createAudioPlayer: jest.fn(() => ({
     loop: false,
@@ -133,7 +145,8 @@ describe("FocusTimerCounting", () => {
     mockTasks = [];
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await cleanupAsync();
     jest.clearAllTimers();
     jest.useRealTimers();
   });
@@ -164,5 +177,32 @@ describe("FocusTimerCounting", () => {
     expect(
       screen.getByText("Break activity modal for 0 minutes")
     ).toBeTruthy();
+  });
+
+  it("uses wall-clock time after the app was suspended", () => {
+    jest.setSystemTime(new Date("2026-10-28T09:00:00.000Z"));
+    render(<FocusTimerCounting />);
+
+    act(() => {
+      jest.setSystemTime(new Date("2026-10-28T09:00:20.000Z"));
+      jest.advanceTimersByTime(250);
+    });
+
+    expect(screen.getByText("00:40")).toBeTruthy();
+  });
+
+  it("logs a completed session only once", async () => {
+    render(<FocusTimerCounting />);
+
+    await act(async () => {
+      jest.advanceTimersByTime(60_000);
+      await Promise.resolve();
+    });
+    act(() => {
+      jest.advanceTimersByTime(5_000);
+    });
+
+    expect(mockWriteSession).toHaveBeenCalledTimes(1);
+    expect(mockPresentTaskCompletionNotification).toHaveBeenCalledTimes(1);
   });
 });

@@ -53,7 +53,7 @@ export default function UndoSnackbar() {
         useNativeDriver: true,
       }).start();
     }
-  }, [isVisible]);
+  }, [isVisible, progressAnim, slideAnim]);
 
 
 
@@ -67,7 +67,10 @@ export default function UndoSnackbar() {
    ];
 
    return (
-     <Animated.View style={StyleSheet.flatten(containerStyle as any)}>
+     <Animated.View
+       style={StyleSheet.flatten(containerStyle as any)}
+       accessibilityLiveRegion="polite"
+     >
       {/* Main row */}
       <View style={s.row}>
         <View style={s.textWrap}>
@@ -87,6 +90,10 @@ export default function UndoSnackbar() {
             if (lastDeleted) undoDelete(lastDeleted);
           }}
           activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel={
+            lastDeleted ? `Undo deleting ${lastDeleted.title}` : "Undo task deletion"
+          }
         >
           <Text style={s.undoText}>Undo</Text>
         </TouchableOpacity>

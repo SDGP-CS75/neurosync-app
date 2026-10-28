@@ -16,6 +16,10 @@ describe("firebase service", () => {
       getFirestore: jest.fn(() => ({ db: true })),
     }));
 
+    jest.doMock("firebase/storage", () => ({
+      getStorage: jest.fn(() => ({ storage: true })),
+    }));
+
     jest.doMock("react-native", () => ({
       Platform: { OS: "web" },
     }));
@@ -24,5 +28,6 @@ describe("firebase service", () => {
 
     expect(firebase.auth).toEqual({ auth: true });
     expect(firebase.db).toEqual({ db: true });
+    expect(firebase.storage).toEqual({ storage: true });
   });
 });

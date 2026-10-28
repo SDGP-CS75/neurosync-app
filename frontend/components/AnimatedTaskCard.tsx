@@ -6,9 +6,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import {
-  View,
   Animated,
-  StyleSheet,
   ViewStyle,
   TouchableOpacity,
   Platform,
@@ -98,6 +96,7 @@ export default function AnimatedTaskCard({
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           activeOpacity={1}
+          accessibilityRole="button"
         >
           {children}
         </TouchableOpacity>
@@ -111,9 +110,3 @@ export default function AnimatedTaskCard({
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    // Default styles
-  },
-});

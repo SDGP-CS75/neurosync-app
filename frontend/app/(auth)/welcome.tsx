@@ -10,7 +10,6 @@ export default function WelcomeScreen() {
 
   const isSmallScreen  = width < 375;
   const isMediumScreen = width >= 375 && width < 768;
-  const isLargeScreen = width >= 768;
 
   const dynamicStyles = useMemo(() => ({
     container: {
@@ -44,7 +43,7 @@ export default function WelcomeScreen() {
     footer: {
       marginBottom: isSmallScreen ? 20 : isMediumScreen ? 25 : 30,
     },
-  }), [isSmallScreen, isMediumScreen, isLargeScreen]);
+  }), [isSmallScreen, isMediumScreen]);
 
   return (
     <ImageBackground 

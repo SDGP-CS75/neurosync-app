@@ -8,27 +8,9 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Task } from "../context/TasksContext";
+import type { Task, TaskTemplate } from "../types";
 
-export interface TaskTemplate {
-  id: string;
-  title: string;
-  category: string;
-  icon: string;
-  iconBg: string;
-  subtasks: Array<{
-    id: string;
-    text: string;
-    isAdding: boolean;
-    isGenarated: boolean;
-    isDone: boolean;
-    durationMinutes?: number;
-    notes?: string;
-    order?: number;
-    dependsOn?: string[];
-  }>;
-  createdAt: string; // ISO timestamp
-}
+export type { TaskTemplate };
 
 /**
  * Save a task as a template.

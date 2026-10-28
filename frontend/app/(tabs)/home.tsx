@@ -24,6 +24,7 @@ import { useTasks } from "../../context/TasksContext";
 import { scheduleTaskNotification } from "../../services/notifications";
 
 import { Easings } from "../../utils/animations";
+import { getTodayKey } from "../../utils/dates";
 
 const { width } = Dimensions.get("window");
 
@@ -41,60 +42,6 @@ function getTaskProgress(task: {
   if (task.status === "done") return 1;
   if (task.status === "in-progress") return 0.5;
   return 0;
-}
-
-// Circular Progress Component
-interface CircularProgressProps {
-  percentage: number;
-  size: number;
-  strokeWidth: number;
-  progressColor: string;
-  bgColor?: string;
-}
-
-function CircularProgress({
-  percentage,
-  size,
-  strokeWidth,
-  progressColor,
-  bgColor = "#E0E0E0",
-}: CircularProgressProps) {
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (percentage / 100) * circumference;
-
-  return (
-    <View style={{ width: size, height: size }}>
-      <Svg width={size} height={size}>
-        <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={bgColor}
-            strokeWidth={strokeWidth}
-            fill="transparent"
-          />
-          <Circle
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            stroke={progressColor}
-            strokeWidth={strokeWidth}
-            fill="transparent"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            strokeLinecap="round"
-          />
-        </G>
-      </Svg>
-      <View style={[StyleSheet.absoluteFill, styles.progressTextContainer]}>
-        <Text style={[styles.progressText, { color: "#fff" }]}>
-          {percentage}%
-        </Text>
-      </View>
-    </View>
-  );
 }
 
 // Small Circular Progress for Task Groups
@@ -218,9 +165,9 @@ export default function HomeScreen() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [cardsFade, cardsSlide, headerFade, headerSlide, sectionsFade, sectionsSlide]);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getTodayKey();
   const displayName = profile.name || "You";
   const displayInitials = displayName
     .split(" ")
@@ -287,16 +234,33 @@ export default function HomeScreen() {
       return;
     }
 
+    const summaryTime = new Date();
+    summaryTime.setHours(20, 0, 0, 0);
+    if (summaryTime.getTime() <= Date.now()) {
+      Alert.alert(
+        "Too Late Today",
+        "The 8 PM summary time has passed. Try again tomorrow before 8 PM."
+      );
+      return;
+    }
+
     setIsScheduling(true);
     try {
-      const summaryTime = new Date();
-      summaryTime.setHours(20, 0, 0, 0); // Schedule for 8 PM today
+      const pendingTitles = todayTasks
+        .filter((task) => task.status !== "done")
+        .slice(0, 3)
+        .map((task) => task.title);
+      const remainingLabel = `${remainingToday} task${
+        remainingToday === 1 ? "" : "s"
+      } remaining`;
+      const extraTasks = remainingToday - pendingTitles.length;
+      const summaryBody = remainingToday
+        ? `${remainingLabel}: ${pendingTitles.join(", ")}${
+            extraTasks > 0 ? ` and ${extraTasks} more` : ""
+          }`
+        : "All of today's tasks are complete.";
 
-      const taskList = todayTasks
-        .map((task) => `• ${task.title}`)
-        .join("\n");
-
-      await scheduleTaskNotification(
+      const notificationId = await scheduleTaskNotification(
         {
           id: `daily-summary-${todayKey}`,
           title: "Daily Task Summary",
@@ -310,8 +274,13 @@ export default function HomeScreen() {
           sound: "default",
           vibration: "default",
           priority: "high",
+          body: summaryBody,
         }
       );
+
+      if (!notificationId) {
+        throw new Error("Notification could not be scheduled");
+      }
 
       Alert.alert(
         "Summary Scheduled",
@@ -347,6 +316,8 @@ export default function HomeScreen() {
               style={styles.headerLeft}
               onPress={() => router.push("/(tabs)/settings")}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Open profile settings"
             >
               <View style={{ alignItems: "center" }}>
                 {profile.profileImage ? (
@@ -371,6 +342,9 @@ export default function HomeScreen() {
               style={styles.notificationBtn}
               onPress={scheduleDailySummary}
               disabled={isScheduling}
+              accessibilityRole="button"
+              accessibilityLabel="Schedule daily summary"
+              accessibilityState={{ busy: isScheduling, disabled: isScheduling }}
             >
               <Ionicons
                 name="notifications-outline"
@@ -410,9 +384,6 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.todayCardRight}>
-                  <TouchableOpacity style={styles.chatIcon}>
-                    <Ionicons name="chatbubble-ellipses" size={20} color={theme.colors.onPrimary} />
-                  </TouchableOpacity>
                   <AnimatedCircularProgress
                     style={{ marginRight: 10, marginTop: 10 }}
                     size={115}
@@ -572,6 +543,10 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={group.id}
                   style={[styles.taskGroupCard, { backgroundColor: theme.colors.surface }]}
+                  onPress={() => router.push("/(tabs)/todo-list")}
+                  activeOpacity={0.75}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${group.title} tasks, ${group.progress}% complete`}
                 >
                   <View style={[styles.taskGroupIcon, { backgroundColor: group.iconBg }]}>
                     <Text style={styles.taskGroupEmoji}>{group.icon}</Text>

@@ -25,6 +25,7 @@ import Nav from "../../components/Nav";
 import AnimatedTaskCard from "../../components/AnimatedTaskCard";
 
 import { Easings } from "../../utils/animations";
+import { getLocalDateKey } from "../../utils/dates";
 
 interface DateItem {
   dateKey: string;
@@ -45,11 +46,11 @@ const STATUS_ORDER: Record<TaskStatus, number> = {
 function getDatesAroundToday(): DateItem[] {
   const items: DateItem[] = [];
   const today = new Date();
-  const todayKey = today.toISOString().slice(0, 10);
+  const todayKey = getLocalDateKey(today);
   for (let offset = -2; offset <= 2; offset++) {
     const d = new Date(today);
     d.setDate(d.getDate() + offset);
-    const dateKey = d.toISOString().slice(0, 10);
+    const dateKey = getLocalDateKey(d);
     items.push({
       dateKey,
       month: MONTHS[d.getMonth()],
@@ -63,8 +64,6 @@ function getDatesAroundToday(): DateItem[] {
 
 // Match Nav.tsx so scroll padding clears the bottom bar
 const BASE_WIDTH = 390;
-
-const todayDateKey = () => new Date().toISOString().slice(0, 10);
 
 export default function TodoListScreen() {
   const { theme } = useAppTheme();
@@ -169,7 +168,16 @@ export default function TodoListScreen() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [
+    dateRowFade,
+    dateRowSlide,
+    filterFade,
+    filterSlide,
+    headerFade,
+    headerSlide,
+    taskListFade,
+    taskListSlide,
+  ]);
 
   const isSmallScreen = width < 375;
   const cardPadding   = isSmallScreen ? 14 : 18;
@@ -178,10 +186,13 @@ export default function TodoListScreen() {
   
   // Helper to extract date from dueDate (same as calendar)
   const getTaskDateKey = (task: Task): string | null => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(task.dateKey)) {
+      return task.dateKey;
+    }
     if (task.dueDate) {
       const d = new Date(task.dueDate);
       if (!isNaN(d.getTime())) {
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        return getLocalDateKey(d);
       }
     }
     return null;
@@ -277,7 +288,13 @@ export default function TodoListScreen() {
           },
         ]}
       >
-        <TouchableOpacity activeOpacity={0.7} onPress={() => router.back()}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => router.back()}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={12}
+        >
           <Ionicons name="chevron-back" size={28} color={theme.colors.text} />
         </TouchableOpacity>
 
@@ -289,10 +306,19 @@ export default function TodoListScreen() {
           <TouchableOpacity 
             activeOpacity={0.7}
             onPress={() => router.push('/(tabs)/calendar')}
+            accessibilityRole="button"
+            accessibilityLabel="Open calendar"
+            hitSlop={10}
           >
             <Ionicons name="calendar-outline" size={26} color={theme.colors.primary} />
           </TouchableOpacity>
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.push('/(tabs)/settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Open notification settings"
+            hitSlop={10}
+          >
             <Ionicons name="notifications-outline" size={26} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
@@ -327,6 +353,9 @@ export default function TodoListScreen() {
                   onPressIn={() => handleDateCardPressIn(index)}
                   onPressOut={() => handleDateCardPressOut(index)}
                   activeOpacity={1}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${date.weekday}, ${date.month} ${date.day}`}
+                  accessibilityState={{ selected: isSelected }}
                   style={[
                     styles.dateCard,
                     {
@@ -399,6 +428,9 @@ export default function TodoListScreen() {
                   onPressIn={() => handleFilterPillPressIn(index)}
                   onPressOut={() => handleFilterPillPressOut(index)}
                   activeOpacity={1}
+                  accessibilityRole="tab"
+                  accessibilityLabel={`Show ${item.label} tasks`}
+                  accessibilityState={{ selected: isActive }}
                   style={[
                     styles.filterPill,
                     {
@@ -476,6 +508,8 @@ export default function TodoListScreen() {
                       hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
                       style={styles.deleteBtn}
                       activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Delete ${task.title}`}
                     >
                       <Ionicons name="trash-outline" size={22} color={theme.colors.textMuted} />
                     </TouchableOpacity>
@@ -503,6 +537,9 @@ export default function TodoListScreen() {
                         style={styles.subtaskRow}
                         activeOpacity={0.7}
                         onPress={() => toggleSubtaskDone(task.id, sub.id)}
+                        accessibilityRole="checkbox"
+                        accessibilityLabel={sub.text}
+                        accessibilityState={{ checked: sub.isDone }}
                       >
                         <Ionicons
                           name={sub.isDone ? "checkbox" : "square-outline"}
@@ -535,7 +572,11 @@ export default function TodoListScreen() {
                     </Text>
                   </View>
 
-                  <TouchableOpacity onPress={() => toggleTaskStatus(task.id)}>
+                  <TouchableOpacity
+                    onPress={() => toggleTaskStatus(task.id)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Change status for ${task.title}`}
+                  >
                     <View
                       style={[
                         styles.statusBadge,

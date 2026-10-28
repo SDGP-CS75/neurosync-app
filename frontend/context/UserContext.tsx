@@ -1,7 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { onAuthStateChanged, getAuth, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { AppState } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
+import {
+  ensureUserProfile,
+  fallbackProfileFromUser,
+  UserProfileData,
+} from '../services/userProfile';
+import { ProfileImageInput, uploadProfileImage } from '../services/profileImage';
 
 interface UserProfile {
   name: string;
@@ -17,7 +25,7 @@ interface UserContextType {
   profile: UserProfile;
   updateProfile: (updates: Partial<UserProfile>) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  setProfileImage: (uri: string) => void;
+  setProfileImage: (image: ProfileImageInput) => Promise<void>;
   resetProfile: () => void;
   isLoading: boolean;
   saveThemePreference: (themeName: string) => Promise<void>;
@@ -49,84 +57,67 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [hapticFeedbackEnabled, setHapticFeedbackEnabled] = useState<boolean>(true);
 
-  // Load user profile from Firestore when auth state changes
-  // Also track userId for saving theme preferences
+  const applyProfile = useCallback((data: UserProfileData) => {
+    const themeName = data.themeName;
+    const hapticFeedback = data.hapticFeedback ?? true;
+    setProfile({
+      name: `${data.firstName} ${data.lastName}`.trim(),
+      email: data.email,
+      profileImage: data.photoURL,
+      about: data.about,
+      age: data.age,
+      themeName,
+      hapticFeedback,
+    });
+    setThemePreference(themeName ?? null);
+    setHapticFeedbackEnabled(hapticFeedback);
+  }, []);
+
+  const loadUserProfile = useCallback(async (user: User) => {
+    setUserId(user.uid);
+    try {
+      applyProfile(await ensureUserProfile(user));
+    } catch (error) {
+      console.warn('Profile sync failed; using authentication data', {
+        name: error instanceof Error ? error.name : typeof error,
+      });
+      applyProfile(fallbackProfileFromUser(user));
+    }
+  }, [applyProfile]);
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      // Update userId state
-      setUserId(user?.uid ?? null);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        try {
-          // Check if the token is valid by forcing a refresh
-          // This helps catch auth errors early before they cause issues
-          await user.getIdTokenResult(true);
-          
-          // Fetch user profile from Firestore
-          const userDocRef = doc(db, 'users', user.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          
-          if (userDocSnap.exists()) {
-            const userData = userDocSnap.data();
-            const themeName = userData.themeName || undefined;
-            const hapticFeedback = userData.hapticFeedback !== undefined ? userData.hapticFeedback : true;
-            setProfile({
-              name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim(),
-              email: userData.email || user.email || '',
-              profileImage: userData.photoURL || '',
-              about: userData.about || '',
-              age: userData.age || '',
-              themeName: themeName,
-              hapticFeedback: hapticFeedback,
-            });
-            // Set theme preference for ThemeContext
-            setThemePreference(themeName || null);
-            // Set haptic feedback preference
-            setHapticFeedbackEnabled(hapticFeedback);
-          } else {
-            // If no profile exists in Firestore, at least use auth data
-            setProfile({
-              name: user.displayName || '',
-              email: user.email || '',
-              profileImage: user.photoURL || '',
-              about: '',
-              age: '',
-              themeName: undefined,
-            });
-            setThemePreference(null);
-          }
-        } catch (error: any) {
-          console.error('Error loading user profile or auth token:', error);
-          
-          // If token refresh fails (400 error from securetoken.googleapis.com),
-          // sign out the user to clear the invalid refresh token
-          if (error?.code === 'auth/invalid-refresh-token' || 
-              error?.message?.includes('INVALID_REFRESH_TOKEN') ||
-              error?.message?.includes('securetoken')) {
-            console.log('Invalid refresh token detected, signing out...');
-            await signOut(auth);
-            setProfile(defaultProfile);
-          } else {
-            // Fallback to auth data for other errors
-            setProfile({
-              name: user.displayName || '',
-              email: user.email || '',
-              profileImage: user.photoURL || '',
-              about: '',
-              age: '',
-            });
-          }
-        }
+        void loadUserProfile(user);
       } else {
-        // User is logged out
+        setUserId(null);
         setProfile(defaultProfile);
         setThemePreference(null);
         setHapticFeedbackEnabled(true);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [loadUserProfile]);
+
+  useEffect(() => {
+    const refreshProfile = () => {
+      const user = auth.currentUser;
+      if (user) void loadUserProfile(user);
+    };
+    const appStateSubscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refreshProfile();
+    });
+    const unsubscribeNetwork = NetInfo.addEventListener((state) => {
+      if (state.isConnected) refreshProfile();
+    });
+
+    return () => {
+      appStateSubscription.remove();
+      unsubscribeNetwork();
+    };
+  }, [loadUserProfile]);
 
   const updateProfile = (updates: Partial<UserProfile>) => {
     setProfile((prev) => ({ ...prev, ...updates }));
@@ -158,14 +149,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [userId]);
 
-  const setProfileImage = useCallback((uri: string) => {
-    setProfile((prev) => ({ ...prev, profileImage: uri }));
-    if (userId) {
-      const userDocRef = doc(db, 'users', userId);
-      setDoc(userDocRef, { photoURL: uri }, { merge: true }).catch((err) =>
-        console.error('Failed to sync profile image to Firestore:', err)
-      );
-    }
+  const setProfileImage = useCallback(async (image: ProfileImageInput) => {
+    if (!userId) throw new Error('You must be signed in to update your profile image.');
+
+    const photoURL = await uploadProfileImage(userId, image);
+    const userDocRef = doc(db, 'users', userId);
+    await setDoc(userDocRef, { photoURL }, { merge: true });
+    setProfile((prev) => ({ ...prev, profileImage: photoURL }));
   }, [userId]);
 
   const resetProfile = () => {

@@ -78,7 +78,7 @@ export const mockUserContext = {
     themeName: "Violet",
   },
   updateProfile: jest.fn(),
-  setProfileImage: jest.fn(),
+  setProfileImage: jest.fn().mockResolvedValue(undefined),
   resetProfile: jest.fn(),
   isLoading: false,
   saveThemePreference: jest.fn().mockResolvedValue(undefined),

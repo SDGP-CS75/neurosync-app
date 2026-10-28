@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
+  AppState,
   Text,
   View,
   StyleSheet,
@@ -26,7 +27,7 @@ import BreakActivityModal from "../../components/BreakActivityModal";
 import { useTasks, SubTask } from "../../context/TasksContext";
 import { writeSession, FocusSession } from "../../services/sessionStorage";
 import { logActualDuration } from "../../services/calibration";
-import { scheduleTaskNotification, cancelTaskNotification } from "../../services/notifications";
+import { presentTaskCompletionNotification } from "../../services/notifications";
 import { Easings } from "../../utils/animations";
 
 // ─── Animated Circular Progress ──────────────────────────────────────────────
@@ -63,7 +64,7 @@ function CustomAnimatedCircularProgress({
       duration,
       useNativeDriver: false,
     }).start();
-  }, [fill, duration]);
+  }, [animatedValue, fill, duration]);
 
   const strokeDashoffset = animatedValue.interpolate({
     inputRange: [0, 100],
@@ -161,6 +162,10 @@ const MUSIC_STREAMS: MusicStream[] = [
 
 type TimerMode = "focus" | "break";
 
+function createSessionId(): string {
+  return `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
 // ─── Subtask Completion Prompt ────────────────────────────────────────────────
 
 interface SubtaskPromptProps {
@@ -228,6 +233,9 @@ function SubtaskCompletionPrompt({
                   ]}
                   onPress={() => onToggle(item.id)}
                   activeOpacity={0.75}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={item.text}
+                  accessibilityState={{ checked: item.isDone }}
                 >
                   <View
                     style={[
@@ -271,6 +279,8 @@ function SubtaskCompletionPrompt({
                 { borderColor: theme.colors.outline },
               ]}
               onPress={onProceed}
+              accessibilityRole="button"
+              accessibilityLabel="Skip subtask check"
             >
               <Text
                 style={[
@@ -287,6 +297,8 @@ function SubtaskCompletionPrompt({
                 { backgroundColor: theme.colors.primary },
               ]}
               onPress={onProceed}
+              accessibilityRole="button"
+              accessibilityLabel="Continue to break"
             >
               <Text style={promptStyles.doneBtnText}>Done → Break</Text>
             </TouchableOpacity>
@@ -432,12 +444,21 @@ export default function FocusTimerCounting() {
 
   // Session tracking
   const sessionStartRef = useRef<Date>(new Date());
+  const sessionIdRef = useRef(createSessionId());
+  const loggedSessionIdsRef = useRef(new Set<string>());
+  const remainingSecondsRef = useRef(
+    initialMode === "focus"
+      ? initialFocusDuration * 60
+      : initialBreakDuration * 60
+  );
+  const elapsedSecondsRef = useRef(0);
+  const deadlineRef = useRef<number | null>(
+    Date.now() + remainingSecondsRef.current * 1000
+  );
+  const completionHandledRef = useRef(false);
 
   // Subtask prompt state (shown when focus session ends)
   const [showSubtaskPrompt, setShowSubtaskPrompt] = useState(false);
-  const [pendingSubtaskToggles, setPendingSubtaskToggles] = useState<
-    Record<string, boolean>
-  >({});
   const [completedFocusMinutes, setCompletedFocusMinutes] = useState(0);
 
   // Break activity modal
@@ -457,7 +478,6 @@ export default function FocusTimerCounting() {
 
   // Animation refs
   const pulseAnim = useRef(new Animated.Value(1)).current;
-  const loadingAnim = useRef(new Animated.Value(0)).current;
   
   // Entrance animations
   const headerFade = useRef(new Animated.Value(0)).current;
@@ -571,50 +591,59 @@ export default function FocusTimerCounting() {
         }),
       ]),
     ]).start();
-  }, []);
+  }, [
+    controlsFade,
+    controlsSlide,
+    headerFade,
+    headerSlide,
+    modeFade,
+    modeSlide,
+    musicFade,
+    musicSlide,
+    stopFade,
+    stopSlide,
+    timerFade,
+    timerSlide,
+  ]);
 
   // ── Screen saver ────────────────────────────────────────────────────────────
 
-  const resetScreenSaverTimeout = useCallback(() => {
+  const hideScreenSaver = useCallback(() => {
+    Animated.timing(screenSaverAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setShowScreenSaver(false));
+  }, [screenSaverAnim]);
+
+  const armScreenSaverTimer = useCallback(() => {
     if (screenSaverTimeout.current) clearTimeout(screenSaverTimeout.current);
 
-    if (showScreenSaver) {
+    if (!isRunning || showScreenSaver) return;
+    screenSaverTimeout.current = setTimeout(() => {
+      setShowScreenSaver(true);
       Animated.timing(screenSaverAnim, {
-        toValue: 0,
-        duration: 300,
+        toValue: 1,
+        duration: 500,
         useNativeDriver: true,
-      }).start(() => setShowScreenSaver(false));
-    }
+      }).start();
+    }, SCREEN_SAVER_TIMEOUT);
+  }, [isRunning, screenSaverAnim, showScreenSaver]);
 
-    if (isRunning) {
-      screenSaverTimeout.current = setTimeout(() => {
-        setShowScreenSaver(true);
-        Animated.timing(screenSaverAnim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }).start();
-      }, SCREEN_SAVER_TIMEOUT);
-    }
-  }, [showScreenSaver, isRunning, screenSaverAnim]);
+  const resetScreenSaverTimeout = useCallback(() => {
+    if (screenSaverTimeout.current) clearTimeout(screenSaverTimeout.current);
+    if (showScreenSaver) hideScreenSaver();
+    armScreenSaverTimer();
+  }, [armScreenSaverTimer, hideScreenSaver, showScreenSaver]);
 
   useEffect(() => {
-    if (isRunning) {
-      resetScreenSaverTimeout();
-    } else {
-      if (screenSaverTimeout.current) clearTimeout(screenSaverTimeout.current);
-      if (showScreenSaver) {
-        Animated.timing(screenSaverAnim, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }).start(() => setShowScreenSaver(false));
-      }
-    }
+    armScreenSaverTimer();
+    if (!isRunning && showScreenSaver) hideScreenSaver();
+
     return () => {
       if (screenSaverTimeout.current) clearTimeout(screenSaverTimeout.current);
     };
-  }, [isRunning]);
+  }, [armScreenSaverTimer, hideScreenSaver, isRunning, showScreenSaver]);
 
   // ── Audio setup ─────────────────────────────────────────────────────────────
 
@@ -667,13 +696,13 @@ export default function FocusTimerCounting() {
         try {
           cur.pause();
           await cur.seekTo(0);
-        } catch (e) {
+        } catch {
           // Ignore pause/seek errors
         }
 
         try {
           cur.remove();
-        } catch (e) {
+        } catch {
           // Ignore cleanup errors
         }
 
@@ -735,7 +764,15 @@ export default function FocusTimerCounting() {
 
   const logCompletedSession = useCallback(
     async (durationMinutes: number) => {
-      const sessionId = `session_${Date.now()}`;
+      const sessionId = sessionIdRef.current;
+      if (
+        durationMinutes <= 0 ||
+        loggedSessionIdsRef.current.has(sessionId)
+      ) {
+        return;
+      }
+      loggedSessionIdsRef.current.add(sessionId);
+
       const session: FocusSession = {
         id: sessionId,
         taskId: linkedTaskId,
@@ -795,55 +832,79 @@ export default function FocusTimerCounting() {
   // ── Timer countdown ─────────────────────────────────────────────────────────
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | null = null;
+    if (!isRunning) return;
 
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-    } else if (timeLeft === 0 && isRunning) {
-      Vibration.vibrate([0, 500, 200, 500]);
+    const totalSeconds =
+      (mode === "focus" ? focusDuration : breakDuration) * 60;
+
+    const completeTimer = () => {
+      if (completionHandledRef.current) return;
+      completionHandledRef.current = true;
+      deadlineRef.current = null;
+      remainingSecondsRef.current = 0;
+      setTimeLeft(0);
       setIsRunning(false);
+      Vibration.vibrate([0, 500, 200, 500]);
 
       if (mode === "focus") {
-        const focusMins = focusDuration;
-        setCompletedFocusMinutes(focusMins);
-        setSessionsCompleted((prev) => prev + 1);
-        logCompletedSession(focusMins);
+        setCompletedFocusMinutes(focusDuration);
+        setSessionsCompleted((previous) => previous + 1);
+        void logCompletedSession(focusDuration);
+        void presentTaskCompletionNotification(linkedTaskTitle);
 
-        // Schedule notification for focus completion
-        if (linkedTaskId && linkedTaskTitle) {
-          scheduleTaskNotification(
-            {
-              id: `focus-complete-${Date.now()}`,
-              title: `Focus session complete! 🎯`,
-              dueDate: new Date().toISOString(),
-              reminder: '0',
-            },
-            { sound: 'default', vibration: 'default', priority: 'high' }
-          ).catch((error) => {
-            console.error('Failed to schedule focus completion notification:', error);
-          });
-        }
-
-        // Show subtask prompt if there's a linked task with subtasks
-        if (linkedTask && linkedTask.subtasks && linkedTask.subtasks.length > 0) {
-          setPendingSubtaskToggles({});
+        if (linkedTask?.subtasks?.length) {
           setShowSubtaskPrompt(true);
         } else {
-          // No task → go straight to break activity
           setShowBreakActivity(true);
         }
-      } else {
-        // Break ended → back to focus, don't auto-start
-        setMode("focus");
-        setTimeLeft(focusDuration * 60);
-        sessionStartRef.current = new Date();
+        return;
       }
-    }
+
+      const nextTotal = focusDuration * 60;
+      setMode("focus");
+      setTimeLeft(nextTotal);
+      remainingSecondsRef.current = nextTotal;
+      elapsedSecondsRef.current = 0;
+      sessionStartRef.current = new Date();
+      sessionIdRef.current = createSessionId();
+      completionHandledRef.current = false;
+    };
+
+    const tick = () => {
+      const deadline = deadlineRef.current;
+      if (deadline === null) return;
+      const remaining = Math.max(
+        0,
+        Math.ceil((deadline - Date.now()) / 1000)
+      );
+      remainingSecondsRef.current = remaining;
+      elapsedSecondsRef.current = Math.max(0, totalSeconds - remaining);
+      setTimeLeft((previous) => (previous === remaining ? previous : remaining));
+      if (remaining === 0) completeTimer();
+    };
+
+    tick();
+    const interval = setInterval(tick, 250);
+    const appStateSubscription = AppState.addEventListener(
+      "change",
+      (nextState) => {
+        if (nextState === "active") tick();
+      }
+    );
 
     return () => {
-      if (interval) clearInterval(interval);
+      clearInterval(interval);
+      appStateSubscription.remove();
     };
-  }, [isRunning, timeLeft, mode, focusDuration, breakDuration]);
+  }, [
+    isRunning,
+    mode,
+    focusDuration,
+    breakDuration,
+    linkedTask,
+    linkedTaskTitle,
+    logCompletedSession,
+  ]);
 
   // ── Subtask prompt handlers ─────────────────────────────────────────────────
 
@@ -863,44 +924,80 @@ export default function FocusTimerCounting() {
   // Called when BreakActivityModal is closed (or "Done" tapped)
   const handleBreakActivityClose = () => {
     setShowBreakActivity(false);
-    // Transition into break timer
+    const nextTotal = breakDuration * 60;
     setMode("break");
-    setTimeLeft(breakDuration * 60);
+    setTimeLeft(nextTotal);
+    remainingSecondsRef.current = nextTotal;
+    elapsedSecondsRef.current = 0;
+    deadlineRef.current = Date.now() + nextTotal * 1000;
+    completionHandledRef.current = false;
     setIsRunning(true);
     sessionStartRef.current = new Date();
+    sessionIdRef.current = createSessionId();
   };
 
   // ── Controls ────────────────────────────────────────────────────────────────
 
-  const handleStartPause = () => setIsRunning((prev) => !prev);
+  const handleStartPause = () => {
+    if (isRunning) {
+      if (deadlineRef.current !== null) {
+        const remaining = Math.max(
+          0,
+          Math.ceil((deadlineRef.current - Date.now()) / 1000)
+        );
+        remainingSecondsRef.current = remaining;
+        setTimeLeft(remaining);
+      }
+      deadlineRef.current = null;
+      setIsRunning(false);
+      return;
+    }
+
+    if (remainingSecondsRef.current <= 0) return;
+    deadlineRef.current =
+      Date.now() + remainingSecondsRef.current * 1000;
+    setIsRunning(true);
+  };
 
   const handleReset = () => {
+    const total = getTotalDuration();
     setIsRunning(false);
-    setTimeLeft(getTotalDuration());
+    setTimeLeft(total);
+    remainingSecondsRef.current = total;
+    elapsedSecondsRef.current = 0;
+    deadlineRef.current = null;
+    completionHandledRef.current = false;
     sessionStartRef.current = new Date();
+    sessionIdRef.current = createSessionId();
   };
 
   const handleSkip = () => {
     setIsRunning(false);
+    deadlineRef.current = null;
+    completionHandledRef.current = true;
     if (mode === "focus") {
-      // Log partial session
-      const elapsed = Math.round(
-        (focusDuration * 60 - timeLeft) / 60
+      const elapsed = Math.max(
+        0,
+        Math.round(elapsedSecondsRef.current / 60)
       );
-      if (elapsed > 0) logCompletedSession(elapsed);
+      if (elapsed > 0) void logCompletedSession(elapsed);
 
       if (linkedTask?.subtasks?.length) {
         setCompletedFocusMinutes(elapsed);
-        setPendingSubtaskToggles({});
         setShowSubtaskPrompt(true);
       } else {
         setShowBreakActivity(true);
         setCompletedFocusMinutes(elapsed);
       }
     } else {
+      const nextTotal = focusDuration * 60;
       setMode("focus");
-      setTimeLeft(focusDuration * 60);
+      setTimeLeft(nextTotal);
+      remainingSecondsRef.current = nextTotal;
+      elapsedSecondsRef.current = 0;
+      completionHandledRef.current = false;
       sessionStartRef.current = new Date();
+      sessionIdRef.current = createSessionId();
     }
   };
 
@@ -917,20 +1014,7 @@ export default function FocusTimerCounting() {
     router.back();
   };
 
-  const loadingScale = loadingAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 1.1],
-  });
-
   const styles = createStyles(theme, mode);
-
-  // Header task label
-  const headerLabel =
-    linkedTaskTitle && linkedTaskTitle.length > 0
-      ? linkedTaskTitle
-      : mode === "focus"
-      ? "Focus Mode"
-      : "Break Time";
 
   return (
     <TouchableWithoutFeedback onPress={resetScreenSaverTimeout}>
@@ -998,6 +1082,8 @@ export default function FocusTimerCounting() {
                 <TouchableOpacity
                   onPress={() => setShowMusicPicker(false)}
                   style={styles.musicPickerClose}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close music picker"
                 >
                   <Ionicons
                     name="close"
@@ -1021,6 +1107,11 @@ export default function FocusTimerCounting() {
                         styles.musicPickerItemActive,
                     ]}
                     onPress={() => playMusicStream(stream)}
+                    accessibilityRole="radio"
+                    accessibilityLabel={stream.name}
+                    accessibilityState={{
+                      checked: selectedStream.id === stream.id && isMusicOn,
+                    }}
                   >
                     <View
                       style={[
@@ -1083,7 +1174,13 @@ export default function FocusTimerCounting() {
               },
             ]}
           >
-            <TouchableOpacity onPress={handleStop} style={styles.backButton}>
+            <TouchableOpacity
+              onPress={handleStop}
+              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="End session and go back"
+              hitSlop={12}
+            >
               <Ionicons
                 name="arrow-back"
                 size={24}
@@ -1176,7 +1273,12 @@ export default function FocusTimerCounting() {
                 duration={isRunning ? 1000 : 300}
               >
                 <View style={styles.timerContent}>
-                  <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+                  <Text
+                    style={styles.timerText}
+                    accessibilityLabel={`${formatTime(timeLeft)} remaining`}
+                  >
+                    {formatTime(timeLeft)}
+                  </Text>
                   <Text style={styles.timerLabel}>
                     {mode === "focus" ? "Stay focused!" : "Take a break"}
                   </Text>
@@ -1206,7 +1308,12 @@ export default function FocusTimerCounting() {
               },
             ]}
           >
-            <TouchableOpacity style={styles.secondaryButton} onPress={handleReset}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleReset}
+              accessibilityRole="button"
+              accessibilityLabel="Reset timer"
+            >
               <Ionicons name="refresh" size={24} color={theme.colors.onSurface} />
               <Text style={styles.buttonLabel}>Reset</Text>
             </TouchableOpacity>
@@ -1214,6 +1321,9 @@ export default function FocusTimerCounting() {
             <TouchableOpacity
               style={styles.primaryButton}
               onPress={handleStartPause}
+              accessibilityRole="button"
+              accessibilityLabel={isRunning ? "Pause timer" : "Start timer"}
+              accessibilityState={{ selected: isRunning }}
             >
               <Ionicons
                 name={isRunning ? "pause" : "play"}
@@ -1225,6 +1335,8 @@ export default function FocusTimerCounting() {
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={handleSkip}
+              accessibilityRole="button"
+              accessibilityLabel={mode === "focus" ? "Skip to break" : "Skip break"}
             >
               <Ionicons
                 name="play-skip-forward"
@@ -1260,6 +1372,13 @@ export default function FocusTimerCounting() {
                 }
               }}
               disabled={isMusicLoading}
+              accessibilityRole="switch"
+              accessibilityLabel="Background music"
+              accessibilityState={{
+                checked: isMusicOn,
+                busy: isMusicLoading,
+                disabled: isMusicLoading,
+              }}
             >
               {isMusicLoading ? (
                 <ActivityIndicator size="small" color={theme.colors.primary} />
@@ -1287,6 +1406,8 @@ export default function FocusTimerCounting() {
             <TouchableOpacity
               style={styles.musicGenreButton}
               onPress={() => setShowMusicPicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Choose music. Current stream: ${selectedStream.name}`}
             >
               <Ionicons
                 name={selectedStream.icon}
@@ -1304,7 +1425,12 @@ export default function FocusTimerCounting() {
               transform: [{ translateY: stopSlide }],
             }}
           >
-          <TouchableOpacity style={styles.stopButton} onPress={handleStop}>
+          <TouchableOpacity
+            style={styles.stopButton}
+            onPress={handleStop}
+            accessibilityRole="button"
+            accessibilityLabel="End focus session"
+          >
             <Ionicons
               name="stop-circle-outline"
               size={20}

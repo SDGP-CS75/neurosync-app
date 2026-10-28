@@ -92,6 +92,7 @@ interface NavItem {
   key:        RouteKey;
   path:       string;
   segment:    string;   // exact file name in (tabs) folder — used for matching
+  label:      string;
   renderIcon: (size: number, color: string) => React.ReactNode;
 }
 
@@ -100,6 +101,7 @@ const NAV_ITEMS: NavItem[] = [
     key: "home",
     path: "/(tabs)/home",
     segment: "home",
+    label: "Home",
     renderIcon: (size, color) => (
       <Ionicons name="home" size={size} color={color} />
     ),
@@ -108,6 +110,7 @@ const NAV_ITEMS: NavItem[] = [
     key: "calendar",
     path: "/(tabs)/todo-list",
     segment: "todo-list",
+    label: "Tasks",
     renderIcon: (size, color) => (
       <MaterialIcons name="assignment" size={size} color={color} />
     ),
@@ -116,6 +119,7 @@ const NAV_ITEMS: NavItem[] = [
     key: "focus",
     path: "/(tabs)/focus-timer",
     segment: "focus-timer",
+    label: "Focus timer",
     renderIcon: (size, color) => (
       <MaterialIcons name="timer" size={size} color={color} />
     ),
@@ -124,6 +128,7 @@ const NAV_ITEMS: NavItem[] = [
     key: "mood",
     path: "/(tabs)/mood-tracking",
     segment: "mood-tracking",
+    label: "Mood",
     renderIcon: (size, color) => (
       <MaterialIcons name="import-contacts" size={size} color={color} />
     ),
@@ -185,6 +190,9 @@ export default function CustomNavBar() {
         style={styles.navItem}
         activeOpacity={0.7}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        accessibilityRole="tab"
+        accessibilityLabel={item.label}
+        accessibilityState={{ selected: isActive }}
       >
         <View
           style={[
@@ -248,6 +256,8 @@ export default function CustomNavBar() {
           router.push("/(tabs)/add-task");
         }}
         activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Add task"
       >
         <View
           style={{

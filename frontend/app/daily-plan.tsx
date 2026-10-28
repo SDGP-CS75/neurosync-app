@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   Text,
@@ -6,17 +12,14 @@ import {
   TouchableOpacity,
   FlatList,
   ActivityIndicator,
-  Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "../context/ThemeContext";
 import { useTasks, Task } from "../context/TasksContext";
-import { API_BASE } from "../constants/api";
 import { apiRequest } from "../services/apiClient";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
+import { getUserTimeZone } from "../utils/dates";
 
 const DEFAULT_AVAILABLE_MINUTES = 480; // 8 hours
 
@@ -62,7 +65,6 @@ interface PlanCardProps {
 
 function PlanCard({ task, rank, reasoning, theme, onStart }: PlanCardProps) {
   const dueStr = formatDueDate(task);
-  const durStr = formatDuration(task.sessionTime ?? 0);
   const subtaskTotal = task.subtasks?.length ?? 0;
   const subtaskDone = task.subtasks?.filter((s) => s.isDone).length ?? 0;
 
@@ -136,6 +138,8 @@ function PlanCard({ task, rank, reasoning, theme, onStart }: PlanCardProps) {
           style={[cardStyles.startBtn, { backgroundColor: theme.colors.primary }]}
           onPress={() => onStart(task)}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={`Start ${task.title}`}
         >
           <Ionicons name="play" size={14} color="#fff" />
           <Text style={cardStyles.startBtnText}>Start this task</Text>
@@ -246,6 +250,24 @@ interface DailyPlanResponse {
   reasoning: Record<string, string>;
 }
 
+function getPlanTaskPayload(tasks: Task[]) {
+  return tasks
+    .filter((task) => task.status !== "done")
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((task) => ({
+      id: task.id,
+      title: task.title,
+      category: task.category,
+      status: task.status,
+      dueDate: task.dueDate,
+      sessionTime: task.sessionTime,
+      subtasks: task.subtasks?.map((subtask) => ({
+        text: subtask.text,
+        isDone: subtask.isDone,
+      })),
+    }));
+}
+
 export default function DailyPlanScreen() {
   const { theme } = useAppTheme();
   const router = useRouter();
@@ -254,9 +276,24 @@ export default function DailyPlanScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [plan, setPlan] = useState<DailyPlanResponse | null>(null);
+  const latestTasksRef = useRef<Task[]>(tasks);
+  const requestIdRef = useRef(0);
+
+  latestTasksRef.current = tasks;
 
   // Incomplete tasks only
-  const incompleteTasks = tasks.filter((t) => t.status !== "done");
+  const incompleteTasks = useMemo(
+    () => tasks.filter((t) => t.status !== "done"),
+    [tasks]
+  );
+  const planTaskPayload = useMemo(
+    () => getPlanTaskPayload(incompleteTasks),
+    [incompleteTasks]
+  );
+  const planTaskSignature = useMemo(
+    () => JSON.stringify(planTaskPayload),
+    [planTaskPayload]
+  );
 
   // Ordered tasks from plan (fall back to original order if plan not loaded)
   const orderedTasks: Task[] = plan
@@ -266,7 +303,12 @@ export default function DailyPlanScreen() {
     : incompleteTasks;
 
   const fetchPlan = useCallback(async () => {
-    if (incompleteTasks.length === 0) {
+    const requestId = ++requestIdRef.current;
+    const requestedTasks = getPlanTaskPayload(latestTasksRef.current);
+
+    if (requestedTasks.length === 0) {
+      setPlan(null);
+      setError(null);
       setLoading(false);
       return;
     }
@@ -281,34 +323,33 @@ export default function DailyPlanScreen() {
       }>("/api/ai/daily-plan", {
         method: "POST",
         body: JSON.stringify({
-          tasks: incompleteTasks.map((t) => ({
-            id:           t.id,
-            title:        t.title,
-            category:     t.category,
-            status:       t.status,
-            dueDate:      t.dueDate,
-            sessionTime:  t.sessionTime,
-            subtasks:     t.subtasks?.map((s) => ({ text: s.text, isDone: s.isDone })),
-          })),
+          tasks: requestedTasks,
           availableMinutes: DEFAULT_AVAILABLE_MINUTES,
           userId: userId ?? undefined,
+          timeZone: getUserTimeZone(),
         }),
       });
 
+      if (requestId !== requestIdRef.current) return;
       setPlan({
         orderedTaskIds: Array.isArray(data.orderedTaskIds) ? data.orderedTaskIds : [],
         reasoning:      typeof data.reasoning === "object" ? data.reasoning : {},
       });
     } catch (e) {
+      if (requestId !== requestIdRef.current) return;
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
+      if (requestId !== requestIdRef.current) return;
       setLoading(false);
     }
-  }, [incompleteTasks.length, userId]);
+  }, [userId]);
 
   useEffect(() => {
-    fetchPlan();
-  }, []);
+    void fetchPlan();
+    return () => {
+      requestIdRef.current += 1;
+    };
+  }, [fetchPlan, planTaskSignature]);
 
   // Navigate to focus timer with task pre-linked
   const handleStartTask = (task: Task) => {
@@ -327,7 +368,13 @@ export default function DailyPlanScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={12}
+        >
           <Ionicons name="arrow-back" size={24} color={theme.colors.onBackground} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -344,6 +391,9 @@ export default function DailyPlanScreen() {
           onPress={fetchPlan}
           style={styles.refreshBtn}
           disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh daily plan"
+          accessibilityState={{ busy: loading, disabled: loading }}
         >
           <Ionicons
             name="refresh"
@@ -380,6 +430,8 @@ export default function DailyPlanScreen() {
           <TouchableOpacity
             style={[styles.retryBtn, { backgroundColor: theme.colors.primary }]}
             onPress={fetchPlan}
+            accessibilityRole="button"
+            accessibilityLabel="Try building the daily plan again"
           >
             <Text style={styles.retryBtnText}>Try again</Text>
           </TouchableOpacity>

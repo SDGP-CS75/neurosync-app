@@ -70,6 +70,7 @@ export default function TaskPicker({ visible, onClose, onSelect }: TaskPickerPro
         style={s.backdrop}
         activeOpacity={1}
         onPress={onClose}
+        accessible={false}
       >
         <View
           style={s.sheet}
@@ -81,7 +82,13 @@ export default function TaskPicker({ visible, onClose, onSelect }: TaskPickerPro
           {/* Header */}
           <View style={s.header}>
             <Text style={s.title}>Working on…</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={12} activeOpacity={0.7}>
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={12}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Close task picker"
+            >
               <Ionicons name="close" size={24} color={theme.colors.textMuted} />
             </TouchableOpacity>
           </View>
@@ -96,9 +103,15 @@ export default function TaskPicker({ visible, onClose, onSelect }: TaskPickerPro
               value={query}
               onChangeText={setQuery}
               autoCorrect={false}
+              accessibilityLabel="Search tasks"
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={() => setQuery("")} hitSlop={8}>
+              <TouchableOpacity
+                onPress={() => setQuery("")}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Clear task search"
+              >
                 <Ionicons name="close-circle" size={16} color={theme.colors.textMuted} />
               </TouchableOpacity>
             )}
@@ -121,6 +134,8 @@ export default function TaskPicker({ visible, onClose, onSelect }: TaskPickerPro
                 style={s.freeRow}
                 onPress={() => handleSelect(null)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel="Start a free focus session without a task"
               >
                 <View style={s.freeIcon}>
                   <Ionicons name="infinite-outline" size={20} color={theme.colors.primary} />
@@ -136,6 +151,8 @@ export default function TaskPicker({ visible, onClose, onSelect }: TaskPickerPro
                 style={s.row}
                 onPress={() => handleSelect(item)}
                 activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={`Select ${item.title}`}
               >
                 {/* Emoji icon */}
                 <View style={[s.iconWrap, { backgroundColor: item.iconBg }]}>

@@ -6,15 +6,60 @@ import {
   getDailyPlan,
 } from '../controllers/aiController.js';
 import { authenticate } from '../middleware/auth.js';
+import { createValidationMiddleware } from '../middleware/validate.js';
+import { createAiQuotaMiddleware } from '../services/aiUsage.js';
+import {
+  validateBreakdownBody,
+  validateDailyPlanBody,
+  validateRescheduleBody,
+  validateSplitBody,
+} from '../services/validation.js';
 
-const router = express.Router();
+function requireGroqApiKey(req, res, next) {
+  if (!process.env.GROQ_API_KEY) {
+    return res.status(503).json({ error: 'AI service is not configured' });
+  }
+  return next();
+}
 
-// Apply authentication middleware to all AI routes
-router.use(authenticate);
+export function createAiRouter({
+  authMiddleware = authenticate,
+  quotaMiddleware = createAiQuotaMiddleware(),
+} = {}) {
+  const router = express.Router();
 
-router.post('/breakdown',    breakTaskIntoSteps);
-router.post('/reschedule',   rescheduleTask);
-router.post('/suggest-split', suggestSplit);
-router.post('/daily-plan',   getDailyPlan);
+  router.use(authMiddleware);
 
-export default router;
+  router.post(
+    '/breakdown',
+    createValidationMiddleware(validateBreakdownBody),
+    requireGroqApiKey,
+    quotaMiddleware,
+    breakTaskIntoSteps
+  );
+  router.post(
+    '/reschedule',
+    createValidationMiddleware(validateRescheduleBody),
+    requireGroqApiKey,
+    quotaMiddleware,
+    rescheduleTask
+  );
+  router.post(
+    '/suggest-split',
+    createValidationMiddleware(validateSplitBody),
+    requireGroqApiKey,
+    quotaMiddleware,
+    suggestSplit
+  );
+  router.post(
+    '/daily-plan',
+    createValidationMiddleware(validateDailyPlanBody),
+    requireGroqApiKey,
+    quotaMiddleware,
+    getDailyPlan
+  );
+
+  return router;
+}
+
+export default createAiRouter();

@@ -1,48 +1,23 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
-import LottieView from "lottie-react-native";
 
 export default function Loader() {
-  const dots = [
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-  ];
-
-  const bounce = (anim: Animated.Value, delay: number) =>
-    Animated.loop(
-      Animated.sequence([
-        Animated.delay(delay),
-        Animated.timing(anim, {
-          toValue: -6,
-          duration: 170,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim, {
-          toValue: 0,
-          duration: 170,
-          useNativeDriver: true,
-        }),
-      ])
-    );
+  const dots = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
 
   useEffect(() => {
     Animated.parallel([
-      bounce(dots[0], 0),
-      bounce(dots[1], 150),
-      bounce(dots[2], 300),
+      createBounce(dots[0], 0),
+      createBounce(dots[1], 150),
+      createBounce(dots[2], 300),
     ]).start();
-  }, []);
+  }, [dots]);
 
   return (
     <View style={styles.container}>
-      <LottieView
-        source={require("../assets/lottie/generating.json")}
-        autoPlay
-        loop
-        style={styles.lottie}
-      />
-
       <View style={styles.textRow}>
         <Text style={styles.text}>Processing</Text>
 
@@ -62,19 +37,32 @@ export default function Loader() {
   );
 }
 
+function createBounce(anim: Animated.Value, delay: number) {
+  return Animated.loop(
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.timing(anim, {
+        toValue: -6,
+        duration: 170,
+        useNativeDriver: true,
+      }),
+      Animated.timing(anim, {
+        toValue: 0,
+        duration: 170,
+        useNativeDriver: true,
+      }),
+    ])
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  lottie: {
-    width: 200,
-    height: 200,
-  },
   textRow: {
     flexDirection: "row",
-    marginTop: 0,
     marginBottom: 120,
   },
   text: {

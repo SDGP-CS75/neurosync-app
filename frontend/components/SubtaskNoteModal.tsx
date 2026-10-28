@@ -65,6 +65,7 @@ export default function SubtaskNoteModal({
           style={s.backdrop}
           activeOpacity={1}
           onPress={onClose}
+          accessible={false}
         >
           <View
             style={[s.sheet, { backgroundColor: theme.colors.surface }]}
@@ -89,6 +90,8 @@ export default function SubtaskNoteModal({
                 onPress={onClose}
                 hitSlop={12}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Close subtask note"
               >
                 <Ionicons name="close" size={24} color={theme.colors.textMuted} />
               </TouchableOpacity>
@@ -133,6 +136,7 @@ export default function SubtaskNoteModal({
                 maxLength={MAX_NOTE_LENGTH + 10}
                 textAlignVertical="top"
                 autoFocus
+                accessibilityLabel={`Note for ${subtaskText}`}
               />
 
               {/* Clear button */}
@@ -142,6 +146,8 @@ export default function SubtaskNoteModal({
                   onPress={handleClear}
                   hitSlop={8}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear subtask note"
                 >
                   <Ionicons
                     name="close-circle"
@@ -184,6 +190,8 @@ export default function SubtaskNoteModal({
                 ]}
                 onPress={onClose}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel subtask note"
               >
                 <Text style={[s.cancelText, { color: theme.colors.textMuted }]}>
                   Cancel
@@ -201,6 +209,9 @@ export default function SubtaskNoteModal({
                 onPress={handleSave}
                 disabled={isOverLimit}
                 activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel="Save subtask note"
+                accessibilityState={{ disabled: isOverLimit }}
               >
                 <Ionicons name="checkmark" size={18} color="#FFF" />
                 <Text style={s.saveText}>Save Note</Text>
