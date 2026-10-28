@@ -8,6 +8,9 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import type { Task } from '../types';
 
+const MAX_RECURRING_OCCURRENCES = 30;
+const MAX_PENDING_NOTIFICATIONS = 50;
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface NotificationOptions {
@@ -99,14 +102,16 @@ function isTriggerTimeInPast(triggerTime: Date): boolean {
 /**
  * Get sound based on option
  */
-function getSound(option?: 'default' | 'gentle' | 'urgent' | 'none'): string | undefined {
+function getSound(
+  option?: 'default' | 'gentle' | 'urgent' | 'none'
+): string | false {
   switch (option) {
     case 'gentle':
-      return 'gentle.wav'; // Custom sound file (to be added)
+      return 'gentle.wav';
     case 'urgent':
-      return 'urgent.wav'; // Custom sound file (to be added)
+      return 'urgent.wav';
     case 'none':
-      return undefined;
+      return false;
     case 'default':
     default:
       return 'default';
@@ -300,6 +305,31 @@ export async function scheduleTaskNotification(
   }
 }
 
+export async function presentTaskCompletionNotification(
+  taskTitle?: string | null
+): Promise<void> {
+  try {
+    await Notifications.scheduleNotificationAsync({
+      identifier: `focus-complete-${Date.now()}`,
+      content: {
+        title: 'Focus session complete',
+        body: taskTitle
+          ? `Nice work on "${taskTitle}". Take a short break.`
+          : 'Nice work. Take a short break before the next session.',
+        data: {
+          type: 'focus-complete',
+        },
+        sound: getSound('default'),
+        vibrate: getVibrationPattern('default'),
+        priority: getPriority('high'),
+      },
+      trigger: null,
+    });
+  } catch (error) {
+    console.error('Error presenting focus completion notification:', error);
+  }
+}
+
 /**
  * Schedule recurring notifications for a task
  */
@@ -318,7 +348,10 @@ export async function scheduleRecurringNotification(
   const notificationIds: string[] = [];
 
   // Calculate max occurrences
-  let maxOccurrences = recurringOptions.maxOccurrences ?? 365;
+  let maxOccurrences = Math.min(
+    recurringOptions.maxOccurrences ?? MAX_RECURRING_OCCURRENCES,
+    MAX_RECURRING_OCCURRENCES
+  );
   if (recurringOptions.endDate) {
     const endDate = new Date(recurringOptions.endDate);
     let count = 0;
@@ -420,7 +453,10 @@ export async function cancelTaskNotification(taskId: string): Promise<void> {
       }
     } catch {
       // Fallback for environments where getAllScheduledNotificationsAsync is unsupported
-      const fallbackIds = Array.from({ length: 30 }, (_, i) => getNotificationId(taskId, i));
+      const fallbackIds = Array.from(
+        { length: MAX_RECURRING_OCCURRENCES },
+        (_, i) => getNotificationId(taskId, i)
+      );
       await Promise.all(
         fallbackIds.map((id) =>
           Notifications.cancelScheduledNotificationAsync(id).catch(() => {})
@@ -651,8 +687,14 @@ export async function rescheduleAllNotifications(tasks: NotificationTask[]): Pro
   let scheduledCount = 0;
   let skippedCount = 0;
   let errorCount = 0;
+  let remainingBudget = MAX_PENDING_NOTIFICATIONS;
   
   for (const task of tasks) {
+    if (remainingBudget <= 0) {
+      skippedCount++;
+      continue;
+    }
+
     // Skip tasks without reminders or due dates
     if (!task.reminder || !task.dueDate) {
       continue;
@@ -670,6 +712,12 @@ export async function rescheduleAllNotifications(tasks: NotificationTask[]): Pro
           endDate: task.recurringReminder.endDate
             ? new Date(task.recurringReminder.endDate)
             : undefined,
+          maxOccurrences: Math.min(
+            task.recurringReminder.maxOccurrences ??
+              MAX_RECURRING_OCCURRENCES,
+            remainingBudget,
+            MAX_RECURRING_OCCURRENCES
+          ),
         };
         const result = await scheduleRecurringNotification(task, recurringOptions, {
           sound: task.reminderSound,
@@ -678,6 +726,7 @@ export async function rescheduleAllNotifications(tasks: NotificationTask[]): Pro
         });
         if (result) {
           scheduledCount++;
+          remainingBudget -= result.length;
         } else {
           skippedCount++;
         }
@@ -689,6 +738,7 @@ export async function rescheduleAllNotifications(tasks: NotificationTask[]): Pro
         });
         if (result) {
           scheduledCount++;
+          remainingBudget--;
         } else {
           skippedCount++;
         }
