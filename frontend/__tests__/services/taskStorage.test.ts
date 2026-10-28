@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import {
+  clearTaskStorageForUser,
   fromFirestoreTask,
   loadTaskTombstones,
   loadTasksForUser,
@@ -139,6 +140,15 @@ describe("task storage", () => {
       "@neurosync_task_tombstones_user-1",
       "{}"
     );
+  });
+
+  it("clears only the signed-in user's task cache and tombstones", async () => {
+    await clearTaskStorageForUser("user-1");
+
+    expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+      "@neurosync_tasks_user-1",
+      "@neurosync_task_tombstones_user-1",
+    ]);
   });
 
   it("normalizes legacy tasks and strips local-only fields before syncing", () => {

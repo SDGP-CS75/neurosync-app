@@ -2,11 +2,10 @@ import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from './firebase';
 import { getAuth } from 'firebase/auth';
-import { clearLocalTasks } from './tasks';
+import { clearTaskStorageForUser } from './taskStorage';
 
 const SESSIONS_STORAGE_KEY_PREFIX = '@neurosync_sessions_';
 const MOOD_ENTRIES_KEY = 'mood_entries';
-const TASKS_CONTEXT_KEY_PREFIX = '@neurosync_tasks_';
 
 /**
  * Reset all user data from Firebase and local storage
@@ -79,19 +78,11 @@ export async function resetAllData(): Promise<{ success: boolean; error?: string
 
     // Clear local storage data
     try {
-      // Clear tasks using the existing function
-      await clearLocalTasks();
+      if (user) await clearTaskStorageForUser(user.uid);
       console.log('Local tasks cleared');
 
-      // Clear TasksContext storage (uses different key format)
-      const allKeys = await AsyncStorage.getAllKeys();
-      const tasksContextKeys = allKeys.filter((key) => key.startsWith(TASKS_CONTEXT_KEY_PREFIX));
-      if (tasksContextKeys.length > 0) {
-        await AsyncStorage.multiRemove(tasksContextKeys);
-        console.log('TasksContext storage cleared');
-      }
-
       // Clear sessions (need to get all keys with the prefix)
+      const allKeys = await AsyncStorage.getAllKeys();
       const sessionKeys = allKeys.filter((key) => key.startsWith(SESSIONS_STORAGE_KEY_PREFIX));
       if (sessionKeys.length > 0) {
         await AsyncStorage.multiRemove(sessionKeys);
@@ -141,17 +132,8 @@ export async function resetTasks(): Promise<{ success: boolean; error?: string }
       }
     }
 
-    // Clear local tasks using the existing function
-    await clearLocalTasks();
+    if (user) await clearTaskStorageForUser(user.uid);
     console.log('Local tasks cleared');
-
-    // Clear TasksContext storage (uses different key format)
-    const allKeys = await AsyncStorage.getAllKeys();
-    const tasksContextKeys = allKeys.filter((key) => key.startsWith(TASKS_CONTEXT_KEY_PREFIX));
-    if (tasksContextKeys.length > 0) {
-      await AsyncStorage.multiRemove(tasksContextKeys);
-      console.log('TasksContext storage cleared');
-    }
 
     return { success: true };
   } catch (error) {

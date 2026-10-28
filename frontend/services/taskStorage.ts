@@ -62,6 +62,13 @@ export async function saveTasksForUser(
   }
 }
 
+export async function clearTaskStorageForUser(userId: string): Promise<void> {
+  await AsyncStorage.multiRemove([
+    TASKS_STORAGE_KEY_PREFIX + userId,
+    TOMBSTONES_STORAGE_KEY_PREFIX + userId,
+  ]);
+}
+
 export async function loadTaskTombstones(
   userId: string
 ): Promise<TaskTombstones> {
