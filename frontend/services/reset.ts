@@ -203,8 +203,30 @@ export async function resetSessions(): Promise<{ success: boolean; error?: strin
  */
 export async function resetMoodEntries(): Promise<{ success: boolean; error?: string }> {
   try {
-    await AsyncStorage.removeItem(MOOD_ENTRIES_KEY);
-    console.log('Local mood entries cleared');
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (user) {
+      const moodsSnapshot = await getDocs(
+        collection(db, 'users', user.uid, 'moods')
+      );
+      await Promise.all(
+        moodsSnapshot.docs.map((moodDoc) =>
+          deleteDoc(doc(db, 'users', user.uid, 'moods', moodDoc.id))
+        )
+      );
+    }
+
+    const allKeys = await AsyncStorage.getAllKeys();
+    const moodKeys = allKeys.filter(
+      (key) =>
+        key.startsWith('@neurosync_mood_entries_') ||
+        key === MOOD_ENTRIES_KEY
+    );
+    if (moodKeys.length > 0) {
+      await AsyncStorage.multiRemove(moodKeys);
+    }
+
     return { success: true };
   } catch (error) {
     console.error('Error resetting mood entries:', error);

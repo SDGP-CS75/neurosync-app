@@ -1,12 +1,12 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Dimensions, Modal, Pressable, StyleSheet, Animated } from "react-native";
-import { useState, useRef, useEffect } from "react";
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, Pressable, StyleSheet, Animated } from "react-native";
+import { useState } from "react";
 import { BlurView } from 'expo-blur';
 import Slider from "@react-native-community/slider";
 import { useTheme } from "react-native-paper";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { collection, addDoc } from 'firebase/firestore';
-import { auth, db } from "../../services/firebase";
+import { auth } from "../../services/firebase";
+import { saveMoodEntry } from "../../services/moodStorage";
+import type { MoodEntry } from "../../types";
 import Nav from "../../components/Nav";
 import { useFadeIn, useSlideUp } from "../../utils/animations";
 
@@ -28,6 +28,8 @@ export default function MoodTracking() {
   const [energyLevel, setEnergyLevel] = useState(3);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [showSavedModal, setShowSavedModal] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const tags = ["Work", "Family", "Sleep", "Friends", "Health", "Hobby", "Love"];
 
@@ -60,45 +62,40 @@ export default function MoodTracking() {
     minute: "2-digit"
   });
 
-  const saveEntry = () => {
-    const entry = {
+  const saveEntry = async () => {
+    if (isSaving) return;
+
+    const uid = auth.currentUser?.uid;
+    if (!uid) {
+      setSaveError("Please sign in again before saving a mood.");
+      return;
+    }
+
+    const entry: MoodEntry = {
       id: `mood_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       mood,
       energyLevel,
-      note,
+      note: note.trim() || undefined,
       tags: selectedTags,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      isSynced: false,
     };
 
-    console.log("Mood Entry:", entry);
-    // persist entry to AsyncStorage with user scoping
-    (async () => {
-      try {
-        const uid = auth.currentUser?.uid;
-        const storageKey = uid ? `@neurosync_mood_entries_${uid}` : 'mood_entries';
-        const raw = await AsyncStorage.getItem(storageKey);
-        const arr = raw ? JSON.parse(raw) : [];
-        arr.unshift(entry); // newest first
-        await AsyncStorage.setItem(storageKey, JSON.stringify(arr));
-
-        // Sync to Firestore if user is authenticated
-        if (uid) {
-          addDoc(collection(db, 'users', uid, 'moods'), entry).catch((e) =>
-            console.warn('Failed to sync mood entry to Firestore:', e)
-          );
-        }
-
-        // reset inputs so next entry is fresh
-        setNote('');
-        setSelectedTags([]);
-        setMood(3);
-        setEnergyLevel(3);
-        // show success modal
-        setShowSavedModal(true);
-      } catch (e) {
-        console.log('Error saving mood entry', e);
-      }
-    })();
+    setIsSaving(true);
+    setSaveError(null);
+    try {
+      await saveMoodEntry(uid, entry);
+      setNote("");
+      setSelectedTags([]);
+      setMood(3);
+      setEnergyLevel(3);
+      setShowSavedModal(true);
+    } catch (error) {
+      console.error("Failed to save mood entry:", error);
+      setSaveError("Your mood could not be saved. Please try again.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // no entrance animation
@@ -334,6 +331,7 @@ export default function MoodTracking() {
             {/* Save Button */}
             <TouchableOpacity
               onPress={saveEntry}
+              disabled={isSaving}
               style={{
                 backgroundColor: colors.primary,
                 paddingVertical: 16,
@@ -344,14 +342,29 @@ export default function MoodTracking() {
                 alignSelf: 'stretch',
                 marginHorizontal: 16,
                 marginBottom: 38,
+                opacity: isSaving ? 0.65 : 1,
               }}
             >
             
               <Text style={{ color: colors.onPrimary, textAlign: "center", fontWeight: "700", fontSize: 16 }}>
-                Save Entry
+                {isSaving ? "Saving..." : "Save Entry"}
               </Text>
 
             </TouchableOpacity>
+            {saveError && (
+              <Text
+                accessibilityRole="alert"
+                style={{
+                  color: colors.error,
+                  marginHorizontal: 16,
+                  marginTop: -24,
+                  marginBottom: 28,
+                  textAlign: "center",
+                }}
+              >
+                {saveError}
+              </Text>
+            )}
 
         </ScrollView>
 

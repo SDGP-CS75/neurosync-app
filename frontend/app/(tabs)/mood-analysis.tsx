@@ -1,45 +1,53 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { View, Text, ScrollView, StyleSheet, Dimensions, TouchableOpacity, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import Nav from '../../components/Nav';
 import { useUser } from '../../context/UserContext';
 import { auth } from '../../services/firebase';
-import { useFadeIn, useSlideUp, useStaggerAnimation } from '../../utils/animations';
+import { loadMoodEntries } from '../../services/moodStorage';
+import type { MoodEntry } from '../../types';
+import { useFadeIn, useSlideUp } from '../../utils/animations';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function MoodAnalysis() {
   const { colors } = useTheme() as any;
   const { profile } = useUser();
-  const [entries, setEntries] = useState<any[]>([]);
+  const [entries, setEntries] = useState<MoodEntry[]>([]);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   
   // Animation hooks
   const headerFade = useFadeIn(300, 0);
   const analyticsSlide = useSlideUp(400, 100);
   const chartFade = useFadeIn(400, 200);
-  const feedbackSlide = useSlideUp(400, 300);
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const uid = auth.currentUser?.uid;
-        const storageKey = uid ? `@neurosync_mood_entries_${uid}` : 'mood_entries';
-        let raw = await AsyncStorage.getItem(storageKey);
-        // Fallback to legacy key if user-specific key is empty
-        if (!raw && uid) {
-          raw = await AsyncStorage.getItem('mood_entries');
-        }
-        const arr = raw ? JSON.parse(raw) : [];
-        setEntries(arr);
-      } catch (e) {
-        console.log('Error loading mood entries', e);
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const uid = auth.currentUser?.uid;
+
+      if (!uid) {
+        setEntries([]);
+        return () => {
+          isActive = false;
+        };
       }
-    };
-    load();
-  }, []);
+
+      loadMoodEntries(uid)
+        .then((loadedEntries) => {
+          if (isActive) setEntries(loadedEntries);
+        })
+        .catch((error) => {
+          console.warn('Error loading mood entries:', error);
+        });
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
 
   // group entries by local date and prepare days array (newest first)
   const days = useMemo(() => {

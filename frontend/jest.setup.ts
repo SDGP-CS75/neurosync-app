@@ -47,6 +47,20 @@ jest.mock("expo-router", () => {
   };
 });
 
+jest.mock("@react-navigation/native", () => {
+  const React = require("react");
+  const actual = jest.requireActual<Record<string, unknown>>(
+    "@react-navigation/native"
+  );
+
+  return {
+    ...actual,
+    useFocusEffect: (effect: () => void | (() => void)) => {
+      React.useEffect(effect, [effect]);
+    },
+  };
+});
+
 jest.mock("@expo/vector-icons", () => {
   const React = require("react");
   const { Text } = require("react-native");

@@ -25,6 +25,7 @@ import UndoSnackbar from "../components/UndoSnackbar";
 import { requestNotificationPermissions } from "../services/notifications";
 import { auth } from "../services/firebase";
 import { syncPendingSessions } from "../services/sessionStorage";
+import { syncPendingMoods } from "../services/moodStorage";
 
 function AppShell() {
   const { theme } = useAppTheme();
@@ -58,8 +59,11 @@ function AppShell() {
 
     const sync = () => {
       if (!userId) return;
-      syncPendingSessions(userId).catch((error) => {
-        console.warn("Failed to sync pending sessions:", error);
+      Promise.all([
+        syncPendingSessions(userId),
+        syncPendingMoods(userId),
+      ]).catch((error) => {
+        console.warn("Failed to sync pending user data:", error);
       });
     };
 
