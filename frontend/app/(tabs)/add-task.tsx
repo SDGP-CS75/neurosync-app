@@ -255,6 +255,9 @@ function DateTimePickerModal({
                 ]}
                 onPress={() => setTab(t)}
                 activeOpacity={0.8}
+                accessibilityRole="tab"
+                accessibilityLabel={`${t === "date" ? "Date" : "Time"} picker`}
+                accessibilityState={{ selected: tab === t }}
               >
                 <Ionicons
                   name={t === "date" ? "calendar-outline" : "time-outline"}
@@ -279,13 +282,25 @@ function DateTimePickerModal({
           {tab === "date" ? (
             <>
               <View style={pickerStyles.monthNav}>
-                <TouchableOpacity onPress={prevMonth} hitSlop={12} activeOpacity={0.7}>
+                <TouchableOpacity
+                  onPress={prevMonth}
+                  hitSlop={12}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous month"
+                >
                   <Ionicons name="chevron-back" size={22} color={text} />
                 </TouchableOpacity>
                 <Text style={[pickerStyles.monthLabel, { color: text }]}>
                   {MONTHS[viewMonth]} {viewYear}
                 </Text>
-                <TouchableOpacity onPress={nextMonth} hitSlop={12} activeOpacity={0.7}>
+                <TouchableOpacity
+                  onPress={nextMonth}
+                  hitSlop={12}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Next month"
+                >
                   <Ionicons name="chevron-forward" size={22} color={text} />
                 </TouchableOpacity>
               </View>
@@ -312,6 +327,16 @@ function DateTimePickerModal({
                       ]}
                       onPress={() => valid && selectDay(day)}
                       activeOpacity={valid ? 0.75 : 1}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        valid
+                          ? `${MONTHS[viewMonth]} ${day}, ${viewYear}`
+                          : undefined
+                      }
+                      accessibilityState={{
+                        selected: isSel,
+                        disabled: !valid,
+                      }}
                     >
                       <Text style={[
                         pickerStyles.cellText,
@@ -332,6 +357,8 @@ function DateTimePickerModal({
                   setSelDate(todayD); setSelMonth(todayM); setSelYear(todayY);
                 }}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Select today"
               >
                 <Text style={[pickerStyles.todayBtnText, { color: primaryColor }]}>Today</Text>
               </TouchableOpacity>
@@ -339,7 +366,13 @@ function DateTimePickerModal({
           ) : (
             <View style={pickerStyles.timeTab}>
               <View style={pickerStyles.spinnerCol}>
-                <TouchableOpacity onPress={() => adjustHour(1)} hitSlop={16} activeOpacity={0.7}>
+                <TouchableOpacity
+                  onPress={() => adjustHour(1)}
+                  hitSlop={16}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase hour"
+                >
                   <Ionicons name="chevron-up" size={26} color={primaryColor} />
                 </TouchableOpacity>
                 <View style={[pickerStyles.spinnerBox, { borderColor: outline, backgroundColor: surfVar }]}>
@@ -347,7 +380,13 @@ function DateTimePickerModal({
                     {String(display12Hour).padStart(2, "0")}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => adjustHour(-1)} hitSlop={16} activeOpacity={0.7}>
+                <TouchableOpacity
+                  onPress={() => adjustHour(-1)}
+                  hitSlop={16}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease hour"
+                >
                   <Ionicons name="chevron-down" size={26} color={primaryColor} />
                 </TouchableOpacity>
                 <Text style={[pickerStyles.spinnerLabel, { color: muted }]}>Hour</Text>
@@ -356,7 +395,13 @@ function DateTimePickerModal({
               <Text style={[pickerStyles.colon, { color: text }]}>:</Text>
 
               <View style={pickerStyles.spinnerCol}>
-                <TouchableOpacity onPress={() => adjustMin(1)} hitSlop={16} activeOpacity={0.7}>
+                <TouchableOpacity
+                  onPress={() => adjustMin(1)}
+                  hitSlop={16}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Increase minutes"
+                >
                   <Ionicons name="chevron-up" size={26} color={primaryColor} />
                 </TouchableOpacity>
                 <View style={[pickerStyles.spinnerBox, { borderColor: outline, backgroundColor: surfVar }]}>
@@ -364,7 +409,13 @@ function DateTimePickerModal({
                     {String(selMin).padStart(2, "0")}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => adjustMin(-1)} hitSlop={16} activeOpacity={0.7}>
+                <TouchableOpacity
+                  onPress={() => adjustMin(-1)}
+                  hitSlop={16}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Decrease minutes"
+                >
                   <Ionicons name="chevron-down" size={26} color={primaryColor} />
                 </TouchableOpacity>
                 <Text style={[pickerStyles.spinnerLabel, { color: muted }]}>Min</Text>
@@ -382,6 +433,9 @@ function DateTimePickerModal({
                         : { backgroundColor: surfVar, borderColor: outline, borderWidth: 1 },
                     ]}
                     activeOpacity={0.8}
+                    accessibilityRole="radio"
+                    accessibilityLabel={p}
+                    accessibilityState={{ checked: ampm === p }}
                   >
                     <Text style={[pickerStyles.ampmText, { color: ampm === p ? "#FFF" : muted }]}>
                       {p}
@@ -397,6 +451,8 @@ function DateTimePickerModal({
               style={[pickerStyles.cancelAction, { borderColor: outline }]}
               onPress={onCancel}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel date and time selection"
             >
               <Text style={[pickerStyles.cancelActionText, { color: muted }]}>Cancel</Text>
             </TouchableOpacity>
@@ -404,6 +460,8 @@ function DateTimePickerModal({
               style={[pickerStyles.confirmAction, { backgroundColor: primaryColor }]}
               onPress={handleConfirm}
               activeOpacity={0.85}
+              accessibilityRole="button"
+              accessibilityLabel="Confirm date and time"
             >
               <Text style={pickerStyles.confirmActionText}>Confirm</Text>
             </TouchableOpacity>
@@ -983,6 +1041,10 @@ export default function AddTaskScreen() {
             }
             delayLongPress={400}
             activeOpacity={0.8}
+            accessibilityRole="checkbox"
+            accessibilityLabel={`${st.text}${st.notes ? `. Note: ${st.notes}` : ""}`}
+            accessibilityHint="Tap to toggle completion. Long press to edit the note."
+            accessibilityState={{ checked: st.isAdding }}
           >
             <View style={[styles.checkbox, {
               borderColor: theme.colors.textMuted,
@@ -1021,6 +1083,9 @@ export default function AddTaskScreen() {
               delayLongPress={100}
               hitSlop={8}
               style={styles.dragHandle}
+              accessibilityRole="button"
+              accessibilityLabel={`Reorder ${st.text}`}
+              accessibilityHint="Long press and drag to reorder this subtask."
             >
               <Ionicons name="reorder-three-outline" size={20} color={theme.colors.textMuted} />
             </TouchableOpacity>
@@ -1107,7 +1172,13 @@ export default function AddTaskScreen() {
             },
           ]}
         >
-          <TouchableOpacity onPress={handleBack} hitSlop={12} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={handleBack}
+            hitSlop={12}
+            activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
             <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.colors.text }]}>New Task</Text>
@@ -1146,11 +1217,15 @@ export default function AddTaskScreen() {
               textAlignVertical="top"
               mode="outlined"
               outlineStyle={{ borderRadius: 16 }}
+              accessibilityLabel="Task title and description"
             />
             {speechAvailable && (
               <TouchableOpacity
                 onPress={isRecording ? stopRecording : startRecording}
                 style={styles.micButton}
+                accessibilityRole="button"
+                accessibilityLabel={isRecording ? "Stop voice input" : "Start voice input"}
+                accessibilityState={{ busy: isRecording }}
               >
                 <Ionicons
                   name={isRecording ? "mic" : "mic-outline"}
@@ -1181,6 +1256,14 @@ export default function AddTaskScreen() {
             onPress={handleBreakIntoSteps}
             activeOpacity={0.85}
             disabled={aiLoading || !mainTask.trim()}
+            accessibilityRole="button"
+            accessibilityLabel={
+              aiLoading ? "Breaking task into steps" : "Break task into steps with AI"
+            }
+            accessibilityState={{
+              busy: aiLoading,
+              disabled: aiLoading || !mainTask.trim(),
+            }}
           >
             {aiLoading ? (
               <Text style={styles.aiButtonText}>Breaking into steps…</Text>
@@ -1244,6 +1327,8 @@ export default function AddTaskScreen() {
                   style={[styles.splitKeepBtn, { borderColor: theme.colors.outline }]}
                   onPress={() => { setShowSplitCard(false); setSplitError(null); }}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Keep task as one task"
                 >
                   <Text style={[styles.splitKeepText, { color: theme.colors.textMuted }]}>
                     Keep as one
@@ -1257,6 +1342,9 @@ export default function AddTaskScreen() {
                   onPress={handleSplitTask}
                   disabled={splitLoading}
                   activeOpacity={0.85}
+                  accessibilityRole="button"
+                  accessibilityLabel={splitLoading ? "Splitting task" : "Split task across days"}
+                  accessibilityState={{ busy: splitLoading, disabled: splitLoading }}
                 >
                   {splitLoading ? (
                     <ActivityIndicator size="small" color="#FFF" />
@@ -1279,6 +1367,8 @@ export default function AddTaskScreen() {
             style={[styles.detailRow, { backgroundColor: rowBg }]}
             onPress={() => setShowDatePicker(true)}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`When: ${whenDisplay || "not set"}. Open date and time picker.`}
           >
             <Ionicons name="calendar-outline" size={22} color={theme.colors.primary} />
             <View style={styles.detailTextWrap}>
@@ -1302,6 +1392,8 @@ export default function AddTaskScreen() {
                     setRescheduleError(null);
                   }}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Reschedule task in natural language"
                 >
                   <Text style={[styles.rescheduleLink, { color: theme.colors.primary }]}>
                     Reschedule
@@ -1315,6 +1407,8 @@ export default function AddTaskScreen() {
                     setShowRescheduleInput(false);
                   }}
                   activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear task date and time"
                 >
                   <Ionicons name="close-circle" size={20} color={theme.colors.textMuted} />
                 </TouchableOpacity>
@@ -1342,6 +1436,7 @@ export default function AddTaskScreen() {
                 onSubmitEditing={handleReschedule}
                 returnKeyType="done"
                 autoFocus
+                accessibilityLabel="Reschedule instruction"
               />
               <TouchableOpacity
                 style={[styles.rescheduleSubmitBtn, {
@@ -1351,6 +1446,14 @@ export default function AddTaskScreen() {
                 onPress={handleReschedule}
                 disabled={rescheduleLoading || !rescheduleText.trim()}
                 activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  rescheduleLoading ? "Rescheduling task" : "Apply reschedule instruction"
+                }
+                accessibilityState={{
+                  busy: rescheduleLoading,
+                  disabled: rescheduleLoading || !rescheduleText.trim(),
+                }}
               >
                 {rescheduleLoading ? (
                   <ActivityIndicator size="small" color="#FFF" />
@@ -1377,6 +1480,8 @@ export default function AddTaskScreen() {
             style={[styles.detailRow, { backgroundColor: rowBg }]}
             onPress={() => setLocationDialog(true)}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`Location: ${location || "not set"}`}
           >
             <Ionicons name="location-outline" size={22} color={theme.colors.primary} />
             <View style={styles.detailTextWrap}>
@@ -1403,6 +1508,8 @@ export default function AddTaskScreen() {
             style={[styles.detailRow, { backgroundColor: rowBg }]}
             onPress={() => setShowReminderPicker(true)}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`Reminder: ${getReminderDisplayText(reminder)}`}
           >
             <Ionicons name="notifications-outline" size={22} color="#E65100" />
             <View style={styles.detailTextWrap}>
@@ -1445,6 +1552,8 @@ export default function AddTaskScreen() {
             style={[styles.addSubTaskBtn, { borderColor: theme.colors.primary }]}
             onPress={() => setSubTaskDialog(true)}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel="Add subtask"
           >
             <Ionicons name="add" size={20} color={theme.colors.primary} />
             <Text style={[styles.addSubTaskText, { color: theme.colors.primary }]}>
@@ -1466,6 +1575,18 @@ export default function AddTaskScreen() {
               onPress={handleSaveAsTemplate}
               disabled={templateSaving || templateSaved}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={
+                templateSaved
+                  ? "Saved as template"
+                  : templateSaving
+                    ? "Saving as template"
+                    : "Save as template"
+              }
+              accessibilityState={{
+                busy: templateSaving,
+                disabled: templateSaving || templateSaved,
+              }}
             >
               {templateSaving ? (
                 <ActivityIndicator size="small" color={theme.colors.primary} />
@@ -1497,6 +1618,9 @@ export default function AddTaskScreen() {
             onPress={handleSave}
             activeOpacity={0.85}
             disabled={!mainTask.trim()}
+            accessibilityRole="button"
+            accessibilityLabel="Save task"
+            accessibilityState={{ disabled: !mainTask.trim() }}
           >
             <Text style={styles.saveButtonText}>Save Task</Text>
           </TouchableOpacity>
@@ -1526,6 +1650,9 @@ export default function AddTaskScreen() {
                     key={opt.value}
                     style={[styles.sheetOption, { borderBottomColor: theme.colors.outline }]}
                     onPress={() => { setReminder(opt.value); setShowReminderPicker(false); }}
+                    accessibilityRole="radio"
+                    accessibilityLabel={opt.label}
+                    accessibilityState={{ checked: reminder === opt.value }}
                   >
                     <View style={{ flex: 1 }}>
                       <Text style={[
@@ -1553,6 +1680,8 @@ export default function AddTaskScreen() {
               <TouchableOpacity
                 style={[styles.sheetCancel, { backgroundColor: theme.colors.surfaceVariant }]}
                 onPress={() => setShowReminderPicker(false)}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel reminder selection"
               >
                 <Text style={[styles.sheetCancelText, { color: theme.colors.text }]}>Cancel</Text>
               </TouchableOpacity>
