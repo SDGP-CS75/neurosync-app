@@ -234,12 +234,33 @@ export default function HomeScreen() {
       return;
     }
 
+    const summaryTime = new Date();
+    summaryTime.setHours(20, 0, 0, 0);
+    if (summaryTime.getTime() <= Date.now()) {
+      Alert.alert(
+        "Too Late Today",
+        "The 8 PM summary time has passed. Try again tomorrow before 8 PM."
+      );
+      return;
+    }
+
     setIsScheduling(true);
     try {
-      const summaryTime = new Date();
-      summaryTime.setHours(20, 0, 0, 0); // Schedule for 8 PM today
+      const pendingTitles = todayTasks
+        .filter((task) => task.status !== "done")
+        .slice(0, 3)
+        .map((task) => task.title);
+      const remainingLabel = `${remainingToday} task${
+        remainingToday === 1 ? "" : "s"
+      } remaining`;
+      const extraTasks = remainingToday - pendingTitles.length;
+      const summaryBody = remainingToday
+        ? `${remainingLabel}: ${pendingTitles.join(", ")}${
+            extraTasks > 0 ? ` and ${extraTasks} more` : ""
+          }`
+        : "All of today's tasks are complete.";
 
-      await scheduleTaskNotification(
+      const notificationId = await scheduleTaskNotification(
         {
           id: `daily-summary-${todayKey}`,
           title: "Daily Task Summary",
@@ -253,8 +274,13 @@ export default function HomeScreen() {
           sound: "default",
           vibration: "default",
           priority: "high",
+          body: summaryBody,
         }
       );
+
+      if (!notificationId) {
+        throw new Error("Notification could not be scheduled");
+      }
 
       Alert.alert(
         "Summary Scheduled",

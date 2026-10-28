@@ -17,6 +17,7 @@ export interface NotificationOptions {
   sound?: 'default' | 'gentle' | 'urgent' | 'none';
   vibration?: 'default' | 'light' | 'heavy' | 'none';
   priority?: 'default' | 'high' | 'low';
+  body?: string;
 }
 
 export interface RecurringOptions {
@@ -274,7 +275,9 @@ export async function scheduleTaskNotification(
       identifier: notificationId,
       content: {
         title: task.title,
-        body: `Reminder: ${task.title} is due ${formatDueTime(task.dueDate)}`,
+        body:
+          options?.body ??
+          `Reminder: ${task.title} is due ${formatDueTime(task.dueDate)}`,
         data: {
           taskId: task.id,
           type: 'task-reminder',

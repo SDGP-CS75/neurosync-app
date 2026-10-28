@@ -54,6 +54,28 @@ describe("notification service", () => {
     );
   });
 
+  it("uses a custom summary body when supplied", async () => {
+    await scheduleTaskNotification(
+      {
+        id: "daily-summary",
+        title: "Daily Task Summary",
+        dueDate: "2026-10-28T20:00:00.000Z",
+        reminder: "0",
+      },
+      {
+        body: "2 tasks remaining: Write report, Review notes",
+      }
+    );
+
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        content: expect.objectContaining({
+          body: "2 tasks remaining: Write report, Review notes",
+        }),
+      })
+    );
+  });
+
   it("presents focus completion immediately", async () => {
     await presentTaskCompletionNotification("Write report");
 
