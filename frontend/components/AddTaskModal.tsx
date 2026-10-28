@@ -110,6 +110,7 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
         style={styles.backdrop}
         activeOpacity={1}
         onPress={onClose}
+        accessible={false}
       >
         <View
           style={[
@@ -129,7 +130,13 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
             <Text style={[styles.title, { color: theme.colors.text }]}>
               Add New Task
             </Text>
-            <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+            <TouchableOpacity
+              onPress={onClose}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Close add task form"
+              hitSlop={12}
+            >
               <Ionicons name="close" size={26} color={theme.colors.textMuted} />
             </TouchableOpacity>
           </View>
@@ -154,6 +161,7 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
                 placeholderTextColor={theme.colors.textMuted}
                 value={title}
                 onChangeText={setTitle}
+                accessibilityLabel="Task title"
               />
             </View>
 
@@ -186,6 +194,9 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
                             : theme.colors.outline,
                         },
                       ]}
+                      accessibilityRole="radio"
+                      accessibilityLabel={cat}
+                      accessibilityState={{ checked: isSelected }}
                     >
                       <Text style={styles.chipEmoji}>{meta.emoji}</Text>
                       <Text
@@ -220,6 +231,7 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
                 placeholderTextColor={theme.colors.textMuted}
                 value={time}
                 onChangeText={setTime}
+                accessibilityLabel="Task time"
               />
             </View>
 
@@ -241,6 +253,7 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
                 placeholderTextColor={theme.colors.textMuted}
                 value={location}
                 onChangeText={setLocation}
+                accessibilityLabel="Task location"
               />
             </View>
 
@@ -262,6 +275,7 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
                 placeholderTextColor={theme.colors.textMuted}
                 value={reminder}
                 onChangeText={setReminder}
+                accessibilityLabel="Task reminder"
               />
             </View>
 
@@ -292,6 +306,9 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
                             : theme.colors.outline,
                         },
                       ]}
+                      accessibilityRole="radio"
+                      accessibilityLabel={label}
+                      accessibilityState={{ checked: isSelected }}
                     >
                       <Text
                         style={[
@@ -312,6 +329,7 @@ export default function AddTaskModal({ visible, onClose, onSave }: AddTaskModalP
               onPress={handleSave}
               disabled={!title.trim()}
               style={styles.saveButton}
+              accessibilityLabel="Add task"
             >
               Add Task
             </Button>

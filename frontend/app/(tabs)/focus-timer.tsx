@@ -341,6 +341,8 @@ export default function FocusTimer() {
             style={styles.workingOnRow}
             onPress={() => setShowTaskPicker(true)}
             activeOpacity={0.8}
+            accessibilityRole="button"
+            accessibilityLabel={`Working on: ${linkedTaskLabel}. Open task picker.`}
           >
             {linkedTask ? (
               <View
@@ -388,6 +390,8 @@ export default function FocusTimer() {
             <TouchableOpacity
               style={styles.clearTaskBtn}
               onPress={() => setLinkedTask(undefined)}
+              accessibilityRole="button"
+              accessibilityLabel="Clear linked task"
             >
               <Text style={styles.clearTaskText}>Clear</Text>
             </TouchableOpacity>
@@ -409,6 +413,9 @@ export default function FocusTimer() {
               mode === "focus" && styles.modeButtonActive,
             ]}
             onPress={() => setMode("focus")}
+            accessibilityRole="radio"
+            accessibilityLabel={`Focus mode, ${focusDuration} minutes`}
+            accessibilityState={{ checked: mode === "focus" }}
           >
             <Ionicons
               name="bulb"
@@ -439,6 +446,9 @@ export default function FocusTimer() {
               mode === "break" && styles.modeButtonActive,
             ]}
             onPress={() => setMode("break")}
+            accessibilityRole="radio"
+            accessibilityLabel={`Break mode, ${breakDuration} minutes`}
+            accessibilityState={{ checked: mode === "break" }}
           >
             <Ionicons
               name="cafe"
@@ -493,6 +503,13 @@ export default function FocusTimer() {
                       styles.presetButtonActive,
                   ]}
                   onPress={() => handleDurationChange(duration)}
+                  accessibilityRole="radio"
+                  accessibilityLabel={`${duration} minutes`}
+                  accessibilityState={{
+                    checked:
+                      (mode === "focus" ? focusDuration : breakDuration) ===
+                        duration && !isCustomValue(),
+                  }}
                 >
                   <Text
                     style={[
@@ -537,6 +554,7 @@ export default function FocusTimer() {
                 maxLength={3}
                 value={mode === "focus" ? customFocusInput : customBreakInput}
                 onChangeText={handleCustomDurationChange}
+                accessibilityLabel={`Custom ${mode} duration in minutes`}
               />
               <Text style={styles.customInputUnit}>min</Text>
             </View>
@@ -586,7 +604,12 @@ export default function FocusTimer() {
             },
           ]}
         >
-          <TouchableOpacity style={styles.startButton} onPress={handleStartTimer}>
+          <TouchableOpacity
+            style={styles.startButton}
+            onPress={handleStartTimer}
+            accessibilityRole="button"
+            accessibilityLabel={`Start ${mode} session`}
+          >
             <Ionicons name="play" size={24} color="#fff" />
             <Text style={styles.startButtonText}>Start Focus Session</Text>
           </TouchableOpacity>

@@ -80,6 +80,8 @@ function EyeRestActivity({ onDone, theme }: { onDone: () => void; theme: any }) 
         style={[actStyles.doneButton, { backgroundColor: theme.colors.primary }]}
         onPress={onDone}
         activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Finish eye rest activity"
       >
         <Text style={actStyles.doneButtonText}>Done</Text>
       </TouchableOpacity>
@@ -198,6 +200,8 @@ function BreathingActivity({ onDone, theme }: { onDone: () => void; theme: any }
         style={[actStyles.doneButton, { backgroundColor: theme.colors.primary }]}
         onPress={onDone}
         activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel="Finish breathing activity"
       >
         <Text style={actStyles.doneButtonText}>Done</Text>
       </TouchableOpacity>
@@ -258,6 +262,8 @@ function StretchActivity({ onDone, theme }: { onDone: () => void; theme: any }) 
         style={[actStyles.doneButton, { backgroundColor: theme.colors.primary }]}
         onPress={isLast ? onDone : () => setStep((s) => s + 1)}
         activeOpacity={0.85}
+        accessibilityRole="button"
+        accessibilityLabel={isLast ? "Finish stretch activity" : "Next stretch"}
       >
         <Text style={actStyles.doneButtonText}>
           {isLast ? "Done" : "Next →"}
@@ -306,6 +312,8 @@ export default function BreakActivityModal({
               hitSlop={12} 
               activeOpacity={0.7}
               style={s.skipButton}
+              accessibilityRole="button"
+              accessibilityLabel="Skip break activity"
             >
               <Text style={[s.skipButtonText, { color: theme.colors.primary }]}>
                 Skip

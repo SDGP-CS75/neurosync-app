@@ -233,6 +233,9 @@ function SubtaskCompletionPrompt({
                   ]}
                   onPress={() => onToggle(item.id)}
                   activeOpacity={0.75}
+                  accessibilityRole="checkbox"
+                  accessibilityLabel={item.text}
+                  accessibilityState={{ checked: item.isDone }}
                 >
                   <View
                     style={[
@@ -276,6 +279,8 @@ function SubtaskCompletionPrompt({
                 { borderColor: theme.colors.outline },
               ]}
               onPress={onProceed}
+              accessibilityRole="button"
+              accessibilityLabel="Skip subtask check"
             >
               <Text
                 style={[
@@ -292,6 +297,8 @@ function SubtaskCompletionPrompt({
                 { backgroundColor: theme.colors.primary },
               ]}
               onPress={onProceed}
+              accessibilityRole="button"
+              accessibilityLabel="Continue to break"
             >
               <Text style={promptStyles.doneBtnText}>Done → Break</Text>
             </TouchableOpacity>
@@ -1085,6 +1092,8 @@ export default function FocusTimerCounting() {
                 <TouchableOpacity
                   onPress={() => setShowMusicPicker(false)}
                   style={styles.musicPickerClose}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close music picker"
                 >
                   <Ionicons
                     name="close"
@@ -1108,6 +1117,11 @@ export default function FocusTimerCounting() {
                         styles.musicPickerItemActive,
                     ]}
                     onPress={() => playMusicStream(stream)}
+                    accessibilityRole="radio"
+                    accessibilityLabel={stream.name}
+                    accessibilityState={{
+                      checked: selectedStream.id === stream.id && isMusicOn,
+                    }}
                   >
                     <View
                       style={[
@@ -1170,7 +1184,13 @@ export default function FocusTimerCounting() {
               },
             ]}
           >
-            <TouchableOpacity onPress={handleStop} style={styles.backButton}>
+            <TouchableOpacity
+              onPress={handleStop}
+              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="End session and go back"
+              hitSlop={12}
+            >
               <Ionicons
                 name="arrow-back"
                 size={24}
@@ -1263,7 +1283,12 @@ export default function FocusTimerCounting() {
                 duration={isRunning ? 1000 : 300}
               >
                 <View style={styles.timerContent}>
-                  <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+                  <Text
+                    style={styles.timerText}
+                    accessibilityLabel={`${formatTime(timeLeft)} remaining`}
+                  >
+                    {formatTime(timeLeft)}
+                  </Text>
                   <Text style={styles.timerLabel}>
                     {mode === "focus" ? "Stay focused!" : "Take a break"}
                   </Text>
@@ -1293,7 +1318,12 @@ export default function FocusTimerCounting() {
               },
             ]}
           >
-            <TouchableOpacity style={styles.secondaryButton} onPress={handleReset}>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={handleReset}
+              accessibilityRole="button"
+              accessibilityLabel="Reset timer"
+            >
               <Ionicons name="refresh" size={24} color={theme.colors.onSurface} />
               <Text style={styles.buttonLabel}>Reset</Text>
             </TouchableOpacity>
@@ -1301,6 +1331,9 @@ export default function FocusTimerCounting() {
             <TouchableOpacity
               style={styles.primaryButton}
               onPress={handleStartPause}
+              accessibilityRole="button"
+              accessibilityLabel={isRunning ? "Pause timer" : "Start timer"}
+              accessibilityState={{ selected: isRunning }}
             >
               <Ionicons
                 name={isRunning ? "pause" : "play"}
@@ -1312,6 +1345,8 @@ export default function FocusTimerCounting() {
             <TouchableOpacity
               style={styles.secondaryButton}
               onPress={handleSkip}
+              accessibilityRole="button"
+              accessibilityLabel={mode === "focus" ? "Skip to break" : "Skip break"}
             >
               <Ionicons
                 name="play-skip-forward"
@@ -1347,6 +1382,13 @@ export default function FocusTimerCounting() {
                 }
               }}
               disabled={isMusicLoading}
+              accessibilityRole="switch"
+              accessibilityLabel="Background music"
+              accessibilityState={{
+                checked: isMusicOn,
+                busy: isMusicLoading,
+                disabled: isMusicLoading,
+              }}
             >
               {isMusicLoading ? (
                 <ActivityIndicator size="small" color={theme.colors.primary} />
@@ -1374,6 +1416,8 @@ export default function FocusTimerCounting() {
             <TouchableOpacity
               style={styles.musicGenreButton}
               onPress={() => setShowMusicPicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`Choose music. Current stream: ${selectedStream.name}`}
             >
               <Ionicons
                 name={selectedStream.icon}
@@ -1391,7 +1435,12 @@ export default function FocusTimerCounting() {
               transform: [{ translateY: stopSlide }],
             }}
           >
-          <TouchableOpacity style={styles.stopButton} onPress={handleStop}>
+          <TouchableOpacity
+            style={styles.stopButton}
+            onPress={handleStop}
+            accessibilityRole="button"
+            accessibilityLabel="End focus session"
+          >
             <Ionicons
               name="stop-circle-outline"
               size={20}

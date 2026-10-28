@@ -140,6 +140,7 @@ export default function AnimatedModal({
         style={styles.backdrop}
         activeOpacity={1}
         onPress={onClose}
+        accessible={false}
       >
         <Animated.View
           style={[
