@@ -243,6 +243,13 @@ jest.mock("firebase/firestore", () => ({
   where: jest.fn(),
 }));
 
+jest.mock("firebase/storage", () => ({
+  getStorage: jest.fn(() => ({ storage: true })),
+  ref: jest.fn(() => ({ path: "profile-image" })),
+  uploadBytes: jest.fn().mockResolvedValue(undefined as never),
+  getDownloadURL: jest.fn().mockResolvedValue("https://example.com/avatar.png" as never),
+}));
+
 jest.mock("expo-audio", () => ({
   createAudioPlayer: jest.fn(() => ({
     loop: false,

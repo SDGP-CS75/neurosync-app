@@ -21,6 +21,7 @@ export default function SettingsScreen() {
   const { width } = useWindowDimensions();
   const activeColor = palette.primary;
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   // Animation values
   const headerFade = useRef(new Animated.Value(0)).current;
@@ -135,15 +136,33 @@ export default function SettingsScreen() {
 
   // Function to open the phone gallery
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    if (isUploadingImage) return;
+
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("Photo Access Needed", "Allow photo access to choose a profile image.");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
     });
 
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+    if (result.canceled) return;
+
+    setIsUploadingImage(true);
+    try {
+      await setProfileImage(result.assets[0]);
+    } catch (error) {
+      console.error("Failed to upload profile image:", {
+        name: error instanceof Error ? error.name : typeof error,
+      });
+      Alert.alert("Upload Failed", error instanceof Error ? error.message : "Please try again.");
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -245,6 +264,7 @@ export default function SettingsScreen() {
     
     profileImageContainer: { alignItems: 'center', marginBottom: 24 * scale, marginTop: 8 * scale },
     profileImage: { width: 100 * scale, height: 100 * scale, borderRadius: 50 * scale, borderWidth: 4 * scale },
+    profileImagePlaceholder: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' },
     editImageBadge: { position: 'absolute', bottom: 0, right: 0, width: 32 * scale, height: 32 * scale, borderRadius: 16 * scale, justifyContent: 'center', alignItems: 'center', borderWidth: 3 * scale, borderColor: 'white', boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.1)', elevation: 3 },
     
     inputRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14 * scale, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
@@ -301,15 +321,33 @@ export default function SettingsScreen() {
           <View style={styles.profileImageContainer}>
             <View>
               {/* Image source now uses the context! */}
-              <Image
-                source={{ uri: profile.profileImage || 'https://via.placeholder.com/100' }}
-                style={[styles.profileImage, { borderColor: activeColor }]} 
-              />
+              {profile.profileImage ? (
+                <Image
+                  source={{ uri: profile.profileImage }}
+                  style={[styles.profileImage, { borderColor: activeColor }]}
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.profileImage,
+                    styles.profileImagePlaceholder,
+                    { borderColor: activeColor },
+                  ]}
+                >
+                  <Ionicons name="person" size={42 * scale} color={activeColor} />
+                </View>
+              )}
+              {isUploadingImage ? (
+                <View style={[styles.profileImage, styles.profileImagePlaceholder, { position: 'absolute', opacity: 0.85 }]}>
+                  <ActivityIndicator color={activeColor} />
+                </View>
+              ) : null}
               {/* The button now triggers the pickImage function */}
               <TouchableOpacity 
                 style={[styles.editImageBadge, { backgroundColor: activeColor }]}
                 onPress={pickImage}
                 activeOpacity={0.8}
+                disabled={isUploadingImage}
               >
                 <Ionicons name="camera" size={14 * scale} color="white" />
               </TouchableOpacity>

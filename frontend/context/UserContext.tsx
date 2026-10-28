@@ -9,6 +9,7 @@ import {
   fallbackProfileFromUser,
   UserProfileData,
 } from '../services/userProfile';
+import { ProfileImageInput, uploadProfileImage } from '../services/profileImage';
 
 interface UserProfile {
   name: string;
@@ -24,7 +25,7 @@ interface UserContextType {
   profile: UserProfile;
   updateProfile: (updates: Partial<UserProfile>) => void;
   updateUserProfile: (updates: Partial<UserProfile>) => Promise<void>;
-  setProfileImage: (uri: string) => void;
+  setProfileImage: (image: ProfileImageInput) => Promise<void>;
   resetProfile: () => void;
   isLoading: boolean;
   saveThemePreference: (themeName: string) => Promise<void>;
@@ -148,14 +149,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
     }
   }, [userId]);
 
-  const setProfileImage = useCallback((uri: string) => {
-    setProfile((prev) => ({ ...prev, profileImage: uri }));
-    if (userId) {
-      const userDocRef = doc(db, 'users', userId);
-      setDoc(userDocRef, { photoURL: uri }, { merge: true }).catch((err) =>
-        console.error('Failed to sync profile image to Firestore:', err)
-      );
-    }
+  const setProfileImage = useCallback(async (image: ProfileImageInput) => {
+    if (!userId) throw new Error('You must be signed in to update your profile image.');
+
+    const photoURL = await uploadProfileImage(userId, image);
+    const userDocRef = doc(db, 'users', userId);
+    await setDoc(userDocRef, { photoURL }, { merge: true });
+    setProfile((prev) => ({ ...prev, profileImage: photoURL }));
   }, [userId]);
 
   const resetProfile = () => {
