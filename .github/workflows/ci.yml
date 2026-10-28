@@ -45,6 +45,21 @@ jobs:
       - run: find src -name '*.js' -print0 | xargs -0 -n1 node --check
       - run: npm test
 
+  security-rules:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run test:rules
+
   docker:
     runs-on: ubuntu-latest
     needs: backend
