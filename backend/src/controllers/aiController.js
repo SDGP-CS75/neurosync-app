@@ -5,7 +5,6 @@ import {
 } from '../services/dateContext.js';
 
 const GROQ_URL         = 'https://api.groq.com/openai/v1/chat/completions';
-const MAX_TASK_LENGTH  = 500;
 const MIN_TASK_LENGTH  = 3;
 const MAX_STEP_MINUTES = 90;
 const REQUEST_TIMEOUT  = 12_000;
@@ -290,7 +289,7 @@ function parseResponse(text) {
     : text.toLowerCase();
 
   if (REFUSAL_PHRASES.some(p => preJson.includes(p))) {
-    console.warn('[aiController] Refusal detected. Raw:', text.slice(0, 200));
+    console.warn('[aiController] Model returned a refusal');
     return { ...empty, _refusal: true };
   }
 
@@ -300,7 +299,7 @@ function parseResponse(text) {
   try {
     parsed = JSON.parse(stripped);
   } catch {
-    console.warn('[aiController] JSON parse failed:', stripped.slice(0, 200));
+    console.warn('[aiController] Model response was not valid JSON');
     const lines = stripped
       .split('\n')
       .map(s => sanitiseStep(s))
@@ -348,7 +347,7 @@ function parseResponse(text) {
     if (WHEN_RX.test(whenStr)) {
       when = whenStr;
     } else {
-      console.warn('[aiController] "when" failed format check, dropping:', whenStr);
+      console.warn('[aiController] Model returned an invalid date; dropping it');
     }
   }
 
@@ -438,7 +437,7 @@ async function buildPayload(model, taskStr, userId = null, timeZone = 'UTC') {
         }
       }
     } catch (err) {
-      console.warn('[aiController] Calibration fetch failed | user=' + userId + ' :', err?.message);
+      console.warn('[aiController] Calibration context could not be loaded');
     }
   }
 
@@ -456,18 +455,13 @@ async function buildPayload(model, taskStr, userId = null, timeZone = 'UTC') {
 // ── Controllers ────────────────────────────────────────────────────────────────
 
 export async function breakTaskIntoSteps(req, res) {
+  const { task } = req.validatedBody;
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
 
-  const { task } = req.body || {};
   const userId = req.user?.uid;
   const timeZone = resolveRequestTimeZone(req);
-  let taskStr = typeof task === 'string' ? task.trim() : '';
-
-  if (!taskStr)
-    return res.status(400).json({ error: 'Missing or empty task' });
-  if (taskStr.length > MAX_TASK_LENGTH)
-    return res.status(400).json({ error: `Task must be ${MAX_TASK_LENGTH} characters or fewer` });
+  let taskStr = task;
 
   taskStr = taskStr.replace(CONTROL_RX, ' ').trim();
   taskStr = cleanTaskInput(taskStr);
@@ -475,7 +469,7 @@ export async function breakTaskIntoSteps(req, res) {
 
   const meaningError = validateTaskMeaning(taskStr);
   if (meaningError) {
-    console.log(`[aiController] 422 rejected | user=${userId ?? 'anon'} | "${taskStr}" → ${meaningError}`);
+    console.log(`[aiController] breakdown rejected | user=${userId ?? 'anon'} | reason=meaning-check`);
     return res.status(422).json({ error: meaningError });
   }
 
@@ -487,16 +481,20 @@ export async function breakTaskIntoSteps(req, res) {
   try {
     data = await callGroqWithRetry(payload, apiKey, MAX_RETRIES);
   } catch (err) {
-    console.error('[aiController] Groq failed:', err?.message);
+    console.error('[aiController] Groq request failed', {
+      operation: 'breakdown',
+      status: err?.status,
+      code: err?.code,
+    });
     if (err?.isQuota) return res.status(429).json({ error: err.message });
-    return res.status(500).json({ error: err.message || 'Failed to break task into steps. Please try again.' });
+    return res.status(502).json({ error: 'AI service is temporarily unavailable. Please try again.' });
   }
 
   const { prompt_tokens, completion_tokens } = data?.usage || {};
   console.log(
     `[aiController] ok | user=${userId ?? 'anon'} | model=${model} | ` +
     `tokens=${prompt_tokens ?? '?'}+${completion_tokens ?? '?'} | ` +
-    `latency=${Date.now() - startTime}ms | task="${taskStr.slice(0, 60)}"`
+    `latency=${Date.now() - startTime}ms`
   );
 
   const rawText = data?.choices?.[0]?.message?.content || '';
@@ -504,7 +502,7 @@ export async function breakTaskIntoSteps(req, res) {
     parseResponse(rawText);
 
   if (_refusal) {
-    console.warn('[aiController] Refusal detected, retrying with neutral framing…');
+    console.warn('[aiController] Model refusal detected; retrying with neutral framing');
     const retryPayload = await buildPayload(
       model,
       `Create a detailed project plan for: ${taskStr}`,
@@ -531,14 +529,18 @@ export async function breakTaskIntoSteps(req, res) {
         });
       }
     } catch (retryErr) {
-      console.error('[aiController] Retry after refusal failed:', retryErr?.message);
+      console.error('[aiController] Retry after refusal failed', {
+        operation: 'breakdown',
+        status: retryErr?.status,
+        code: retryErr?.code,
+      });
     }
 
     return res.status(422).json({ error: "Try rephrasing your task — e.g. 'Plan an AI conflict video project'" });
   }
 
   if (steps.length < 1) {
-    console.warn('[aiController] 0 valid steps parsed. Raw:', rawText.slice(0, 300));
+    console.warn('[aiController] Model returned no usable steps');
     return res.status(500).json({ error: 'AI returned no usable steps. Please try rephrasing your task.' });
   }
 
@@ -558,17 +560,12 @@ export async function breakTaskIntoSteps(req, res) {
 }
 
 export async function rescheduleTask(req, res) {
+  const { instruction, currentDueDate } = req.validatedBody;
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
 
-  const { instruction, currentDueDate } = req.body || {};
   const userId = req.user?.uid;
   const timeZone = resolveRequestTimeZone(req);
-
-  if (!instruction || typeof instruction !== 'string' || !instruction.trim())
-    return res.status(400).json({ error: 'Missing or empty instruction' });
-  if (!currentDueDate || typeof currentDueDate !== 'string' || !currentDueDate.trim())
-    return res.status(400).json({ error: 'Missing or empty currentDueDate' });
 
   const safeInstruction = instruction.trim().replace(INJECTION_RX, "'").slice(0, 200);
   const safeDueDate     = currentDueDate.trim().replace(INJECTION_RX, "'").slice(0, 50);
@@ -610,48 +607,42 @@ Rules:
   try {
     data = await callGroqWithRetry(payload, apiKey, MAX_RETRIES);
   } catch (err) {
-    console.error('[aiController:reschedule] Groq failed:', err?.message);
+    console.error('[aiController] Groq request failed', {
+      operation: 'reschedule',
+      status: err?.status,
+      code: err?.code,
+    });
     if (err?.isQuota) return res.status(429).json({ error: err.message });
-    return res.status(500).json({ error: err.message || 'Failed to reschedule. Please try again.' });
+    return res.status(502).json({ error: 'AI service is temporarily unavailable. Please try again.' });
   }
 
   const rawText = data?.choices?.[0]?.message?.content || '';
   const parsed = parseJsonResponse(rawText);
 
   if (!parsed) {
-    console.warn('[aiController:reschedule] JSON parse failed:', rawText.slice(0, 200));
+    console.warn('[aiController] Model response was not valid JSON');
     return res.status(500).json({ error: 'Failed to parse rescheduled date. Please try again.' });
   }
 
   const newDueDate = typeof parsed.newDueDate === 'string' ? parsed.newDueDate.trim() : '';
   if (!WHEN_RX.test(newDueDate)) {
-    console.warn('[aiController:reschedule] Invalid date format:', newDueDate);
+    console.warn('[aiController] Model returned an invalid date');
     return res.status(500).json({ error: 'AI returned an invalid date format. Please try again.' });
   }
 
-  console.log(`[aiController:reschedule] ok | user=${userId ?? 'anon'} | latency=${Date.now() - startTime}ms | "${safeInstruction}" → "${newDueDate}"`);
+  console.log(`[aiController:reschedule] ok | user=${userId ?? 'anon'} | latency=${Date.now() - startTime}ms`);
   return res.json({ newDueDate });
 }
 
 export async function suggestSplit(req, res) {
+  const { task, steps, totalDurationMinutes } = req.validatedBody;
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
 
-  const { task, steps, totalDurationMinutes } = req.body || {};
   const userId = req.user?.uid;
 
-  if (!task || typeof task !== 'string' || !task.trim())
-    return res.status(400).json({ error: 'Missing or empty task' });
-  if (!Array.isArray(steps) || steps.length === 0)
-    return res.status(400).json({ error: 'Missing or empty steps array' });
-  if (typeof totalDurationMinutes !== 'number' || totalDurationMinutes <= 0)
-    return res.status(400).json({ error: 'Missing or invalid totalDurationMinutes' });
-
-  const safeTask  = task.trim().replace(INJECTION_RX, "'").slice(0, MAX_TASK_LENGTH);
-  const safeSteps = steps
-    .slice(0, 10)
-    .map(s => typeof s === 'string' ? s.replace(INJECTION_RX, "'").slice(0, 100) : '')
-    .filter(Boolean);
+  const safeTask = task;
+  const safeSteps = steps;
 
   const stepsText = safeSteps.map((s, i) => `${i + 1}. ${s}`).join('\n');
 
@@ -695,16 +686,20 @@ Return ONLY a raw JSON object:
   try {
     data = await callGroqWithRetry(payload, apiKey, MAX_RETRIES);
   } catch (err) {
-    console.error('[aiController:suggestSplit] Groq failed:', err?.message);
+    console.error('[aiController] Groq request failed', {
+      operation: 'suggestSplit',
+      status: err?.status,
+      code: err?.code,
+    });
     if (err?.isQuota) return res.status(429).json({ error: err.message });
-    return res.status(500).json({ error: err.message || 'Failed to split task. Please try again.' });
+    return res.status(502).json({ error: 'AI service is temporarily unavailable. Please try again.' });
   }
 
   const rawText = data?.choices?.[0]?.message?.content || '';
   const parsed = parseJsonResponse(rawText);
 
   if (!parsed) {
-    console.warn('[aiController:suggestSplit] JSON parse failed:', rawText.slice(0, 200));
+    console.warn('[aiController] Model response was not valid JSON');
     return res.status(500).json({ error: 'Failed to parse split tasks. Please try again.' });
   }
 
@@ -744,22 +739,17 @@ Return ONLY a raw JSON object:
   if (splitTasks.length === 0)
     return res.status(500).json({ error: 'AI returned unusable split tasks. Please try again.' });
 
-  console.log(`[aiController:suggestSplit] ok | user=${userId ?? 'anon'} | latency=${Date.now() - startTime}ms | "${safeTask.slice(0, 60)}" → ${splitTasks.length} tasks`);
+  console.log(`[aiController:suggestSplit] ok | user=${userId ?? 'anon'} | latency=${Date.now() - startTime}ms | tasks=${splitTasks.length}`);
   return res.json({ splitTasks });
 }
 
 export async function getDailyPlan(req, res) {
+  const { tasks, availableMinutes } = req.validatedBody;
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'GROQ_API_KEY is not configured' });
 
-  const { tasks, availableMinutes } = req.body || {};
   const userId = req.user?.uid;
   const timeZone = resolveRequestTimeZone(req);
-
-  if (!Array.isArray(tasks) || tasks.length === 0)
-    return res.status(400).json({ error: 'Missing or empty tasks array' });
-  if (typeof availableMinutes !== 'number' || availableMinutes <= 0)
-    return res.status(400).json({ error: 'Missing or invalid availableMinutes' });
 
   const dateCtx  = buildDateContext(timeZone);
   const taskList = tasks
@@ -814,16 +804,20 @@ Only use IDs from the list above. reasoning must have one entry per orderedTaskI
   try {
     data = await callGroqWithRetry(payload, apiKey, MAX_RETRIES);
   } catch (err) {
-    console.error('[aiController:getDailyPlan] Groq failed:', err?.message);
+    console.error('[aiController] Groq request failed', {
+      operation: 'getDailyPlan',
+      status: err?.status,
+      code: err?.code,
+    });
     if (err?.isQuota) return res.status(429).json({ error: err.message });
-    return res.status(500).json({ error: err.message || 'Failed to generate daily plan. Please try again.' });
+    return res.status(502).json({ error: 'AI service is temporarily unavailable. Please try again.' });
   }
 
   const rawText = data?.choices?.[0]?.message?.content || '';
   const parsed = parseJsonResponse(rawText);
 
   if (!parsed) {
-    console.warn('[aiController:getDailyPlan] JSON parse failed:', rawText.slice(0, 200));
+    console.warn('[aiController] Model response was not valid JSON');
     return res.status(500).json({ error: 'Failed to parse daily plan. Please try again.' });
   }
 
