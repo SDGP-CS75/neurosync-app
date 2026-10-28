@@ -6,6 +6,7 @@ import {
   getDailyPlan,
 } from '../controllers/aiController.js';
 import { authenticate } from '../middleware/auth.js';
+import { createValidationMiddleware } from '../middleware/validate.js';
 import {
   validateBreakdownBody,
   validateDailyPlanBody,
@@ -13,25 +14,33 @@ import {
   validateSplitBody,
 } from '../services/validation.js';
 
-const router = express.Router();
+export function createAiRouter({ authMiddleware = authenticate } = {}) {
+  const router = express.Router();
 
-function validateBody(validator) {
-  return (req, res, next) => {
-    const result = validator(req.body);
-    if (result.error) {
-      return res.status(400).json({ error: result.error });
-    }
-    req.validatedBody = result.value;
-    next();
-  };
+  router.use(authMiddleware);
+
+  router.post(
+    '/breakdown',
+    createValidationMiddleware(validateBreakdownBody),
+    breakTaskIntoSteps
+  );
+  router.post(
+    '/reschedule',
+    createValidationMiddleware(validateRescheduleBody),
+    rescheduleTask
+  );
+  router.post(
+    '/suggest-split',
+    createValidationMiddleware(validateSplitBody),
+    suggestSplit
+  );
+  router.post(
+    '/daily-plan',
+    createValidationMiddleware(validateDailyPlanBody),
+    getDailyPlan
+  );
+
+  return router;
 }
 
-// Apply authentication middleware to all AI routes
-router.use(authenticate);
-
-router.post('/breakdown', validateBody(validateBreakdownBody), breakTaskIntoSteps);
-router.post('/reschedule', validateBody(validateRescheduleBody), rescheduleTask);
-router.post('/suggest-split', validateBody(validateSplitBody), suggestSplit);
-router.post('/daily-plan', validateBody(validateDailyPlanBody), getDailyPlan);
-
-export default router;
+export default createAiRouter();

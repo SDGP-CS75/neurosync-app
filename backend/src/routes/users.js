@@ -2,9 +2,13 @@ import express from 'express';
 import { getUserProfile, createUserProfile } from '../controllers/userController.js';
 import { authenticate } from '../middleware/auth.js';
 
-const router = express.Router();
+export function createUserRouter({ authMiddleware = authenticate } = {}) {
+  const router = express.Router();
 
-router.get('/profile', authenticate, getUserProfile);
-router.post('/', authenticate, createUserProfile);
+  router.get('/profile', authMiddleware, getUserProfile);
+  router.post('/', authMiddleware, createUserProfile);
 
-export default router;
+  return router;
+}
+
+export default createUserRouter();

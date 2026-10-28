@@ -1,5 +1,3 @@
-import express from 'express';
-
 /**
  * Enhanced error handler with better classification and logging
  */

@@ -16,7 +16,7 @@ const calibrationCache = new Map();
 const CALIBRATION_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
 
 // Cache cleanup interval to prevent memory leaks
-setInterval(() => {
+const calibrationCacheCleanup = setInterval(() => {
   const now = Date.now();
   for (const [key, value] of calibrationCache.entries()) {
     if (now - value.timestamp > CALIBRATION_CACHE_TTL) {
@@ -24,6 +24,7 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000); // Clean up every 5 minutes
+calibrationCacheCleanup.unref?.();
 
 const ALLOWED_MODELS = [
   'llama-3.1-8b-instant',

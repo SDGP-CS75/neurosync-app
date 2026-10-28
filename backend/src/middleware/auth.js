@@ -1,21 +1,32 @@
 import admin from 'firebase-admin';
 
-export const authenticate = async (req, res, next) => {
-  // Skip auth when SKIP_AUTH is set (for testing/deployment)
-  const skipAuth = process.env.SKIP_AUTH === 'true';
-  if (skipAuth) {
-    req.user = { uid: 'test-user-123' };
-    return next();
-  }
+export function isAuthBypassEnabled(env = process.env) {
+  return env.NODE_ENV !== 'production' && env.SKIP_AUTH === 'true';
+}
 
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'No token provided' });
+export function createAuthenticate({
+  env = process.env,
+  verifyIdToken = (token) => admin.auth().verifyIdToken(token),
+} = {}) {
+  return async (req, res, next) => {
+    if (isAuthBypassEnabled(env)) {
+      req.user = { uid: 'test-user-123' };
+      return next();
+    }
 
-  try {
-    const decoded = await admin.auth().verifyIdToken(token);
-    req.user = decoded; // uid is available at req.user.uid
-    next();
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-};
+    const authorization = req.get('authorization') || '';
+    const match = authorization.match(/^Bearer\s+(\S+)$/i);
+    if (!match) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    try {
+      req.user = await verifyIdToken(match[1]);
+      return next();
+    } catch {
+      return res.status(401).json({ error: 'Invalid or expired token' });
+    }
+  };
+}
+
+export const authenticate = createAuthenticate();
