@@ -1,5 +1,6 @@
 import { auth } from './firebase';
 import { API_BASE } from '../constants/api';
+import { getUserTimeZone } from '../utils/dates';
 
 export interface ApiRequestOptions extends RequestInit {
   timeoutMs?: number;
@@ -42,6 +43,7 @@ export async function apiRequest<T = any>(
 
   const requestHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-Timezone': getUserTimeZone(),
     ...(headers as Record<string, string>),
   };
 

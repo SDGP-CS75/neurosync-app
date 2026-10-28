@@ -36,7 +36,6 @@ import DraggableFlatList, {
 } from "react-native-draggable-flatlist";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks } from "../../context/TasksContext";
-import { API_BASE } from "../../constants/api";
 import { apiRequest } from "../../services/apiClient";
 import Nav from "../../components/Nav";
 import InputDialog from "../../components/InputDialog";
@@ -46,6 +45,7 @@ import SubtaskNoteModal from "../../components/SubtaskNoteModal";
 import DependencyBadge from "../../components/DependencyBadge";
 import { saveTemplate } from "../../services/templateStorage";
 import { Easings } from "../../utils/animations";
+import { getLocalDateKey, getTodayKey, getUserTimeZone } from "../../utils/dates";
 import type { SubTask } from "../../types";
 
 // ── Speech recognition — guarded for Expo Go ─────────────────────────────────
@@ -744,7 +744,7 @@ export default function AddTaskScreen() {
         when?: string;
       }>("/api/ai/breakdown", {
         method: "POST",
-        body: JSON.stringify({ task: taskText }),
+        body: JSON.stringify({ task: taskText, timeZone: getUserTimeZone() }),
       });
 
       const steps: string[] = Array.isArray(data?.steps) ? data.steps : [];
@@ -802,18 +802,19 @@ export default function AddTaskScreen() {
 
     try {
       const data = await apiRequest<{
-        splitTasks: Array<{
+        splitTasks: {
           title: string;
           steps: string[];
           stepDurations: number[];
           totalDurationMinutes: number;
-        }>;
+        }[];
       }>("/api/ai/suggest-split", {
         method: "POST",
         body: JSON.stringify({
           task: mainTask.trim(),
           steps: aiSteps,
           totalDurationMinutes: aiMeta.totalDurationMinutes,
+          timeZone: getUserTimeZone(),
         }),
       });
 
@@ -821,8 +822,7 @@ export default function AddTaskScreen() {
 
       if (splitTasks.length === 0) throw new Error("No split tasks returned");
 
-      const today = new Date();
-      const dateKey = today.toISOString().slice(0, 10);
+      const dateKey = getTodayKey();
 
       splitTasks.forEach((st) => {
         addTask({
@@ -869,6 +869,7 @@ export default function AddTaskScreen() {
         body: JSON.stringify({
           instruction,
           currentDueDate: whenDate.toISOString(),
+          timeZone: getUserTimeZone(),
         }),
       });
 
@@ -892,9 +893,7 @@ export default function AddTaskScreen() {
     const title = (aiMeta.title ?? mainTask).trim();
     if (!title) return;
 
-    const dateKey = whenDate 
-      ? `${whenDate.getFullYear()}-${String(whenDate.getMonth() + 1).padStart(2, "0")}-${String(whenDate.getDate()).padStart(2, "0")}`
-      : new Date().toISOString().slice(0, 10);
+    const dateKey = whenDate ? getLocalDateKey(whenDate) : getTodayKey();
 
     addTask({
       title,
@@ -934,7 +933,7 @@ export default function AddTaskScreen() {
       subtasks: subTasks,
       status: "todo" as const,
       isSynced: false,
-      dateKey: new Date().toISOString().slice(0, 10),
+      dateKey: getTodayKey(),
     };
 
     const result = await saveTemplate(userId, pseudoTask);

@@ -1,4 +1,8 @@
 import { getCalibrationContext } from '../services/aiCalibration.js';
+import {
+  buildDateContext,
+  resolveRequestTimeZone,
+} from '../services/dateContext.js';
 
 const GROQ_URL         = 'https://api.groq.com/openai/v1/chat/completions';
 const MAX_TASK_LENGTH  = 500;
@@ -21,11 +25,6 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000); // Clean up every 5 minutes
-
-// Cache for date context (rebuilds every minute)
-let cachedDateContext = null;
-let dateContextTimestamp = 0;
-const DATE_CONTEXT_TTL = 60 * 1000; // 1 minute
 
 const ALLOWED_MODELS = [
   'llama-3.1-8b-instant',
@@ -77,9 +76,6 @@ const WHEN_RX      = /^\d{1,2} [A-Z][a-z]{2} \d{4}, \d{1,2}\.\d{2} (am|pm)$/;
 const CONTROL_RX   = /[\u0000-\u001F\u200B-\u200D\uFEFF]/g;
 const INJECTION_RX = /["\\]/g;
 
-const MONTHS        = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const WEEKDAY_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 /**
@@ -100,46 +96,6 @@ function parseJsonResponse(text) {
 function resolveModel() {
   const requested = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
   return ALLOWED_MODELS.includes(requested) ? requested : 'llama-3.1-8b-instant';
-}
-
-function fmtDate(d) {
-  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
-}
-
-function nextWeekday(now, targetDow) {
-  const d    = new Date(now);
-  const diff = ((targetDow - d.getUTCDay()) + 7) % 7 || 7;
-  d.setUTCDate(d.getUTCDate() + diff);
-  return d;
-}
-
-function buildDateContext() {
-  const now = Date.now();
-  
-  // Return cached context if still valid
-  if (cachedDateContext && (now - dateContextTimestamp < DATE_CONTEXT_TTL)) {
-    return cachedDateContext;
-  }
-  
-  const nowDate     = new Date();
-  const tomorrow    = new Date(nowDate); tomorrow.setUTCDate(nowDate.getUTCDate() + 1);
-  const nextWeekend = nextWeekday(nowDate, 6);
-  const nextWeek    = new Date(nowDate); nextWeek.setUTCDate(nowDate.getUTCDate() + 7);
-  const endOfWeek   = nextWeekday(nowDate, 5);
-
-  cachedDateContext = [
-    `Today         : ${fmtDate(nowDate)}`,
-    `Tonight       : ${fmtDate(nowDate)}  (use 9.00 pm unless a time is given)`,
-    `Tomorrow      : ${fmtDate(tomorrow)}`,
-    `This weekend  : ${fmtDate(nextWeekend)}`,
-    `End of week   : ${fmtDate(endOfWeek)}`,
-    `Next week     : ${fmtDate(nextWeek)}`,
-    '',
-    ...WEEKDAY_NAMES.map((name, i) => `Next ${name.padEnd(10)}: ${fmtDate(nextWeekday(nowDate, i))}`),
-  ].join('\n');
-  
-  dateContextTimestamp = now;
-  return cachedDateContext;
 }
 
 const DURATION_REFERENCE = `
@@ -239,8 +195,8 @@ function validateTaskMeaning(input) {
   return null;
 }
 
-function buildPrompt(task) {
-  const dateCtx = buildDateContext();
+function buildPrompt(task, timeZone) {
+  const dateCtx = buildDateContext(timeZone);
 
   return `You are a helpful daily task planner. Break the user's task into 3-6 simple, clear steps with REALISTIC time estimates.
 
@@ -456,7 +412,7 @@ async function callGroqWithRetry(payload, apiKey, retries = MAX_RETRIES) {
   throw lastError || new Error('Failed after retries');
 }
 
-async function buildPayload(model, taskStr, userId = null) {
+async function buildPayload(model, taskStr, userId = null, timeZone = 'UTC') {
   let systemPrompt =
     'You are a task planning assistant. Your ONLY job is to break any user input ' +
     'into actionable steps with REALISTIC time estimates, and return a JSON object. ' +
@@ -490,7 +446,7 @@ async function buildPayload(model, taskStr, userId = null) {
     model,
     messages: [
       { role: 'system', content: systemPrompt },
-      { role: 'user',   content: buildPrompt(taskStr) },
+      { role: 'user',   content: buildPrompt(taskStr, timeZone) },
     ],
     temperature: 0.3,
     max_tokens:  900,
@@ -505,6 +461,7 @@ export async function breakTaskIntoSteps(req, res) {
 
   const { task } = req.body || {};
   const userId = req.user?.uid;
+  const timeZone = resolveRequestTimeZone(req);
   let taskStr = typeof task === 'string' ? task.trim() : '';
 
   if (!taskStr)
@@ -523,7 +480,7 @@ export async function breakTaskIntoSteps(req, res) {
   }
 
   const model   = resolveModel();
-  const payload = await buildPayload(model, taskStr, userId ?? null);
+  const payload = await buildPayload(model, taskStr, userId ?? null, timeZone);
 
   const startTime = Date.now();
   let data;
@@ -548,7 +505,12 @@ export async function breakTaskIntoSteps(req, res) {
 
   if (_refusal) {
     console.warn('[aiController] Refusal detected, retrying with neutral framing…');
-    const retryPayload = await buildPayload(model, `Create a detailed project plan for: ${taskStr}`);
+    const retryPayload = await buildPayload(
+      model,
+      `Create a detailed project plan for: ${taskStr}`,
+      userId ?? null,
+      timeZone
+    );
 
     try {
       const retryData = await callGroqWithRetry(retryPayload, apiKey, 1);
@@ -601,6 +563,7 @@ export async function rescheduleTask(req, res) {
 
   const { instruction, currentDueDate } = req.body || {};
   const userId = req.user?.uid;
+  const timeZone = resolveRequestTimeZone(req);
 
   if (!instruction || typeof instruction !== 'string' || !instruction.trim())
     return res.status(400).json({ error: 'Missing or empty instruction' });
@@ -609,7 +572,7 @@ export async function rescheduleTask(req, res) {
 
   const safeInstruction = instruction.trim().replace(INJECTION_RX, "'").slice(0, 200);
   const safeDueDate     = currentDueDate.trim().replace(INJECTION_RX, "'").slice(0, 50);
-  const dateCtx         = buildDateContext();
+  const dateCtx         = buildDateContext(timeZone);
 
   const prompt = `You are a date parser. The user wants to reschedule a task.
 
@@ -791,13 +754,14 @@ export async function getDailyPlan(req, res) {
 
   const { tasks, availableMinutes } = req.body || {};
   const userId = req.user?.uid;
+  const timeZone = resolveRequestTimeZone(req);
 
   if (!Array.isArray(tasks) || tasks.length === 0)
     return res.status(400).json({ error: 'Missing or empty tasks array' });
   if (typeof availableMinutes !== 'number' || availableMinutes <= 0)
     return res.status(400).json({ error: 'Missing or invalid availableMinutes' });
 
-  const dateCtx  = buildDateContext();
+  const dateCtx  = buildDateContext(timeZone);
   const taskList = tasks
     .slice(0, 20)
     .map((t, i) => {

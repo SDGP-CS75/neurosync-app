@@ -24,6 +24,7 @@ import { useTasks } from "../../context/TasksContext";
 import { scheduleTaskNotification } from "../../services/notifications";
 
 import { Easings } from "../../utils/animations";
+import { getTodayKey } from "../../utils/dates";
 
 const { width } = Dimensions.get("window");
 
@@ -220,7 +221,7 @@ export default function HomeScreen() {
     ]).start();
   }, []);
 
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = getTodayKey();
   const displayName = profile.name || "You";
   const displayInitials = displayName
     .split(" ")

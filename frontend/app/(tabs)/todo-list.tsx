@@ -25,6 +25,7 @@ import Nav from "../../components/Nav";
 import AnimatedTaskCard from "../../components/AnimatedTaskCard";
 
 import { Easings } from "../../utils/animations";
+import { getLocalDateKey } from "../../utils/dates";
 
 interface DateItem {
   dateKey: string;
@@ -45,11 +46,11 @@ const STATUS_ORDER: Record<TaskStatus, number> = {
 function getDatesAroundToday(): DateItem[] {
   const items: DateItem[] = [];
   const today = new Date();
-  const todayKey = today.toISOString().slice(0, 10);
+  const todayKey = getLocalDateKey(today);
   for (let offset = -2; offset <= 2; offset++) {
     const d = new Date(today);
     d.setDate(d.getDate() + offset);
-    const dateKey = d.toISOString().slice(0, 10);
+    const dateKey = getLocalDateKey(d);
     items.push({
       dateKey,
       month: MONTHS[d.getMonth()],
@@ -63,8 +64,6 @@ function getDatesAroundToday(): DateItem[] {
 
 // Match Nav.tsx so scroll padding clears the bottom bar
 const BASE_WIDTH = 390;
-
-const todayDateKey = () => new Date().toISOString().slice(0, 10);
 
 export default function TodoListScreen() {
   const { theme } = useAppTheme();
@@ -178,10 +177,13 @@ export default function TodoListScreen() {
   
   // Helper to extract date from dueDate (same as calendar)
   const getTaskDateKey = (task: Task): string | null => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(task.dateKey)) {
+      return task.dateKey;
+    }
     if (task.dueDate) {
       const d = new Date(task.dueDate);
       if (!isNaN(d.getTime())) {
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        return getLocalDateKey(d);
       }
     }
     return null;

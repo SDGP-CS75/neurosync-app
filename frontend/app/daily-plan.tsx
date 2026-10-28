@@ -13,8 +13,8 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAppTheme } from "../context/ThemeContext";
 import { useTasks, Task } from "../context/TasksContext";
-import { API_BASE } from "../constants/api";
 import { apiRequest } from "../services/apiClient";
+import { getUserTimeZone } from "../utils/dates";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -62,7 +62,6 @@ interface PlanCardProps {
 
 function PlanCard({ task, rank, reasoning, theme, onStart }: PlanCardProps) {
   const dueStr = formatDueDate(task);
-  const durStr = formatDuration(task.sessionTime ?? 0);
   const subtaskTotal = task.subtasks?.length ?? 0;
   const subtaskDone = task.subtasks?.filter((s) => s.isDone).length ?? 0;
 
@@ -292,6 +291,7 @@ export default function DailyPlanScreen() {
           })),
           availableMinutes: DEFAULT_AVAILABLE_MINUTES,
           userId: userId ?? undefined,
+          timeZone: getUserTimeZone(),
         }),
       });
 

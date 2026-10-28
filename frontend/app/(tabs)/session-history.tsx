@@ -17,6 +17,7 @@ import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks } from "../../context/TasksContext";
 import { getSessions, FocusSession } from "../../services/sessionStorage";
 import { useFadeIn, useSlideUp } from "../../utils/animations";
+import { getLocalDateKey, getTodayKey } from "../../utils/dates";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -59,7 +60,7 @@ function formatDuration(minutes: number): string {
 }
 
 function isoDateKey(iso: string): string {
-  return iso.split("T")[0]; // "YYYY-MM-DD"
+  return getLocalDateKey(new Date(iso));
 }
 
 // ─── Log Tab ──────────────────────────────────────────────────────────────────
@@ -447,7 +448,7 @@ export default function SessionHistory() {
 
   // ── Summary bar ─────────────────────────────────────────────────────────────
 
-  const todayKey = new Date().toISOString().split("T")[0];
+  const todayKey = getTodayKey();
   const todaySessions = sessions.filter(
     (s) => s.mode === "focus" && isoDateKey(s.startedAt) === todayKey
   );

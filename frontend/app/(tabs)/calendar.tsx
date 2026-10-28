@@ -15,6 +15,7 @@ import { useRouter } from "expo-router";
 import { useAppTheme } from "../../context/ThemeContext";
 import { useTasks, Task } from "../../context/TasksContext";
 import { Easings } from "../../utils/animations";
+import { getLocalDateKey } from "../../utils/dates";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CELL_SIZE = Math.floor((SCREEN_WIDTH - 32) / 7);
@@ -56,9 +57,12 @@ function parseDueDate(task: Task): Date | null {
 }
 
 function taskDateKey(task: Task): string | null {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(task.dateKey)) {
+    return task.dateKey;
+  }
   const d = parseDueDate(task);
   if (!d) return null;
-  return toDateKey(d.getFullYear(), d.getMonth(), d.getDate());
+  return getLocalDateKey(d);
 }
 
 function formatTimeDisplay(task: Task): string {
