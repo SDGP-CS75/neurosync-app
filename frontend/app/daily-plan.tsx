@@ -135,6 +135,8 @@ function PlanCard({ task, rank, reasoning, theme, onStart }: PlanCardProps) {
           style={[cardStyles.startBtn, { backgroundColor: theme.colors.primary }]}
           onPress={() => onStart(task)}
           activeOpacity={0.85}
+          accessibilityRole="button"
+          accessibilityLabel={`Start ${task.title}`}
         >
           <Ionicons name="play" size={14} color="#fff" />
           <Text style={cardStyles.startBtnText}>Start this task</Text>
@@ -327,7 +329,13 @@ export default function DailyPlanScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={12}
+        >
           <Ionicons name="arrow-back" size={24} color={theme.colors.onBackground} />
         </TouchableOpacity>
         <View style={styles.headerCenter}>
@@ -344,6 +352,9 @@ export default function DailyPlanScreen() {
           onPress={fetchPlan}
           style={styles.refreshBtn}
           disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh daily plan"
+          accessibilityState={{ busy: loading, disabled: loading }}
         >
           <Ionicons
             name="refresh"
@@ -380,6 +391,8 @@ export default function DailyPlanScreen() {
           <TouchableOpacity
             style={[styles.retryBtn, { backgroundColor: theme.colors.primary }]}
             onPress={fetchPlan}
+            accessibilityRole="button"
+            accessibilityLabel="Try building the daily plan again"
           >
             <Text style={styles.retryBtnText}>Try again</Text>
           </TouchableOpacity>

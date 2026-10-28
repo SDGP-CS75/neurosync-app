@@ -210,7 +210,14 @@ export default function MoodAnalysis() {
                 const label = d.dateObj.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
                 const selected = i === selectedDayIndex;
                 return (
-                  <TouchableOpacity key={d.dateKey} onPress={() => { setSelectedDayIndex(i); setShowAllEntries(false); }} style={[styles.datePill, selected && { backgroundColor: colors.primary }]}> 
+                  <TouchableOpacity
+                    key={d.dateKey}
+                    onPress={() => { setSelectedDayIndex(i); setShowAllEntries(false); }}
+                    style={[styles.datePill, selected && { backgroundColor: colors.primary }]}
+                    accessibilityRole="tab"
+                    accessibilityLabel={`${label}, ${d.items.length} mood check-ins`}
+                    accessibilityState={{ selected }}
+                  >
                     <Text style={{ color: selected ? '#fff' : colors.onBackground, fontWeight: '700' }}>{label}</Text>
                     <Text style={{ color: selected ? '#fff' : colors.textMuted, fontSize: 12 }}>{d.items.length} check-ins</Text>
                   </TouchableOpacity>
@@ -267,7 +274,6 @@ export default function MoodAnalysis() {
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={{ color: colors.textMuted }}>{new Date(e.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</Text>
-                  <Text style={{ color: colors.primary, marginTop: 6 }}>Edit</Text>
                 </View>
               </View>
             </View>
@@ -275,7 +281,13 @@ export default function MoodAnalysis() {
 
           {/* Show more / Show less */}
           {selectedDay && selectedDay.items.length > 3 && (
-            <TouchableOpacity onPress={() => setShowAllEntries((s) => !s)} style={[styles.showMoreBtn, { borderColor: colors.primary }]}> 
+            <TouchableOpacity
+              onPress={() => setShowAllEntries((s) => !s)}
+              style={[styles.showMoreBtn, { borderColor: colors.primary }]}
+              accessibilityRole="button"
+              accessibilityLabel={showAllEntries ? "Show fewer mood entries" : "Show all mood entries"}
+              accessibilityState={{ expanded: showAllEntries }}
+            >
               <Text style={{ color: colors.primary }}>{showAllEntries ? 'Show less' : `Show more (${selectedDay.items.length - 3})`}</Text>
             </TouchableOpacity>
           )}

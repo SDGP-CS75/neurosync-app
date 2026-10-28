@@ -36,6 +36,8 @@ export default function DependencyBadge({
         onPress={() => setShowTooltip(true)}
         activeOpacity={0.8}
         hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={`Task locked. Complete ${blockedByTexts.join(", ")} first. Open details.`}
       >
         <Ionicons name="lock-closed" size={11} color={theme.colors.textMuted} />
         <Text style={[s.badgeText, { color: theme.colors.textMuted }]}>
@@ -54,6 +56,7 @@ export default function DependencyBadge({
           style={s.tooltipOverlay}
           activeOpacity={1}
           onPress={() => setShowTooltip(false)}
+          accessible={false}
         >
           <View
             style={[
@@ -74,6 +77,8 @@ export default function DependencyBadge({
                 onPress={() => setShowTooltip(false)}
                 hitSlop={10}
                 activeOpacity={0.7}
+                accessibilityRole="button"
+                accessibilityLabel="Close blocked task details"
               >
                 <Ionicons name="close" size={20} color={theme.colors.textMuted} />
               </TouchableOpacity>
@@ -109,6 +114,8 @@ export default function DependencyBadge({
               style={[s.tooltipClose, { backgroundColor: theme.colors.surfaceVariant ?? theme.colors.background }]}
               onPress={() => setShowTooltip(false)}
               activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss blocked task details"
             >
               <Text style={[s.tooltipCloseText, { color: theme.colors.text }]}>
                 Got it

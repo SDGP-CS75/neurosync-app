@@ -164,6 +164,7 @@ export default function MoodTracking() {
               value={note}
               onChangeText={setNote}
               multiline
+              accessibilityLabel="Mood note"
               style={{
                 backgroundColor: colors.surfaceVariant,
                 borderRadius: 12,
@@ -189,6 +190,9 @@ export default function MoodTracking() {
                   <TouchableOpacity
                     key={index}
                     onPress={() => toggleTag(tag)}
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={tag}
+                    accessibilityState={{ checked: isSelected }}
                     style={{
                       paddingVertical: 8,
                       paddingHorizontal: 14,
@@ -226,6 +230,9 @@ export default function MoodTracking() {
                     key={index}
                     onPress={() => setMood(index)}
                     activeOpacity={0.85}
+                    accessibilityRole="radio"
+                    accessibilityLabel={m.label}
+                    accessibilityState={{ checked: isSelected }}
                     style={{
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -302,6 +309,13 @@ export default function MoodTracking() {
                   minimumTrackTintColor={colors.primary}
                   maximumTrackTintColor={colors.outline}
                   thumbTintColor={colors.primary}
+                  accessibilityLabel="Energy level"
+                  accessibilityValue={{
+                    min: 0,
+                    max: 10,
+                    now: energyLevel,
+                    text: `${energyLevel} out of 10`,
+                  }}
                 />
 
                 <View style={{ flexDirection: "row", marginTop: 10 }}>
@@ -332,6 +346,9 @@ export default function MoodTracking() {
             <TouchableOpacity
               onPress={saveEntry}
               disabled={isSaving}
+              accessibilityRole="button"
+              accessibilityLabel={isSaving ? "Saving mood entry" : "Save mood entry"}
+              accessibilityState={{ busy: isSaving, disabled: isSaving }}
               style={{
                 backgroundColor: colors.primary,
                 paddingVertical: 16,
@@ -385,6 +402,8 @@ export default function MoodTracking() {
 
             <Pressable
               onPress={() => setShowSavedModal(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss mood saved message"
               style={({ pressed }) => [
                 {
                   marginTop: 18,

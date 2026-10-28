@@ -123,7 +123,12 @@ function TaskRow({ task, theme, index, onPress }: { task: Task; theme: any; inde
   }, []);
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`Open ${task.title}`}
+    >
       <Animated.View
         style={[
           taskRowStyles.row,
@@ -257,6 +262,7 @@ function MonthCell({
         activeOpacity={cell.valid ? 0.75 : 1}
         accessibilityRole="button"
         accessibilityLabel={cell.valid ? `Select ${cell.key}` : undefined}
+        accessibilityState={{ selected: cell.isSelected }}
       >
         <Text
           style={[
@@ -439,6 +445,7 @@ function WeekDay({
         activeOpacity={0.8}
         accessibilityRole="button"
         accessibilityLabel={`Select ${key}`}
+        accessibilityState={{ selected: isSelected }}
       >
         <Text
           style={[
@@ -748,11 +755,22 @@ export default function CalendarScreen() {
           },
         ]}
       >
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={12}
+        >
           <Ionicons name="arrow-back" size={24} color={theme.colors.onBackground} />
         </TouchableOpacity>
         <Text style={styles.title}>Calendar</Text>
-        <TouchableOpacity onPress={goToToday} style={styles.todayBtn}>
+        <TouchableOpacity
+          onPress={goToToday}
+          style={styles.todayBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go to today"
+        >
           <Text style={[styles.todayBtnText, { color: primaryColor }]}>Today</Text>
         </TouchableOpacity>
       </Animated.View>
@@ -771,6 +789,9 @@ export default function CalendarScreen() {
           <TouchableOpacity
             style={[styles.toggleOpt, viewMode === "month" && { backgroundColor: primaryColor }]}
             onPress={() => setViewMode("month")}
+            accessibilityRole="tab"
+            accessibilityLabel="Month view"
+            accessibilityState={{ selected: viewMode === "month" }}
           >
             <Text style={[styles.toggleOptText, viewMode === "month" && { color: "#fff" }]}>
               Month
@@ -779,6 +800,9 @@ export default function CalendarScreen() {
           <TouchableOpacity
             style={[styles.toggleOpt, viewMode === "week" && { backgroundColor: primaryColor }]}
             onPress={() => setViewMode("week")}
+            accessibilityRole="tab"
+            accessibilityLabel="Week view"
+            accessibilityState={{ selected: viewMode === "week" }}
           >
             <Text style={[styles.toggleOptText, viewMode === "week" && { color: "#fff" }]}>
               Week
@@ -802,6 +826,8 @@ export default function CalendarScreen() {
             onPress={viewMode === "month" ? prevMonth : prevWeek}
             hitSlop={12}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={viewMode === "month" ? "Previous month" : "Previous week"}
           >
             <Ionicons name="chevron-back" size={22} color={theme.colors.onBackground} />
           </TouchableOpacity>
@@ -816,6 +842,8 @@ export default function CalendarScreen() {
             onPress={viewMode === "month" ? nextMonth : nextWeek}
             hitSlop={12}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={viewMode === "month" ? "Next month" : "Next week"}
           >
             <Ionicons name="chevron-forward" size={22} color={theme.colors.onBackground} />
           </TouchableOpacity>

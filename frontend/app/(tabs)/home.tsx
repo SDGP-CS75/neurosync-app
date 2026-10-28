@@ -348,6 +348,8 @@ export default function HomeScreen() {
               style={styles.headerLeft}
               onPress={() => router.push("/(tabs)/settings")}
               activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Open profile settings"
             >
               <View style={{ alignItems: "center" }}>
                 {profile.profileImage ? (
@@ -372,6 +374,9 @@ export default function HomeScreen() {
               style={styles.notificationBtn}
               onPress={scheduleDailySummary}
               disabled={isScheduling}
+              accessibilityRole="button"
+              accessibilityLabel="Schedule daily summary"
+              accessibilityState={{ busy: isScheduling, disabled: isScheduling }}
             >
               <Ionicons
                 name="notifications-outline"
@@ -411,9 +416,6 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 </View>
                 <View style={styles.todayCardRight}>
-                  <TouchableOpacity style={styles.chatIcon}>
-                    <Ionicons name="chatbubble-ellipses" size={20} color={theme.colors.onPrimary} />
-                  </TouchableOpacity>
                   <AnimatedCircularProgress
                     style={{ marginRight: 10, marginTop: 10 }}
                     size={115}
@@ -573,6 +575,10 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   key={group.id}
                   style={[styles.taskGroupCard, { backgroundColor: theme.colors.surface }]}
+                  onPress={() => router.push("/(tabs)/todo-list")}
+                  activeOpacity={0.75}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Open ${group.title} tasks, ${group.progress}% complete`}
                 >
                   <View style={[styles.taskGroupIcon, { backgroundColor: group.iconBg }]}>
                     <Text style={styles.taskGroupEmoji}>{group.icon}</Text>

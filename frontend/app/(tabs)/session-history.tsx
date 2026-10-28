@@ -465,11 +465,24 @@ export default function SessionHistory() {
       <Animated.View style={{ flex: 1, opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+          hitSlop={12}
+        >
           <Ionicons name="arrow-back" size={24} color={theme.colors.onBackground} />
         </TouchableOpacity>
         <Text style={styles.title}>Session History</Text>
-        <TouchableOpacity onPress={loadSessions} style={styles.refreshBtn}>
+        <TouchableOpacity
+          onPress={loadSessions}
+          style={styles.refreshBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Refresh session history"
+          accessibilityState={{ busy: loading }}
+          disabled={loading}
+        >
           <Ionicons name="refresh" size={22} color={theme.colors.onSurfaceVariant} />
         </TouchableOpacity>
       </View>
@@ -510,6 +523,9 @@ export default function SessionHistory() {
         <TouchableOpacity
           style={[styles.tab, activeTab === "log" && styles.tabActive]}
           onPress={() => setActiveTab("log")}
+          accessibilityRole="tab"
+          accessibilityLabel="Session log"
+          accessibilityState={{ selected: activeTab === "log" }}
         >
           <Text
             style={[
@@ -523,6 +539,9 @@ export default function SessionHistory() {
         <TouchableOpacity
           style={[styles.tab, activeTab === "byTask" && styles.tabActive]}
           onPress={() => setActiveTab("byTask")}
+          accessibilityRole="tab"
+          accessibilityLabel="Sessions by task"
+          accessibilityState={{ selected: activeTab === "byTask" }}
         >
           <Text
             style={[
@@ -544,7 +563,12 @@ export default function SessionHistory() {
         <View style={styles.errorWrap}>
           <Ionicons name="alert-circle-outline" size={48} color={theme.colors.error} />
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={loadSessions}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={loadSessions}
+            accessibilityRole="button"
+            accessibilityLabel="Retry loading session history"
+          >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
