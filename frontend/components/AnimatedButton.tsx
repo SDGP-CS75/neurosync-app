@@ -205,6 +205,12 @@ export default function AnimatedButton({
           getSizeStyles(),
           disabled && styles.disabled,
         ]}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{
+          disabled: disabled || loading,
+          busy: loading,
+        }}
       >
         {loading ? (
           <View style={styles.loadingContainer}>

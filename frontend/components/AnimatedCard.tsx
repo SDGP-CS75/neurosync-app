@@ -164,6 +164,8 @@ export default function AnimatedCard({
         disabled={disabled}
         activeOpacity={1}
         style={styles.cardContent}
+        accessibilityRole={onPress ? "button" : undefined}
+        accessibilityState={onPress ? { disabled } : undefined}
       >
         {children}
       </CardWrapper>

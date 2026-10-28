@@ -250,6 +250,8 @@ export default function SignUp() {
           <Text
             onPress={() => router.push("/(auth)/signIn")}
             style={{ color: theme.colors.primary, fontWeight: "bold" }}
+            accessibilityRole="link"
+            accessibilityLabel="Go to sign in"
           >
             Sign In
           </Text>

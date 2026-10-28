@@ -98,6 +98,7 @@ export default function AnimatedTaskCard({
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           activeOpacity={1}
+          accessibilityRole="button"
         >
           {children}
         </TouchableOpacity>

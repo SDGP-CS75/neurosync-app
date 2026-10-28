@@ -76,6 +76,8 @@ export default function ForgotPassword() {
       <Text
         onPress={() => router.push("/(auth)/signIn")}
         style={[styles.backLink, { color: theme.colors.primary }]}
+        accessibilityRole="link"
+        accessibilityLabel="Back to sign in"
       >
         Back to Sign In
       </Text>

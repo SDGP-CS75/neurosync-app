@@ -266,6 +266,8 @@ export default function SignIn() {
         <Text
           onPress={() => router.push("/(auth)/forgotPassword")}
           style={[styles.forgotPassword, { color: theme.colors.textMuted }]}
+          accessibilityRole="link"
+          accessibilityLabel="Forgot password"
         >
           Forgot Password
         </Text>
@@ -276,6 +278,8 @@ export default function SignIn() {
           <Text
             onPress={() => router.push("/(auth)/signUp")}
             style={{ color: theme.colors.primary, fontWeight: "bold" }}
+            accessibilityRole="link"
+            accessibilityLabel="Create a new account"
           >
             Sign Up
           </Text>
