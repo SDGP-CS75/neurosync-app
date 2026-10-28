@@ -1,11 +1,9 @@
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from './firebase';
 import { getAuth } from 'firebase/auth';
 import { clearTaskStorageForUser } from './taskStorage';
-
-const SESSIONS_STORAGE_KEY_PREFIX = '@neurosync_sessions_';
-const MOOD_ENTRIES_KEY = 'mood_entries';
+import { clearSessionStorageForUser } from './sessionStorage';
+import { clearMoodStorageForUser } from './moodStorage';
 
 /**
  * Reset all user data from Firebase and local storage
@@ -78,25 +76,14 @@ export async function resetAllData(): Promise<{ success: boolean; error?: string
 
     // Clear local storage data
     try {
-      if (user) await clearTaskStorageForUser(user.uid);
-      console.log('Local tasks cleared');
-
-      // Clear sessions (need to get all keys with the prefix)
-      const allKeys = await AsyncStorage.getAllKeys();
-      const sessionKeys = allKeys.filter((key) => key.startsWith(SESSIONS_STORAGE_KEY_PREFIX));
-      if (sessionKeys.length > 0) {
-        await AsyncStorage.multiRemove(sessionKeys);
-        console.log('Local sessions cleared');
+      if (user) {
+        await Promise.all([
+          clearTaskStorageForUser(user.uid),
+          clearSessionStorageForUser(user.uid),
+          clearMoodStorageForUser(user.uid),
+        ]);
       }
-
-      // Clear mood entries (both legacy and user-scoped keys)
-      const moodKeys = allKeys.filter((key) => key.startsWith('@neurosync_mood_entries_') || key === MOOD_ENTRIES_KEY);
-      if (moodKeys.length > 0) {
-        await AsyncStorage.multiRemove(moodKeys);
-      } else {
-        await AsyncStorage.removeItem(MOOD_ENTRIES_KEY);
-      }
-      console.log('Local mood entries cleared');
+      console.log('Local user data cleared');
     } catch (error) {
       console.error('Error clearing local storage:', error);
       return { success: false, error: 'Failed to clear local data' };
@@ -165,11 +152,8 @@ export async function resetSessions(): Promise<{ success: boolean; error?: strin
       }
     }
 
-    // Clear local sessions
-    const allKeys = await AsyncStorage.getAllKeys();
-    const sessionKeys = allKeys.filter((key) => key.startsWith(SESSIONS_STORAGE_KEY_PREFIX));
-    if (sessionKeys.length > 0) {
-      await AsyncStorage.multiRemove(sessionKeys);
+    if (user) {
+      await clearSessionStorageForUser(user.uid);
       console.log('Local sessions cleared');
     }
 
@@ -199,14 +183,8 @@ export async function resetMoodEntries(): Promise<{ success: boolean; error?: st
       );
     }
 
-    const allKeys = await AsyncStorage.getAllKeys();
-    const moodKeys = allKeys.filter(
-      (key) =>
-        key.startsWith('@neurosync_mood_entries_') ||
-        key === MOOD_ENTRIES_KEY
-    );
-    if (moodKeys.length > 0) {
-      await AsyncStorage.multiRemove(moodKeys);
+    if (user) {
+      await clearMoodStorageForUser(user.uid);
     }
 
     return { success: true };

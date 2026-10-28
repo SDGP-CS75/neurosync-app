@@ -245,3 +245,8 @@ export async function syncPendingMoods(userId: string): Promise<void> {
 export function getMoodStorageKey(userId: string): string {
   return MOOD_STORAGE_KEY_PREFIX + userId;
 }
+
+export async function clearMoodStorageForUser(userId: string): Promise<void> {
+  if (!userId) return;
+  await AsyncStorage.removeItem(getMoodStorageKey(userId));
+}

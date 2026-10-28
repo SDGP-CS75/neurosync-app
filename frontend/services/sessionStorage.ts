@@ -66,6 +66,13 @@ export function mergeSessions(
   return sortSessions(merged);
 }
 
+export async function clearSessionStorageForUser(
+  userId: string
+): Promise<void> {
+  if (!userId) return;
+  await AsyncStorage.removeItem(SESSIONS_STORAGE_KEY_PREFIX + userId);
+}
+
 async function saveSessionsLocally(
   userId: string,
   sessions: FocusSession[]
